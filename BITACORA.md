@@ -1,33 +1,156 @@
 # Torneo360 - Bitacora del Proyecto
 
-## 2026-04-13 — Inicio del proyecto (Fase 1: Fundacion)
+> Sistema de Gestion Integral de Torneos de Baby Futbol
+> Desarrollado por Juan Lacy
 
-### Creado
-- **Backend completo** (Fase 1):
-  - Scaffolding: Express 5, Sequelize 6, PostgreSQL, Socket.io
-  - Modelos: Usuario, PermisoDefaultRol, PermisoUsuario, AuditLog, Torneo
-  - Middleware: authMiddleware (JWT, roles, permisos granulares, club-scoping), errorHandler, requestLogger
-  - Servicios: auditService, emailService (SES + SMTP)
-  - Controllers: authController (login, Google, Microsoft, register, verify, reset, refresh, permisos), permisosController, adminController
-  - Rutas: /auth, /permisos, /admin
-  - Entry point con Socket.io integrado
-  - 5 migraciones + 2 seeders (permisos por defecto + usuario admin)
+---
 
-- **Frontend completo** (Fase 1):
-  - Angular 21 + Tailwind CSS 4 + Angular Material 21
-  - Core: AuthService (con permisos), SocketService, authInterceptor, guards (auth, admin, guest, role)
-  - Layout: Sidenav responsive con menu adaptativo por permisos
-  - Auth pages: Login, Register, Verify Email, Forgot Password, Reset Password
-  - Features: Dashboard (placeholder), Admin Usuarios (tabla con filtros), Admin Permisos (editor de matriz)
-  - Routing con lazy loading y guards
+## Stack Tecnologico
 
-### Decisiones tecnicas
-- PostgreSQL en vez de MySQL (mejor para JSONB, concurrencia)
-- Socket.io para tiempo real (ideal para tablets en cancha)
-- Sistema de permisos de SistemaGH (PermisoDefaultRol + PermisoUsuario)
-- Dark theme verde (identidad Baby Futbol)
+| Componente | Tecnologia |
+|-----------|------------|
+| Backend | Node.js + Express 5 (ES Modules), puerto 7300 |
+| Base de datos | PostgreSQL + Sequelize 6 (JSONB) |
+| Frontend | Angular 21 + Tailwind CSS 4 + Angular Material 21, puerto 4300 |
+| Tiempo real | Socket.io (WebSockets) |
+| Auth | JWT + Google OAuth + Microsoft MSAL |
+| Permisos | PermisoDefaultRol + PermisoUsuario (granular) |
+| Email | Amazon SES v2 + Nodemailer (SMTP fallback) |
+| Deploy | VPS + PM2 + Nginx (aaPanel) |
+| Repositorio | [GitHub](https://github.com/juanlacy/Torneos360) |
+| Produccion | https://torneos360.huelemu.com.ar |
 
-### Proximos pasos (Fase 2)
-- Modelos: Zona, Club, Categoria, Jugador, Staff, Arbitro, Veedor
-- CRUD completo de entidades del torneo
-- Fichaje de jugadores con fichas medicas
+---
+
+## Roles del Sistema
+
+| Rol | Descripcion |
+|-----|-------------|
+| `admin_sistema` | Acceso total al sistema |
+| `admin_torneo` | Administra torneos, clubes, jugadores, fixture, arbitros |
+| `delegado` | Gestiona su club, opera el panel de control en partidos |
+| `arbitro` | Valida y cierra partidos |
+| `veedor` | Supervisa partidos (lectura + observaciones) |
+| `entrenador` | Ve datos de su equipo |
+| `publico` | Ve posiciones, resultados y calendario |
+
+---
+
+## Fases del Proyecto
+
+| Fase | Descripcion | Estado |
+|------|-------------|--------|
+| 1 | Fundacion (Auth, Permisos, Layout) | Completada |
+| 2 | Entidades Core (Clubes, Jugadores, Staff) | Completada |
+| 3 | Competencia (Fixture, Partidos, Posiciones) | Pendiente |
+| 4 | Control de Partidos en Tiempo Real | Pendiente |
+| 5 | PWA, Estadisticas y Reportes | Pendiente |
+
+---
+
+## Registro de Cambios
+
+### 2026-04-13 — Fase 2: Entidades Core del Torneo
+
+#### Backend
+- **7 nuevos modelos**: Zona, Club, Categoria, Jugador, Staff, Arbitro, Veedor
+- **7 migraciones** con foreign keys e indices
+- **6 controllers CRUD** con validaciones de negocio:
+  - **Torneos**: CRUD + generar las 7 categorias automaticas del anio + gestion de zonas
+  - **Clubes**: CRUD + upload de escudo + listado de jugadores por club
+  - **Jugadores**: CRUD completo con:
+    - Validacion de DNI unico por torneo
+    - Control de limite de jugadores por categoria (20-25)
+    - Validacion de edad vs anio de nacimiento de la categoria
+    - Flujo de fichaje: pendiente → aprobado/rechazado/baja
+    - Upload de foto del jugador
+  - **Staff**: CRUD con club-scoping (entrenadores, ayudantes, delegados generales y auxiliares)
+  - **Arbitros**: CRUD por torneo
+  - **Veedores**: CRUD por torneo
+- **Asociaciones completas**: Torneo → Zonas → Clubes → Jugadores/Staff, Torneo → Categorias, etc.
+- Todas las rutas protegidas con `requirePermiso(modulo, accion)`
+- Club-scoping automatico para delegados y entrenadores
+
+#### Frontend
+- **Pantalla Torneos**: crear/editar torneos, generar categorias con un click, gestionar zonas
+- **Pantalla Clubes**: grilla de cards con escudo y colores del club, filtro por torneo/zona
+- **Pantalla Jugadores**: tabla con filtros multiples (club, categoria, estado fichaje, busqueda libre), formulario de alta, aprobacion/rechazo de fichaje desde menu contextual
+- Menu lateral actualizado con seccion "Torneo" (Torneos, Clubes, Jugadores)
+
+#### Fixes
+- Corregido `RouterLink` no usado en ClubesComponent
+
+---
+
+### 2026-04-13 — Fase 1: Fundacion del Proyecto
+
+#### Backend
+- Scaffolding completo: Express 5, Sequelize 6, PostgreSQL, Socket.io
+- **5 modelos**: Usuario (7 roles), PermisoDefaultRol, PermisoUsuario, AuditLog, Torneo
+- **Middleware**: authMiddleware (JWT, roles, permisos granulares, club-scoping con `clubWhere`/`clubData`/`tieneAccesoAlClub`), errorHandler con clases de error tipadas, requestLogger
+- **Servicios**: auditService (registro con JSONB, sanitizacion de datos sensibles), emailService (SES v2 + SMTP fallback, templates HTML dark theme)
+- **Auth completo**: login local + Google OAuth + Microsoft MSAL, register con verificacion de email, forgot/reset password, refresh token con rotacion, upload de avatar
+- **5 migraciones** + **2 seeders** (matriz de permisos por rol + usuario admin)
+- Entry point con Socket.io integrado (auth JWT en handshake, rooms por match/jornada/club)
+- Swagger UI en `/api-docs`
+- Health check en `/health`
+
+#### Frontend
+- Angular 21 standalone components + Tailwind CSS 4 + Angular Material 21
+- **AuthService** con BehaviorSubject, JWT refresh proactivo, cache de permisos, metodo `puede(modulo, accion)`
+- **SocketService** wrapper de Socket.io con auto-connect/disconnect segun sesion
+- **Interceptor** HTTP con inyeccion de token + retry en 401 via refresh
+- **Guards**: authGuard, adminGuard, guestGuard, roleGuard factory
+- **Layout**: Sidenav responsive con menu adaptativo segun rol y permisos, toolbar con menu de usuario
+- **5 paginas de auth**: Login (local + Google + Microsoft), Register, Verify Email, Forgot Password, Reset Password
+- **Dashboard** placeholder con cards de estadisticas
+- **Admin Usuarios**: tabla con busqueda, filtro por rol, paginacion
+- **Admin Permisos**: editor visual de matriz de permisos por rol (checkbox grid)
+
+#### Infraestructura
+- Deploy script (`deploy.sh`) con PM2 + Nginx + migraciones automaticas
+- Config Nginx para aaPanel con proxy al backend + WebSocket upgrade para Socket.io
+- `ecosystem.config.cjs` para PM2
+
+#### Decisiones tecnicas
+- **PostgreSQL** en vez de MySQL: mejor soporte JSONB, mejor concurrencia para tiempo real
+- **Socket.io** para tiempo real: bidireccional, ideal para tablets en cada mesa de control
+- **Sistema de permisos** adaptado de SistemaGH: dos niveles (default por rol + override por usuario)
+- **Dark theme verde/amarillo**: identidad visual de Baby Futbol
+- **Deteccion automatica de entorno** (`window.location.hostname`) para apiUrl prod/dev
+
+#### Fixes post-deploy
+- MSAL inicializado lazy para evitar crash sin credenciales configuradas
+- Sass `@import` migrado a `@use` (deprecation Dart Sass 3.0)
+- Budget de bundle ajustado a 1MB/2MB (normal con Angular Material)
+- Config Nginx actualizada con paths reales de aaPanel
+
+---
+
+## Estructura de la Base de Datos
+
+### Auth y Admin
+- `usuarios` — 7 roles, OAuth, vinculacion a entidad, club-scoping
+- `permisos_default_rol` — Permisos por defecto segun rol
+- `permisos_usuario` — Override individual por usuario
+- `audit_logs` — Registro de cambios con JSONB
+
+### Torneo
+- `torneos` — Contenedor anual con estado y config JSONB
+- `zonas` — Divisiones del torneo (Blanca, Celeste)
+- `categorias` — Por anio de nacimiento (2013-2019), flag `es_preliminar`
+- `clubes` — Con zona, escudo, colores, contacto JSONB
+
+### Personas
+- `jugadores` — DNI, foto, estado fichaje, ficha medica JSONB, datos personales JSONB
+- `staff` — Entrenadores, ayudantes, delegados (por club)
+- `arbitros` — Por torneo
+- `veedores` — Por torneo
+
+### Competencia (Fase 3)
+- `fixture_jornadas` — Fechas con zona y fase (ida/vuelta)
+- `partidos` — Por jornada + categoria, con estado y confirmacion del arbitro
+- `partido_jugadores` — Roster validado pre-partido
+- `partido_eventos` — Goles, tarjetas, sustituciones en tiempo real
+- `tabla_posiciones` — Por categoria + zona
+- `tabla_posiciones_club` — Total del club (suma de 6 categorias, excluye preliminar)
