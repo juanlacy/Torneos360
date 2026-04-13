@@ -17,9 +17,15 @@ import { initSocket } from './config/socket.js';
 import { sequelize } from './models/index.js';
 
 // ─── Importar rutas ──────────────────────────────────────────────────────────
-import authRoutes     from './routes/auth.js';
-import adminRoutes    from './routes/admin.js';
-import permisosRoutes from './routes/permisos.js';
+import authRoutes      from './routes/auth.js';
+import adminRoutes     from './routes/admin.js';
+import permisosRoutes  from './routes/permisos.js';
+import torneosRoutes   from './routes/torneos.js';
+import clubesRoutes    from './routes/clubes.js';
+import jugadoresRoutes from './routes/jugadores.js';
+import staffRoutes     from './routes/staff.js';
+import arbitrosRoutes  from './routes/arbitros.js';
+import veedoresRoutes  from './routes/veedores.js';
 
 // ─── Swagger ─────────────────────────────────────────────────────────────────
 import swaggerJsdoc from 'swagger-jsdoc';
@@ -106,11 +112,19 @@ import { mkdirSync } from 'fs';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = dirname(__filename);
 mkdirSync(join(__dirname, '..', 'uploads', 'avatars'), { recursive: true });
+mkdirSync(join(__dirname, '..', 'uploads', 'escudos'), { recursive: true });
+mkdirSync(join(__dirname, '..', 'uploads', 'jugadores'), { recursive: true });
 app.use('/uploads', express.static(join(__dirname, '..', 'uploads')));
 
 // ─── Rutas protegidas ───────────────────────────────────────────────────────
-app.use('/admin',    apiLimiter, adminRoutes);
-app.use('/permisos', apiLimiter, permisosRoutes);
+app.use('/admin',     apiLimiter, adminRoutes);
+app.use('/permisos',  apiLimiter, permisosRoutes);
+app.use('/torneos',   apiLimiter, torneosRoutes);
+app.use('/clubes',    apiLimiter, clubesRoutes);
+app.use('/jugadores', apiLimiter, jugadoresRoutes);
+app.use('/staff',     apiLimiter, staffRoutes);
+app.use('/arbitros',  apiLimiter, arbitrosRoutes);
+app.use('/veedores',  apiLimiter, veedoresRoutes);
 
 // ─── Health check ───────────────────────────────────────────────────────────
 app.get('/health', async (req, res) => {

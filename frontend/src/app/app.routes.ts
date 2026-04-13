@@ -28,6 +28,20 @@ export const routes: Routes = [
         loadComponent: () => import('./features/dashboard/dashboard').then(m => m.DashboardComponent),
       },
 
+      // ─── Torneo ──────────────────────────────────────────────────────────
+      {
+        path: 'torneos',
+        loadComponent: () => import('./features/torneos/torneos').then(m => m.TorneosComponent),
+      },
+      {
+        path: 'clubes',
+        loadComponent: () => import('./features/clubes/clubes').then(m => m.ClubesComponent),
+      },
+      {
+        path: 'jugadores',
+        loadComponent: () => import('./features/jugadores/jugadores').then(m => m.JugadoresComponent),
+      },
+
       // ─── Admin ───────────────────────────────────────────────────────────
       {
         path: 'admin',

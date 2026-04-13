@@ -28,6 +28,10 @@ import { AuthService } from '../services/auth.service';
 
           @if (auth.puede('torneos', 'ver')) {
             <div class="px-4 pt-4 pb-1 text-xs font-semibold text-slate-500 uppercase">Torneo</div>
+            <a mat-list-item routerLink="/torneos" routerLinkActive="!bg-slate-800">
+              <mat-icon matListItemIcon>emoji_events</mat-icon>
+              <span matListItemTitle>Torneos</span>
+            </a>
           }
           @if (auth.puede('clubes', 'ver')) {
             <a mat-list-item routerLink="/clubes" routerLinkActive="!bg-slate-800">
