@@ -1,6 +1,8 @@
+const isProd = window.location.hostname !== 'localhost';
+
 export const environment = {
-  production: false,
-  apiUrl: 'http://localhost:7300',
+  production: isProd,
+  apiUrl: isProd ? '' : 'http://localhost:7300',
   googleClientId: '',
   microsoftClientId: '',
   microsoftTenantId: '',
