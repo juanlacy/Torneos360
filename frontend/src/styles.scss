@@ -1,0 +1,44 @@
+@use '@angular/material' as mat;
+@import "tailwindcss";
+
+html {
+  height: 100%;
+  @include mat.theme(
+    (
+      color: (
+        primary: mat.$green-palette,
+        tertiary: mat.$yellow-palette,
+      ),
+      typography: Roboto,
+      density: 0,
+    )
+  );
+}
+
+body {
+  color-scheme: dark;
+  background-color: #0f172a;
+  color: #e2e8f0;
+  font: var(--mat-sys-body-medium);
+  margin: 0;
+  height: 100%;
+}
+
+// Scrollbar styling
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #1e293b;
+}
+::-webkit-scrollbar-thumb {
+  background: #475569;
+  border-radius: 4px;
+}
+
+// Toastr overrides
+.toast-container .ngx-toastr {
+  background-color: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 8px;
+}
