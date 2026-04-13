@@ -20,14 +20,20 @@ const JWT_EXPIRES = process.env.JWT_EXPIRES_IN || '8h';
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
-const msalConfig = {
-  auth: {
-    clientId: process.env.MICROSOFT_CLIENT_ID,
-    authority: `https://login.microsoftonline.com/${process.env.MICROSOFT_TENANT_ID || 'common'}`,
-    clientSecret: process.env.MICROSOFT_CLIENT_SECRET,
-  },
+// MSAL se inicializa lazy — solo cuando se configuren las credenciales de Microsoft
+let msalApp = null;
+const getMsalApp = () => {
+  if (!msalApp && process.env.MICROSOFT_CLIENT_ID && process.env.MICROSOFT_CLIENT_SECRET) {
+    msalApp = new ConfidentialClientApplication({
+      auth: {
+        clientId: process.env.MICROSOFT_CLIENT_ID,
+        authority: `https://login.microsoftonline.com/${process.env.MICROSOFT_TENANT_ID || 'common'}`,
+        clientSecret: process.env.MICROSOFT_CLIENT_SECRET,
+      },
+    });
+  }
+  return msalApp;
 };
-const msalApp = new ConfidentialClientApplication(msalConfig);
 
 // ─── Modulos y acciones para mis-permisos ────────────────────────────────────
 const TODOS_MODULOS = ['torneos', 'clubes', 'jugadores', 'fixture', 'partidos', 'posiciones', 'arbitros', 'veedores', 'staff', 'configuracion', 'reportes'];
