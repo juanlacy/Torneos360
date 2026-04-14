@@ -81,8 +81,8 @@ export const partidosPorJornada = async (req, res) => {
     const partidos = await Partido.findAll({
       where,
       include: [
-        { model: Club, as: 'clubLocal', attributes: ['id', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario'] },
-        { model: Club, as: 'clubVisitante', attributes: ['id', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario'] },
+        { model: Club, as: 'clubLocal', attributes: ['id', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'] },
+        { model: Club, as: 'clubVisitante', attributes: ['id', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'] },
         { model: Categoria, as: 'categoria', attributes: ['id', 'nombre', 'anio_nacimiento', 'es_preliminar'] },
         { model: Arbitro, as: 'arbitro', attributes: ['id', 'nombre', 'apellido'] },
       ],
@@ -214,8 +214,8 @@ export const agregarEnfrentamiento = async (req, res) => {
     const partidosCompletos = await Partido.findAll({
       where: { id: partidos.map(p => p.id) },
       include: [
-        { model: Club, as: 'clubLocal', attributes: ['id', 'nombre', 'nombre_corto'] },
-        { model: Club, as: 'clubVisitante', attributes: ['id', 'nombre', 'nombre_corto'] },
+        { model: Club, as: 'clubLocal', attributes: ['id', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'] },
+        { model: Club, as: 'clubVisitante', attributes: ['id', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'] },
         { model: Categoria, as: 'categoria', attributes: ['id', 'nombre', 'anio_nacimiento'] },
       ],
       order: [['hora_inicio', 'ASC']],

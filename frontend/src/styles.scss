@@ -11,6 +11,12 @@
   --color-success: #16a34a;
 
   --sidebar-width: 260px;
+
+  // Shadows
+  --shadow-sm: 0 1px 3px rgb(0 0 0 / 6%);
+  --shadow-md: 0 2px 8px rgb(0 0 0 / 8%);
+  --shadow-lg: 0 4px 16px rgb(0 0 0 / 12%);
+  --shadow-xl: 0 8px 24px rgb(0 0 0 / 15%);
 }
 
 html {
@@ -36,18 +42,75 @@ body {
   height: 100%;
 }
 
-// ─── Scrollbar ──────────────────────────────────────────────────────────────
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: #f1f5f9; }
-::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 3px; }
+// ═══════════════════════════════════════════════════════════════════════════
+// Animaciones globales
+// ═══════════════════════════════════════════════════════════════════════════
 
-// ─── Sidebar active nav ────────────────────────────────────────────────────
-.nav-active {
-  background-color: var(--color-primario, #16a34a) !important;
-  color: white !important;
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
-// ─── Badges ─────────────────────────────────────────────────────────────────
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-15px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -1000px 0; }
+  100% { background-position: 1000px 0; }
+}
+
+// Clases de animacion
+.animate-fade-in { animation: fadeIn 0.3s ease-out; }
+.animate-fade-in-up { animation: fadeInUp 0.4s ease-out; }
+.animate-fade-in-down { animation: fadeInDown 0.4s ease-out; }
+.animate-scale-in { animation: scaleIn 0.3s ease-out; }
+.animate-slide-in-left { animation: slideInLeft 0.4s ease-out; }
+
+// Staggered animation para grids
+.stagger-children > * {
+  animation: fadeInUp 0.4s ease-out both;
+  @for $i from 1 through 24 {
+    &:nth-child(#{$i}) { animation-delay: #{($i - 1) * 0.04}s; }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Scrollbar
+// ═══════════════════════════════════════════════════════════════════════════
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: #f1f5f9; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Sidebar
+// ═══════════════════════════════════════════════════════════════════════════
+.nav-active {
+  background-color: var(--color-primario, #762c7e) !important;
+  color: white !important;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--color-primario) 35%, transparent);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Badges
+// ═══════════════════════════════════════════════════════════════════════════
 .badge {
   display: inline-flex;
   align-items: center;
@@ -56,6 +119,7 @@ body {
   font-size: 0.75rem;
   font-weight: 500;
 }
+
 .badge-programado  { background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
 .badge-en_curso    { background: #fef9c3; color: #854d0e; border: 1px solid #fde68a; }
 .badge-finalizado  { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
@@ -64,18 +128,53 @@ body {
 .badge-aprobado    { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
 .badge-rechazado   { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
 
-// ─── Brand helpers ──────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+// Cards reutilizables
+// ═══════════════════════════════════════════════════════════════════════════
+.card {
+  background: white;
+  border-radius: 0.75rem;
+  border: 1px solid #e5e7eb;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.25s ease;
+}
+
+.card-hover {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-lg);
+    border-color: #d1d5db;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Brand helpers
+// ═══════════════════════════════════════════════════════════════════════════
 .icon-brand { color: var(--color-primario); }
 .icon-brand-bg {
   background-color: color-mix(in srgb, var(--color-primario) 12%, white);
   color: var(--color-primario);
 }
+
+.brand-gradient {
+  background: linear-gradient(135deg, var(--color-primario) 0%, var(--color-secundario) 100%);
+}
+
+.brand-gradient-soft {
+  background: linear-gradient(135deg,
+    color-mix(in srgb, var(--color-primario) 8%, white) 0%,
+    color-mix(in srgb, var(--color-acento) 8%, white) 100%);
+}
+
 .btn-brand {
   background-color: var(--color-primario);
   color: white;
   &:hover { filter: brightness(0.9); }
   &:disabled { opacity: 0.5; }
 }
+
 .brand-bar {
   height: 3px;
   background: linear-gradient(90deg, var(--color-primario), var(--color-acento));
@@ -83,28 +182,91 @@ body {
   margin-bottom: 1rem;
 }
 
-// ─── Focus rings ────────────────────────────────────────────────────────────
+// KPI card base
+.kpi-card {
+  background: white;
+  border-radius: 1rem;
+  padding: 1.25rem;
+  border: 1px solid #e5e7eb;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.25s ease;
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--color-primario), var(--color-acento));
+  }
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+  }
+}
+
+// Avatar gradient para iniciales
+.avatar-gradient {
+  background: linear-gradient(135deg, #a78bfa 0%, #7c3aed 100%);
+  color: white;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid white;
+  box-shadow: var(--shadow-md);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Focus rings en inputs
+// ═══════════════════════════════════════════════════════════════════════════
 main input:focus,
 main select:focus,
 main textarea:focus {
   --tw-ring-color: var(--color-primario) !important;
 }
 
-// ─── Card hover ─────────────────────────────────────────────────────────────
-.card-hover {
-  transition: box-shadow 0.2s, transform 0.2s;
-  &:hover {
-    box-shadow: 0 4px 12px rgb(0 0 0 / 8%);
-    transform: translateY(-1px);
-  }
-}
-
-// ─── Auto-brand buttons in main content ─────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+// Material overrides
+// ═══════════════════════════════════════════════════════════════════════════
 main button.mat-mdc-unelevated-button.mat-primary {
   --mdc-filled-button-container-color: var(--color-primario) !important;
 }
 
-// ─── Toastr ─────────────────────────────────────────────────────────────────
+// Material tab indicator con color primario
+.mat-mdc-tab.mdc-tab--active .mdc-tab__text-label {
+  color: var(--color-primario) !important;
+}
+.mat-mdc-tab-list .mdc-tab-indicator__content--underline {
+  border-color: var(--color-primario) !important;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Toastr
+// ═══════════════════════════════════════════════════════════════════════════
 .toast-container .ngx-toastr {
   border-radius: 8px;
+  box-shadow: var(--shadow-lg);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Club escudo — tamano consistente
+// ═══════════════════════════════════════════════════════════════════════════
+.escudo-sm { width: 28px; height: 28px; border-radius: 6px; object-fit: cover; }
+.escudo-md { width: 40px; height: 40px; border-radius: 8px; object-fit: cover; }
+.escudo-lg { width: 64px; height: 64px; border-radius: 12px; object-fit: cover; }
+.escudo-xl { width: 96px; height: 96px; border-radius: 16px; object-fit: cover; }
+
+// Placeholder para cuando no hay escudo
+.escudo-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: white;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 20%);
 }

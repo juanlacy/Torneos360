@@ -22,7 +22,7 @@ import { BrandingService } from '../../core/services/branding.service';
   standalone: true,
   imports: [FormsModule, RouterLink, UpperCasePipe, MatCardModule, MatButtonModule, MatIconModule, MatSelectModule, MatFormFieldModule, MatInputModule, MatChipsModule, MatExpansionModule, MatDividerModule],
   template: `
-    <div class="space-y-4">
+    <div class="space-y-4 animate-fade-in">
       <div class="flex items-center justify-between flex-wrap gap-2">
         <h1 class="text-2xl font-bold text-gray-900">Fixture</h1>
         <div class="flex gap-2 items-center flex-wrap">
@@ -116,13 +116,39 @@ import { BrandingService } from '../../core/services/branding.service';
             } @else {
               <!-- Cruces agrupados -->
               @for (cruce of jornada._cruces; track cruce.key) {
-                <div class="flex items-center gap-3 p-3 rounded-lg bg-gray-50 mb-2">
-                  <div class="flex-1 flex items-center justify-center gap-4">
-                    <span class="text-right flex-1 font-semibold text-gray-900">{{ cruce.local }}</span>
-                    <span class="text-xs font-medium text-gray-400 px-2">vs</span>
-                    <span class="text-left flex-1 font-semibold text-gray-900">{{ cruce.visitante }}</span>
+                <div class="flex items-center gap-3 p-3 rounded-lg bg-gray-50 hover:bg-gray-100 border border-transparent hover:border-gray-200 transition-all mb-2">
+                  <!-- Local -->
+                  <div class="flex-1 flex items-center justify-end gap-2">
+                    <span class="font-semibold text-gray-900 text-sm">{{ cruce.local }}</span>
+                    @if (cruce.localEscudo) {
+                      <img [src]="resolveUrl(cruce.localEscudo)" class="escudo-md shrink-0" alt="">
+                    } @else {
+                      <div class="escudo-md escudo-placeholder text-xs shrink-0"
+                        [style.background-color]="cruce.localColor || '#762c7e'">
+                        {{ initials(cruce.local) }}
+                      </div>
+                    }
                   </div>
-                  <span class="text-xs text-gray-400">{{ cruce.partidos }} partidos</span>
+
+                  <!-- VS badge -->
+                  <div class="px-3 py-1 rounded-full bg-white border border-gray-200 shadow-sm">
+                    <span class="text-[10px] font-bold text-gray-500">VS</span>
+                  </div>
+
+                  <!-- Visitante -->
+                  <div class="flex-1 flex items-center gap-2">
+                    @if (cruce.visitEscudo) {
+                      <img [src]="resolveUrl(cruce.visitEscudo)" class="escudo-md shrink-0" alt="">
+                    } @else {
+                      <div class="escudo-md escudo-placeholder text-xs shrink-0"
+                        [style.background-color]="cruce.visitColor || '#762c7e'">
+                        {{ initials(cruce.visitante) }}
+                      </div>
+                    }
+                    <span class="font-semibold text-gray-900 text-sm">{{ cruce.visitante }}</span>
+                  </div>
+
+                  <span class="text-[10px] text-gray-400 font-medium hidden md:inline">{{ cruce.partidos }} partidos</span>
                   @if (auth.isAdmin()) {
                     <button mat-icon-button class="!text-red-400 hover:!text-red-600" (click)="eliminarCruce(jornada, cruce)">
                       <mat-icon class="!text-lg">delete</mat-icon>
@@ -139,13 +165,26 @@ import { BrandingService } from '../../core/services/branding.service';
               @if (jornada._cruces?.length) {
                 <mat-divider class="!my-3"></mat-divider>
                 <details class="text-sm">
-                  <summary class="cursor-pointer text-gray-500 hover:text-gray-700 mb-2">Ver detalle por categoria y horarios</summary>
-                  <div class="space-y-1">
+                  <summary class="cursor-pointer text-gray-500 hover:text-gray-700 mb-2 font-medium">
+                    <mat-icon class="!text-sm align-middle mr-1">schedule</mat-icon>
+                    Ver detalle por categoria y horarios
+                  </summary>
+                  <div class="space-y-1 mt-2">
                     @for (p of jornada._partidos; track p.id) {
-                      <div class="flex items-center gap-2 px-3 py-1.5 rounded hover:bg-gray-50 text-gray-600">
-                        <span class="w-12 text-xs text-gray-400">{{ getHora(p) }}</span>
-                        <span class="w-20 text-xs font-medium">{{ p.categoria?.nombre }}</span>
-                        <span class="flex-1">{{ p.clubLocal?.nombre_corto }} vs {{ p.clubVisitante?.nombre_corto }}</span>
+                      <div class="flex items-center gap-2 px-3 py-1.5 rounded hover:bg-gray-50 text-gray-700">
+                        <span class="w-12 text-xs font-mono text-gray-500">{{ getHora(p) }}</span>
+                        <span class="w-16 text-[10px] font-semibold uppercase tracking-wide bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full text-center">{{ p.categoria?.nombre }}</span>
+                        <div class="flex-1 flex items-center gap-1.5">
+                          @if (p.clubLocal?.escudo_url) {
+                            <img [src]="resolveUrl(p.clubLocal.escudo_url)" class="escudo-sm" alt="">
+                          }
+                          <span class="text-xs">{{ p.clubLocal?.nombre_corto }}</span>
+                          <span class="text-[10px] text-gray-400">vs</span>
+                          @if (p.clubVisitante?.escudo_url) {
+                            <img [src]="resolveUrl(p.clubVisitante.escudo_url)" class="escudo-sm" alt="">
+                          }
+                          <span class="text-xs">{{ p.clubVisitante?.nombre_corto }}</span>
+                        </div>
                         <span class="badge text-xs" [class]="'badge-' + p.estado">{{ p.estado }}</span>
                         <a [routerLink]="['/partidos', p.id]" class="text-gray-400 hover:text-gray-600">
                           <mat-icon class="!text-sm">open_in_new</mat-icon>
@@ -295,6 +334,12 @@ export class FixtureComponent implements OnInit {
               visitante: p.clubVisitante?.nombre_corto || p.clubVisitante?.nombre,
               club_local_id: p.club_local_id,
               club_visitante_id: p.club_visitante_id,
+              localEscudo: p.clubLocal?.escudo_url,
+              localColor: p.clubLocal?.color_primario,
+              localColorSec: p.clubLocal?.color_secundario,
+              visitEscudo: p.clubVisitante?.escudo_url,
+              visitColor: p.clubVisitante?.color_primario,
+              visitColorSec: p.clubVisitante?.color_secundario,
               partidos: 0,
             };
           }
@@ -329,6 +374,18 @@ export class FixtureComponent implements OnInit {
     if (!partido.hora_inicio) return '';
     const d = new Date(partido.hora_inicio);
     return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+  }
+
+  resolveUrl(url: string | null | undefined): string {
+    if (!url) return '';
+    if (url.startsWith('http')) return url;
+    if (url.startsWith('/uploads/')) return url;
+    return `${environment.apiUrl}${url}`;
+  }
+
+  initials(name: string | null | undefined): string {
+    if (!name) return '?';
+    return name.substring(0, 2).toUpperCase();
   }
 
   // ─── Gestion manual ──────────────────────────────────────

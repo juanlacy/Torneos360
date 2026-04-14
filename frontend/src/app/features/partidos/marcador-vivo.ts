@@ -58,12 +58,20 @@ import { SocketService } from '../../core/services/socket.service';
                 [class.!border-yellow-400]="p.estado === 'en_curso'"
                 [class.!border-green-500]="p.estado === 'finalizado'">
                 <mat-card-content class="p-4">
-                  <div class="flex items-center gap-4">
+                  <div class="flex items-center gap-3">
                     <!-- Club local -->
-                    <div class="flex-1 text-right">
-                      <span class="font-semibold text-gray-900">
+                    <div class="flex-1 flex items-center justify-end gap-2">
+                      <span class="font-semibold text-gray-900 text-sm truncate">
                         {{ p.clubLocal?.nombre_corto || p.clubLocal?.nombre }}
                       </span>
+                      @if (p.clubLocal?.escudo_url) {
+                        <img [src]="resolveUrl(p.clubLocal.escudo_url)" class="escudo-md shrink-0" alt="">
+                      } @else {
+                        <div class="escudo-md escudo-placeholder text-xs shrink-0"
+                          [style.background-color]="p.clubLocal?.color_primario || '#762c7e'">
+                          {{ initials(p.clubLocal?.nombre_corto || p.clubLocal?.nombre) }}
+                        </div>
+                      }
                     </div>
 
                     <!-- Marcador -->
@@ -88,14 +96,22 @@ import { SocketService } from '../../core/services/socket.service';
                     </div>
 
                     <!-- Club visitante -->
-                    <div class="flex-1 text-left">
-                      <span class="font-semibold text-gray-900">
+                    <div class="flex-1 flex items-center gap-2">
+                      @if (p.clubVisitante?.escudo_url) {
+                        <img [src]="resolveUrl(p.clubVisitante.escudo_url)" class="escudo-md shrink-0" alt="">
+                      } @else {
+                        <div class="escudo-md escudo-placeholder text-xs shrink-0"
+                          [style.background-color]="p.clubVisitante?.color_primario || '#762c7e'">
+                          {{ initials(p.clubVisitante?.nombre_corto || p.clubVisitante?.nombre) }}
+                        </div>
+                      }
+                      <span class="font-semibold text-gray-900 text-sm truncate">
                         {{ p.clubVisitante?.nombre_corto || p.clubVisitante?.nombre }}
                       </span>
                     </div>
 
                     <!-- Link al detalle -->
-                    <a [routerLink]="['/partidos', p.id]" class="text-gray-400 hover:text-gray-600">
+                    <a [routerLink]="['/partidos', p.id]" class="text-gray-400 hover:text-gray-600 shrink-0">
                       <mat-icon>open_in_new</mat-icon>
                     </a>
                   </div>
@@ -231,5 +247,17 @@ export class MarcadorVivoComponent implements OnInit, OnDestroy {
         this.cdr.detectChanges();
       }),
     );
+  }
+
+  resolveUrl(url: string | null | undefined): string {
+    if (!url) return '';
+    if (url.startsWith('http')) return url;
+    if (url.startsWith('/uploads/')) return url;
+    return `${environment.apiUrl}${url}`;
+  }
+
+  initials(name: string | null | undefined): string {
+    if (!name) return '?';
+    return name.substring(0, 2).toUpperCase();
   }
 }

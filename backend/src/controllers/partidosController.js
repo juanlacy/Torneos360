@@ -8,8 +8,8 @@ export const obtener = async (req, res) => {
   try {
     const partido = await Partido.findByPk(req.params.id, {
       include: [
-        { model: Club, as: 'clubLocal', attributes: ['id', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario'] },
-        { model: Club, as: 'clubVisitante', attributes: ['id', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario'] },
+        { model: Club, as: 'clubLocal', attributes: ['id', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'] },
+        { model: Club, as: 'clubVisitante', attributes: ['id', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'] },
         { model: Categoria, as: 'categoria', attributes: ['id', 'nombre', 'anio_nacimiento'] },
         { model: Arbitro, as: 'arbitro', attributes: ['id', 'nombre', 'apellido'] },
         { model: Veedor, as: 'veedor', attributes: ['id', 'nombre', 'apellido'] },

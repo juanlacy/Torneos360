@@ -44,7 +44,7 @@ export const listar = async (req, res) => {
       ];
     }
 
-    const includeClub = { model: Club, as: 'club', attributes: ['id', 'nombre', 'nombre_corto', 'escudo_url'] };
+    const includeClub = { model: Club, as: 'club', attributes: ['id', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'] };
     if (torneo_id) includeClub.where = { torneo_id };
 
     const jugadores = await Jugador.findAll({
@@ -66,7 +66,7 @@ export const obtener = async (req, res) => {
   try {
     const jugador = await Jugador.findByPk(req.params.id, {
       include: [
-        { model: Club, as: 'club', attributes: ['id', 'nombre', 'nombre_corto', 'escudo_url'] },
+        { model: Club, as: 'club', attributes: ['id', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'] },
         { model: Categoria, as: 'categoria', attributes: ['id', 'nombre', 'anio_nacimiento'] },
       ],
     });

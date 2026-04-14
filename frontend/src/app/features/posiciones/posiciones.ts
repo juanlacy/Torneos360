@@ -16,7 +16,7 @@ import { AuthService } from '../../core/services/auth.service';
   standalone: true,
   imports: [FormsModule, MatCardModule, MatButtonModule, MatIconModule, MatSelectModule, MatFormFieldModule, MatTabsModule],
   template: `
-    <div class="space-y-6">
+    <div class="space-y-6 animate-fade-in">
       <!-- Header -->
       <div class="flex items-center justify-between">
         <div>
@@ -71,11 +71,14 @@ import { AuthService } from '../../core/services/auth.service';
                       <!-- Club -->
                       <td class="px-4 py-3">
                         <div class="flex items-center gap-3">
-                          <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-                            [style.background-color]="p.club?.color_primario || '#e2e8f0'"
-                            [style.color]="p.club?.color_secundario || '#475569'">
-                            {{ (p.club?.nombre_corto || p.club?.nombre || '--').substring(0, 2).toUpperCase() }}
-                          </div>
+                          @if (p.club?.escudo_url) {
+                            <img [src]="resolveUrl(p.club.escudo_url)" class="escudo-md shrink-0" alt="Escudo">
+                          } @else {
+                            <div class="escudo-md escudo-placeholder text-xs shrink-0"
+                              [style.background-color]="p.club?.color_primario || '#762c7e'">
+                              {{ (p.club?.nombre_corto || p.club?.nombre || '--').substring(0, 2).toUpperCase() }}
+                            </div>
+                          }
                           <span class="font-medium text-gray-900">{{ p.club?.nombre }}</span>
                         </div>
                       </td>
@@ -146,11 +149,14 @@ import { AuthService } from '../../core/services/auth.service';
                         <!-- Club -->
                         <td class="px-4 py-3">
                           <div class="flex items-center gap-3">
-                            <div class="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0"
-                              [style.background-color]="p.club?.color_primario || '#e2e8f0'"
-                              [style.color]="p.club?.color_secundario || '#475569'">
-                              {{ (p.club?.nombre_corto || p.club?.nombre || '--').substring(0, 2).toUpperCase() }}
-                            </div>
+                            @if (p.club?.escudo_url) {
+                              <img [src]="resolveUrl(p.club.escudo_url)" class="escudo-sm shrink-0" alt="Escudo">
+                            } @else {
+                              <div class="escudo-sm escudo-placeholder text-[9px] shrink-0"
+                                [style.background-color]="p.club?.color_primario || '#762c7e'">
+                                {{ (p.club?.nombre_corto || p.club?.nombre || '--').substring(0, 2).toUpperCase() }}
+                              </div>
+                            }
                             <span class="font-medium text-gray-900 text-sm">{{ p.club?.nombre_corto || p.club?.nombre }}</span>
                           </div>
                         </td>
@@ -249,5 +255,12 @@ export class PosicionesComponent implements OnInit {
       next: (res) => { this.toastr.success(res.message); this.cargar(); this.cdr.detectChanges(); },
       error: (e: any) => this.toastr.error(e.error?.message || 'Error'),
     });
+  }
+
+  resolveUrl(url: string | null | undefined): string {
+    if (!url) return '';
+    if (url.startsWith('http')) return url;
+    if (url.startsWith('/uploads/')) return url;
+    return `${environment.apiUrl}${url}`;
   }
 }

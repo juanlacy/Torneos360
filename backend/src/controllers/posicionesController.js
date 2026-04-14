@@ -12,7 +12,7 @@ export const porCategoria = async (req, res) => {
     const posiciones = await TablaPosiciones.findAll({
       where,
       include: [
-        { model: Club, as: 'club', attributes: ['id', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario'] },
+        { model: Club, as: 'club', attributes: ['id', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'] },
         { model: Categoria, as: 'categoria', attributes: ['id', 'nombre', 'anio_nacimiento', 'es_preliminar'] },
         { model: Zona, as: 'zona', attributes: ['id', 'nombre', 'color'] },
       ],
@@ -35,7 +35,7 @@ export const general = async (req, res) => {
     const posiciones = await TablaPosicionesClub.findAll({
       where,
       include: [
-        { model: Club, as: 'club', attributes: ['id', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario'] },
+        { model: Club, as: 'club', attributes: ['id', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'] },
         { model: Zona, as: 'zona', attributes: ['id', 'nombre', 'color'] },
       ],
       order: [['puntos_totales', 'DESC']],

@@ -18,7 +18,7 @@ import { ViewPreferenceService, ViewMode } from '../../core/services/view-prefer
   standalone: true,
   imports: [FormsModule, MatButtonModule, MatIconModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatMenuModule],
   template: `
-    <div class="space-y-5">
+    <div class="space-y-5 animate-fade-in">
 
       <!-- Header -->
       <div class="flex flex-wrap items-center justify-between gap-3">
@@ -134,7 +134,7 @@ import { ViewPreferenceService, ViewMode } from '../../core/services/view-prefer
 
       <!-- Vista TARJETAS -->
       @if (viewMode === 'cards') {
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 stagger-children">
           @for (club of clubesFiltrados; track club.id) {
             <div class="bg-white rounded-xl border border-gray-200 hover:shadow-lg hover:border-gray-300 transition-all duration-200 overflow-hidden group">
               <!-- Header con gradiente -->

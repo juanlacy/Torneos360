@@ -18,7 +18,7 @@ import { ViewPreferenceService, ViewMode } from '../../core/services/view-prefer
   standalone: true,
   imports: [FormsModule, MatButtonModule, MatIconModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatMenuModule],
   template: `
-    <div class="space-y-5">
+    <div class="space-y-5 animate-fade-in">
 
       <!-- Header -->
       <div class="flex flex-wrap items-center justify-between gap-3">
@@ -142,57 +142,70 @@ import { ViewPreferenceService, ViewMode } from '../../core/services/view-prefer
 
       <!-- Vista TARJETAS -->
       @if (viewMode === 'cards') {
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 stagger-children">
           @for (j of jugadores; track j.id) {
-            <div class="bg-white rounded-xl border border-gray-200 hover:shadow-lg hover:border-gray-300 transition-all duration-200 overflow-hidden">
+            <div class="bg-white rounded-xl border border-gray-200 hover:shadow-xl hover:-translate-y-1 hover:border-gray-300 transition-all duration-200 overflow-hidden">
               <!-- Header con color del club -->
-              <div class="h-16 relative"
+              <div class="h-20 relative"
                 [style.background]="'linear-gradient(135deg, ' + (j.club?.color_primario || '#762c7e') + ' 0%, ' + (j.club?.color_secundario || '#4f2f7d') + ' 100%)'">
+                <!-- Escudo del club arriba a la izquierda -->
+                <div class="absolute top-2 left-2">
+                  @if (j.club?.escudo_url) {
+                    <img [src]="resolveUrl(j.club.escudo_url)" class="w-10 h-10 rounded-lg object-cover border-2 border-white shadow-md" alt="Club">
+                  } @else {
+                    <div class="w-10 h-10 rounded-lg flex items-center justify-center text-xs font-bold border-2 border-white shadow-md"
+                      [style.background-color]="j.club?.color_secundario || '#fff'"
+                      [style.color]="j.club?.color_primario || '#762c7e'">
+                      {{ (j.club?.nombre_corto || j.club?.nombre || '?').substring(0, 2).toUpperCase() }}
+                    </div>
+                  }
+                </div>
+
                 <!-- Badge fichaje -->
                 <span class="absolute top-2 right-2 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold backdrop-blur bg-white/90"
                   [class]="getFichajeTextClass(j.estado_fichaje)">
                   {{ j.estado_fichaje }}
                 </span>
-                <!-- Numero camiseta -->
+
+                <!-- Numero camiseta (abajo derecha) -->
                 @if (j.numero_camiseta) {
-                  <span class="absolute top-2 left-2 inline-flex items-center justify-center w-7 h-7 rounded-full text-sm font-bold bg-white/90 text-gray-800">
-                    {{ j.numero_camiseta }}
+                  <span class="absolute bottom-2 right-2 inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold bg-white/90 text-gray-800 shadow-md">
+                    #{{ j.numero_camiseta }}
                   </span>
                 }
               </div>
 
               <!-- Foto / avatar -->
               <div class="relative px-4 pb-4">
-                <div class="relative -mt-8 inline-block">
+                <div class="relative -mt-10 inline-block">
                   @if (j.foto_url) {
-                    <img [src]="resolveUrl(j.foto_url)" class="w-16 h-16 rounded-full object-cover border-4 border-white shadow-md" alt="Foto">
+                    <img [src]="resolveUrl(j.foto_url)" class="w-20 h-20 rounded-full object-cover border-4 border-white shadow-lg" alt="Foto">
                   } @else {
-                    <div class="w-16 h-16 rounded-full flex items-center justify-center text-lg font-bold border-4 border-white shadow-md"
-                      [style.background-color]="j.club?.color_primario || '#762c7e'"
-                      [style.color]="j.club?.color_secundario || '#fff'">
+                    <div class="w-20 h-20 rounded-full flex items-center justify-center text-xl font-bold border-4 border-white shadow-lg text-white"
+                      [style.background]="'linear-gradient(135deg, ' + (j.club?.color_primario || '#a78bfa') + ' 0%, ' + (j.club?.color_secundario || '#7c3aed') + ' 100%)'">
                       {{ (j.nombre?.charAt(0) || '') + (j.apellido?.charAt(0) || '') }}
                     </div>
                   }
                 </div>
 
                 <div class="mt-2">
-                  <h3 class="font-semibold text-gray-900 leading-tight">{{ j.apellido }}</h3>
-                  <p class="text-sm text-gray-600">{{ j.nombre }}</p>
+                  <h3 class="font-bold text-gray-900 leading-tight">{{ j.apellido }}</h3>
+                  <p class="text-sm text-gray-500">{{ j.nombre }}</p>
                 </div>
 
                 <!-- Info -->
-                <div class="mt-3 space-y-1 pt-3 border-t border-gray-100">
-                  <div class="flex items-center gap-2 text-xs text-gray-500">
+                <div class="mt-3 space-y-1.5 pt-3 border-t border-gray-100">
+                  <div class="flex items-center gap-2 text-xs text-gray-600">
                     <mat-icon class="!text-sm !w-4 !h-4 text-gray-400">badge</mat-icon>
-                    <span>DNI {{ j.dni }}</span>
+                    <span class="font-medium">{{ j.dni }}</span>
                   </div>
-                  <div class="flex items-center gap-2 text-xs text-gray-500">
-                    <mat-icon class="!text-sm !w-4 !h-4 text-gray-400">groups</mat-icon>
-                    <span class="truncate">{{ j.club?.nombre_corto || j.club?.nombre }}</span>
+                  <div class="flex items-center gap-2 text-xs text-gray-600">
+                    <mat-icon class="!text-sm !w-4 !h-4 text-gray-400">shield</mat-icon>
+                    <span class="truncate font-medium">{{ j.club?.nombre_corto || j.club?.nombre }}</span>
                   </div>
-                  <div class="flex items-center gap-2 text-xs text-gray-500">
+                  <div class="flex items-center gap-2 text-xs text-gray-600">
                     <mat-icon class="!text-sm !w-4 !h-4 text-gray-400">emoji_events</mat-icon>
-                    <span>Cat {{ j.categoria?.nombre }}</span>
+                    <span>Categoria {{ j.categoria?.nombre }}</span>
                   </div>
                 </div>
 
@@ -258,9 +271,8 @@ import { ViewPreferenceService, ViewMode } from '../../core/services/view-prefer
                           @if (j.foto_url) {
                             <img [src]="resolveUrl(j.foto_url)" class="w-9 h-9 rounded-full object-cover shrink-0" alt="Foto">
                           } @else {
-                            <div class="w-9 h-9 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0"
-                              [style.background-color]="j.club?.color_primario || '#e2e8f0'"
-                              [style.color]="j.club?.color_secundario || '#475569'">
+                            <div class="w-9 h-9 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 text-white"
+                              [style.background]="'linear-gradient(135deg, ' + (j.club?.color_primario || '#a78bfa') + ' 0%, ' + (j.club?.color_secundario || '#7c3aed') + ' 100%)'">
                               {{ (j.nombre?.charAt(0) || '') + (j.apellido?.charAt(0) || '') }}
                             </div>
                           }
@@ -275,7 +287,19 @@ import { ViewPreferenceService, ViewMode } from '../../core/services/view-prefer
                         </div>
                       </td>
                       <td class="px-4 py-3 text-sm text-gray-600 hidden sm:table-cell">{{ j.dni }}</td>
-                      <td class="px-4 py-3 text-sm text-gray-600">{{ j.club?.nombre_corto || j.club?.nombre }}</td>
+                      <td class="px-4 py-3">
+                        <div class="flex items-center gap-2">
+                          @if (j.club?.escudo_url) {
+                            <img [src]="resolveUrl(j.club.escudo_url)" class="escudo-sm shrink-0" alt="Escudo">
+                          } @else {
+                            <div class="escudo-sm escudo-placeholder text-[9px] shrink-0"
+                              [style.background-color]="j.club?.color_primario || '#762c7e'">
+                              {{ (j.club?.nombre_corto || j.club?.nombre || '?').substring(0, 2).toUpperCase() }}
+                            </div>
+                          }
+                          <span class="text-sm text-gray-700 truncate">{{ j.club?.nombre_corto || j.club?.nombre }}</span>
+                        </div>
+                      </td>
                       <td class="px-4 py-3 hidden md:table-cell">
                         <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
                           {{ j.categoria?.nombre }}
