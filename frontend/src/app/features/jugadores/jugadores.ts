@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -213,7 +213,7 @@ export class JugadoresComponent implements OnInit {
   editando: any = null;
   form: any = { nombre: '', apellido: '', dni: '', fecha_nacimiento: '', club_id: '', categoria_id: '', numero_camiseta: null };
 
-  constructor(private http: HttpClient, public auth: AuthService, private toastr: ToastrService) {}
+  constructor(private http: HttpClient, public auth: AuthService, private toastr: ToastrService, private cdr: ChangeDetectorRef) {}
 
   ngOnInit() {
     // Cargar torneos para obtener categorias y clubes
@@ -223,10 +223,11 @@ export class JugadoresComponent implements OnInit {
           const torneo = res.data[0];
           this.categorias = torneo.categorias || [];
         }
+        this.cdr.detectChanges();
       },
     });
     this.http.get<any>(`${environment.apiUrl}/clubes`).subscribe({
-      next: res => this.clubes = res.data,
+      next: res => { this.clubes = res.data; this.cdr.detectChanges(); },
     });
     this.cargar();
   }
@@ -239,7 +240,7 @@ export class JugadoresComponent implements OnInit {
     if (this.filtros.search) params.search = this.filtros.search;
 
     this.http.get<any>(`${environment.apiUrl}/jugadores`, { params }).subscribe({
-      next: res => this.jugadores = res.data,
+      next: res => { this.jugadores = res.data; this.cdr.detectChanges(); },
       error: () => this.toastr.error('Error al cargar jugadores'),
     });
   }
@@ -252,7 +253,7 @@ export class JugadoresComponent implements OnInit {
       ? this.http.put(`${environment.apiUrl}/jugadores/${this.editando.id}`, this.form)
       : this.http.post(`${environment.apiUrl}/jugadores`, this.form);
     obs.subscribe({
-      next: () => { this.toastr.success(this.editando ? 'Jugador actualizado' : 'Jugador creado'); this.cancelarForm(); this.cargar(); },
+      next: () => { this.toastr.success(this.editando ? 'Jugador actualizado' : 'Jugador creado'); this.cancelarForm(); this.cargar(); this.cdr.detectChanges(); },
       error: (e: any) => this.toastr.error(e.error?.message || 'Error'),
     });
   }
@@ -271,7 +272,7 @@ export class JugadoresComponent implements OnInit {
 
   cambiarFichaje(j: any, estado: string) {
     this.http.put(`${environment.apiUrl}/jugadores/${j.id}/fichaje`, { estado }).subscribe({
-      next: () => { this.toastr.success(`Fichaje ${estado}`); this.cargar(); },
+      next: () => { this.toastr.success(`Fichaje ${estado}`); this.cargar(); this.cdr.detectChanges(); },
       error: (e: any) => this.toastr.error(e.error?.message || 'Error'),
     });
   }

@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -140,13 +140,14 @@ export class MarcadorVivoComponent implements OnInit, OnDestroy {
   jornadaId: number | null = null;
   private subs: Subscription[] = [];
 
-  constructor(private http: HttpClient, private socket: SocketService, private toastr: ToastrService) {}
+  constructor(private http: HttpClient, private socket: SocketService, private toastr: ToastrService, private cdr: ChangeDetectorRef) {}
 
   ngOnInit() {
     this.http.get<any>(`${environment.apiUrl}/torneos`).subscribe({
       next: res => {
         this.torneos = res.data;
         if (this.torneos.length) { this.torneoId = this.torneos[0].id; this.cargarJornadas(); }
+        this.cdr.detectChanges();
       },
     });
     this.setupSocketListeners();
@@ -160,7 +161,7 @@ export class MarcadorVivoComponent implements OnInit, OnDestroy {
   cargarJornadas() {
     if (!this.torneoId) return;
     this.http.get<any>(`${environment.apiUrl}/fixture/${this.torneoId}/jornadas`).subscribe({
-      next: res => { this.jornadas = res.data; },
+      next: res => { this.jornadas = res.data; this.cdr.detectChanges(); },
     });
   }
 
@@ -174,6 +175,7 @@ export class MarcadorVivoComponent implements OnInit, OnDestroy {
         this.partidos = res.data;
         this.agrupar();
         this.socket.joinJornada(this.jornadaId!);
+        this.cdr.detectChanges();
       },
     });
   }
@@ -194,6 +196,7 @@ export class MarcadorVivoComponent implements OnInit, OnDestroy {
       this.socket.on('match:score').subscribe((data: any) => {
         const p = this.partidos.find(x => x.id === data.partido_id);
         if (p) { p.goles_local = data.goles_local; p.goles_visitante = data.goles_visitante; }
+        this.cdr.detectChanges();
       }),
       // Nuevo evento (actualiza marcador + muestra ultimo evento)
       this.socket.on('match:event').subscribe((data: any) => {
@@ -203,11 +206,13 @@ export class MarcadorVivoComponent implements OnInit, OnDestroy {
           p.goles_visitante = data.goles_visitante;
           p._ultimoEvento = data.evento;
         }
+        this.cdr.detectChanges();
       }),
       // Partido iniciado
       this.socket.on('match:start').subscribe((data: any) => {
         const p = this.partidos.find(x => x.id === data.partido_id);
         if (p) { p.estado = 'en_curso'; }
+        this.cdr.detectChanges();
       }),
       // Partido finalizado
       this.socket.on('match:end').subscribe((data: any) => {
@@ -217,11 +222,13 @@ export class MarcadorVivoComponent implements OnInit, OnDestroy {
           p.goles_local = data.goles_local;
           p.goles_visitante = data.goles_visitante;
         }
+        this.cdr.detectChanges();
       }),
       // Confirmado
       this.socket.on('match:confirm').subscribe((data: any) => {
         const p = this.partidos.find(x => x.id === data.partido_id);
         if (p) p.confirmado_arbitro = true;
+        this.cdr.detectChanges();
       }),
     );
   }

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -145,13 +145,13 @@ export class TorneosComponent implements OnInit {
   editando: any = null;
   form: any = { nombre: '', anio: new Date().getFullYear(), estado: 'planificacion' };
 
-  constructor(private http: HttpClient, public auth: AuthService, private toastr: ToastrService) {}
+  constructor(private http: HttpClient, public auth: AuthService, private toastr: ToastrService, private cdr: ChangeDetectorRef) {}
 
   ngOnInit() { this.cargar(); }
 
   cargar() {
     this.http.get<any>(`${environment.apiUrl}/torneos`).subscribe({
-      next: res => this.torneos = res.data,
+      next: res => { this.torneos = res.data; this.cdr.detectChanges(); },
       error: () => this.toastr.error('Error al cargar torneos'),
     });
   }
@@ -162,7 +162,7 @@ export class TorneosComponent implements OnInit {
       ? this.http.put(`${environment.apiUrl}/torneos/${this.editando.id}`, this.form)
       : this.http.post(`${environment.apiUrl}/torneos`, this.form);
     obs.subscribe({
-      next: () => { this.toastr.success(this.editando ? 'Torneo actualizado' : 'Torneo creado'); this.cancelar(); this.cargar(); },
+      next: () => { this.toastr.success(this.editando ? 'Torneo actualizado' : 'Torneo creado'); this.cancelar(); this.cargar(); this.cdr.detectChanges(); },
       error: (e: any) => this.toastr.error(e.error?.message || 'Error'),
     });
   }
@@ -177,7 +177,7 @@ export class TorneosComponent implements OnInit {
 
   generarCategorias(torneo: any) {
     this.http.post(`${environment.apiUrl}/torneos/${torneo.id}/generar-categorias`, {}).subscribe({
-      next: (res: any) => { this.toastr.success(res.message); this.cargar(); },
+      next: (res: any) => { this.toastr.success(res.message); this.cargar(); this.cdr.detectChanges(); },
       error: (e: any) => this.toastr.error(e.error?.message || 'Error'),
     });
   }

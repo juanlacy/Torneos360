@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { MatCardModule } from '@angular/material/card';
 import { MatTabsModule } from '@angular/material/tabs';
@@ -70,7 +70,7 @@ export class PermisosComponent implements OnInit {
   selectedRol = 'admin_torneo';
   permisosMap: Record<string, Record<string, Record<string, boolean>>> = {};
 
-  constructor(private http: HttpClient, private toastr: ToastrService) {}
+  constructor(private http: HttpClient, private toastr: ToastrService, private cdr: ChangeDetectorRef) {}
 
   ngOnInit(): void {
     this.loadDefaults();
@@ -82,6 +82,7 @@ export class PermisosComponent implements OnInit {
         this.permisosMap = res.data;
         this.modulos = res.modulos;
         this.acciones = res.acciones;
+        this.cdr.detectChanges();
       },
       error: () => this.toastr.error('Error al cargar permisos'),
     });
@@ -103,6 +104,7 @@ export class PermisosComponent implements OnInit {
         if (!this.permisosMap[this.selectedRol]) this.permisosMap[this.selectedRol] = {};
         if (!this.permisosMap[this.selectedRol][modulo]) this.permisosMap[this.selectedRol][modulo] = {};
         this.permisosMap[this.selectedRol][modulo][accion] = !!permite;
+        this.cdr.detectChanges();
       },
       error: () => this.toastr.error('Error al actualizar permiso'),
     });

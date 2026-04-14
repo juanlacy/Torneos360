@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../../core/services/auth.service';
@@ -161,6 +161,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     public auth: AuthService,
     private http: HttpClient,
     private branding: BrandingService,
+    private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit() {
@@ -179,10 +180,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
           pendientes: d.pendientes ?? d.partidos_pendientes ?? 0,
         };
         this.proximosPartidos = d.proximos_partidos || d.proximosPartidos || [];
+        this.cdr.detectChanges();
       },
       error: () => {
         this.stats = { clubes: 0, jugadores: 0, jornadas: 0, partidos: 0, finalizados: 0, pendientes: 0 };
         this.proximosPartidos = [];
+        this.cdr.detectChanges();
       },
     });
   }

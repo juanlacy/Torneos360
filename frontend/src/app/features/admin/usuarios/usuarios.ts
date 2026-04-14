@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -98,7 +98,7 @@ export class UsuariosComponent implements OnInit {
   pageSize = 20;
   total = 0;
 
-  constructor(private http: HttpClient, private toastr: ToastrService) {}
+  constructor(private http: HttpClient, private toastr: ToastrService, private cdr: ChangeDetectorRef) {}
 
   ngOnInit(): void {
     this.loadUsuarios();
@@ -113,6 +113,7 @@ export class UsuariosComponent implements OnInit {
       next: (res) => {
         this.usuarios = res.data;
         this.total = res.pagination.total;
+        this.cdr.detectChanges();
       },
       error: () => this.toastr.error('Error al cargar usuarios'),
     });

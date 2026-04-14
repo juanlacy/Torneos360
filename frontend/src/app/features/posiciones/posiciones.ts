@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -200,7 +200,7 @@ export class PosicionesComponent implements OnInit {
   filtroCategoria: number | null = null;
   columnasCategoria = ['pos', 'club', 'pj', 'pg', 'pe', 'pp', 'gf', 'gc', 'dg', 'pts'];
 
-  constructor(private http: HttpClient, public auth: AuthService, private toastr: ToastrService) {}
+  constructor(private http: HttpClient, public auth: AuthService, private toastr: ToastrService, private cdr: ChangeDetectorRef) {}
 
   ngOnInit() {
     this.http.get<any>(`${environment.apiUrl}/torneos`).subscribe({
@@ -211,6 +211,7 @@ export class PosicionesComponent implements OnInit {
           this.categorias = this.torneos[0].categorias || [];
           this.cargar();
         }
+        this.cdr.detectChanges();
       },
     });
   }
@@ -221,7 +222,7 @@ export class PosicionesComponent implements OnInit {
     this.categorias = torneo?.categorias || [];
 
     this.http.get<any>(`${environment.apiUrl}/posiciones/${this.torneoId}/general`).subscribe({
-      next: res => this.posicionesClub = res.data,
+      next: res => { this.posicionesClub = res.data; this.cdr.detectChanges(); },
     });
 
     if (this.filtroCategoria) this.cargarPorCategoria();
@@ -232,7 +233,7 @@ export class PosicionesComponent implements OnInit {
     this.http.get<any>(`${environment.apiUrl}/posiciones/${this.torneoId}/categorias`, {
       params: { categoria_id: this.filtroCategoria },
     }).subscribe({
-      next: res => this.posicionesCategoria = res.data,
+      next: res => { this.posicionesCategoria = res.data; this.cdr.detectChanges(); },
     });
   }
 
@@ -245,7 +246,7 @@ export class PosicionesComponent implements OnInit {
 
   recalcular() {
     this.http.post<any>(`${environment.apiUrl}/posiciones/${this.torneoId}/recalcular`, {}).subscribe({
-      next: (res) => { this.toastr.success(res.message); this.cargar(); },
+      next: (res) => { this.toastr.success(res.message); this.cargar(); this.cdr.detectChanges(); },
       error: (e: any) => this.toastr.error(e.error?.message || 'Error'),
     });
   }

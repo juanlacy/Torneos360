@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -166,7 +166,7 @@ export class ClubesComponent implements OnInit {
   editando: any = null;
   form: any = { nombre: '', nombre_corto: '', zona_id: null, color_primario: '#16a34a', color_secundario: '#ffffff' };
 
-  constructor(private http: HttpClient, public auth: AuthService, private toastr: ToastrService) {}
+  constructor(private http: HttpClient, public auth: AuthService, private toastr: ToastrService, private cdr: ChangeDetectorRef) {}
 
   ngOnInit() {
     this.http.get<any>(`${environment.apiUrl}/torneos`).subscribe({
@@ -177,6 +177,7 @@ export class ClubesComponent implements OnInit {
           this.zonas = this.torneos[0].zonas || [];
           this.cargar();
         }
+        this.cdr.detectChanges();
       },
     });
   }
@@ -186,7 +187,7 @@ export class ClubesComponent implements OnInit {
     const torneo = this.torneos.find(t => t.id === this.filtroTorneo);
     this.zonas = torneo?.zonas || [];
     this.http.get<any>(`${environment.apiUrl}/clubes`, { params: { torneo_id: this.filtroTorneo } }).subscribe({
-      next: res => this.clubes = res.data,
+      next: res => { this.clubes = res.data; this.cdr.detectChanges(); },
       error: () => this.toastr.error('Error al cargar clubes'),
     });
   }
@@ -198,7 +199,7 @@ export class ClubesComponent implements OnInit {
       ? this.http.put(`${environment.apiUrl}/clubes/${this.editando.id}`, data)
       : this.http.post(`${environment.apiUrl}/clubes`, data);
     obs.subscribe({
-      next: () => { this.toastr.success(this.editando ? 'Club actualizado' : 'Club creado'); this.cancelar(); this.cargar(); },
+      next: () => { this.toastr.success(this.editando ? 'Club actualizado' : 'Club creado'); this.cancelar(); this.cargar(); this.cdr.detectChanges(); },
       error: (e: any) => this.toastr.error(e.error?.message || 'Error'),
     });
   }
@@ -224,6 +225,7 @@ export class ClubesComponent implements OnInit {
       next: (res) => {
         this.toastr.success('Escudo actualizado');
         club.escudo_url = res.data?.escudo_url || res.escudo_url;
+        this.cdr.detectChanges();
       },
       error: (e: any) => this.toastr.error(e.error?.message || 'Error al subir escudo'),
     });

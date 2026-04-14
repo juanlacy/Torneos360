@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -279,11 +279,11 @@ export class ConfiguracionComponent implements OnInit {
     gemini_api_key: '', gemini_modelo: 'gemini-2.5-flash',
   };
 
-  constructor(private http: HttpClient, private toastr: ToastrService, private branding: BrandingService) {}
+  constructor(private http: HttpClient, private toastr: ToastrService, private branding: BrandingService, private cdr: ChangeDetectorRef) {}
 
   ngOnInit() {
     this.http.get<any>(`${environment.apiUrl}/torneos`).subscribe({
-      next: res => this.torneos = res.data,
+      next: res => { this.torneos = res.data; this.cdr.detectChanges(); },
     });
     this.cargarIA();
   }
@@ -301,6 +301,7 @@ export class ConfiguracionComponent implements OnInit {
           color_secundario: d.color_secundario || '#4f2f7d',
           color_acento: d.color_acento || '#8cb24d',
         };
+        this.cdr.detectChanges();
       },
     });
   }
@@ -310,6 +311,7 @@ export class ConfiguracionComponent implements OnInit {
       next: () => {
         this.toastr.success('Identidad visual guardada');
         this.branding.recargar();
+        this.cdr.detectChanges();
       },
       error: (e: any) => this.toastr.error(e.error?.message || 'Error'),
     });
@@ -325,6 +327,7 @@ export class ConfiguracionComponent implements OnInit {
         this.brandForm.logo_url = res.data.logo_url;
         this.toastr.success('Logo subido');
         this.branding.recargar();
+        this.cdr.detectChanges();
       },
       error: (e: any) => this.toastr.error(e.error?.message || 'Error'),
     });
@@ -350,7 +353,7 @@ export class ConfiguracionComponent implements OnInit {
   guardarConfigTorneo() {
     const config = { ...this.torneoSeleccionado.config, ...this.configTorneo };
     this.http.put(`${environment.apiUrl}/torneos/${this.torneoSeleccionado.id}`, { config }).subscribe({
-      next: () => { this.toastr.success('Reglas guardadas'); this.torneoSeleccionado.config = config; },
+      next: () => { this.toastr.success('Reglas guardadas'); this.torneoSeleccionado.config = config; this.cdr.detectChanges(); },
       error: (e: any) => this.toastr.error(e.error?.message || 'Error'),
     });
   }
@@ -359,7 +362,7 @@ export class ConfiguracionComponent implements OnInit {
 
   cargarIA() {
     this.http.get<any>(`${environment.apiUrl}/configuracion/integracion_ia`).subscribe({
-      next: res => { if (res.data?.valor) this.iaConfig = { ...this.iaConfig, ...res.data.valor }; },
+      next: res => { if (res.data?.valor) this.iaConfig = { ...this.iaConfig, ...res.data.valor }; this.cdr.detectChanges(); },
       error: () => {},
     });
   }
@@ -369,6 +372,7 @@ export class ConfiguracionComponent implements OnInit {
       next: (res: any) => {
         this.toastr.success('Integraciones IA guardadas');
         if (res.data?.valor) this.iaConfig = { ...this.iaConfig, ...res.data.valor };
+        this.cdr.detectChanges();
       },
       error: (e: any) => this.toastr.error(e.error?.message || 'Error'),
     });
