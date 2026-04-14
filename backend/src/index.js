@@ -120,6 +120,7 @@ mkdirSync(join(__dirname, '..', 'uploads', 'avatars'), { recursive: true });
 mkdirSync(join(__dirname, '..', 'uploads', 'escudos'), { recursive: true });
 mkdirSync(join(__dirname, '..', 'uploads', 'jugadores'), { recursive: true });
 mkdirSync(join(__dirname, '..', 'uploads', 'informes'), { recursive: true });
+mkdirSync(join(__dirname, '..', 'uploads', 'torneos'), { recursive: true });
 app.use('/uploads', express.static(join(__dirname, '..', 'uploads')));
 
 // ─── Rutas protegidas ───────────────────────────────────────────────────────

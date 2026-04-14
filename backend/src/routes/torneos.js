@@ -1,6 +1,9 @@
 import { Router } from 'express';
 import { authenticateToken, requireAdminTorneo, requirePermiso } from '../middleware/authMiddleware.js';
-import { listar, obtener, crear, actualizar, generarCategorias, crearZona, eliminarZona } from '../controllers/torneosController.js';
+import {
+  listar, obtener, crear, actualizar, generarCategorias, crearZona, eliminarZona,
+  getBranding, updateBranding, uploadLogo, subirLogo,
+} from '../controllers/torneosController.js';
 
 const router = Router();
 
@@ -11,9 +14,14 @@ router.get('/:id', requirePermiso('torneos', 'ver'), obtener);
 router.post('/',   requireAdminTorneo, crear);
 router.put('/:id', requireAdminTorneo, actualizar);
 
-// Categorias y zonas del torneo
+// Categorias y zonas
 router.post('/:id/generar-categorias', requireAdminTorneo, generarCategorias);
 router.post('/:id/zonas', requireAdminTorneo, crearZona);
 router.delete('/:torneoId/zonas/:id', requireAdminTorneo, eliminarZona);
+
+// Branding
+router.get('/:id/branding', requirePermiso('torneos', 'ver'), getBranding);
+router.put('/:id/branding', requireAdminTorneo, updateBranding);
+router.post('/:id/upload-logo', requireAdminTorneo, uploadLogo, subirLogo);
 
 export default router;

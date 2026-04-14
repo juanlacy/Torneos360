@@ -1,5 +1,26 @@
 import { Torneo, Zona, Categoria, Club } from '../models/index.js';
 import { registrarAudit } from '../services/auditService.js';
+import multer from 'multer';
+import { fileURLToPath } from 'url';
+import { dirname, join, extname } from 'path';
+import { unlinkSync, existsSync } from 'fs';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname  = dirname(__filename);
+
+// Multer para logos de torneo
+const logoStorage = multer.diskStorage({
+  destination: join(__dirname, '..', '..', 'uploads', 'torneos'),
+  filename: (req, file, cb) => cb(null, `torneo-${req.params.id}-${Date.now()}${extname(file.originalname)}`),
+});
+export const uploadLogo = multer({
+  storage: logoStorage,
+  limits: { fileSize: 2 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (/^image\/(jpeg|png|webp|svg\+xml)$/.test(file.mimetype)) cb(null, true);
+    else cb(new Error('Solo imagenes JPG, PNG, WebP o SVG'));
+  },
+}).single('logo');
 
 // GET /torneos
 export const listar = async (req, res) => {
@@ -120,6 +141,73 @@ export const eliminarZona = async (req, res) => {
     const deleted = await Zona.destroy({ where: { id: req.params.id, torneo_id: req.params.torneoId } });
     if (!deleted) return res.status(404).json({ success: false, message: 'Zona no encontrada' });
     res.json({ success: true, message: 'Zona eliminada' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Branding del torneo
+// ═══════════════════════════════════════════════════════════════════════════
+
+// GET /torneos/:id/branding  (publico — para que el frontend aplique colores)
+export const getBranding = async (req, res) => {
+  try {
+    const torneo = await Torneo.findByPk(req.params.id, {
+      attributes: ['id', 'nombre', 'logo_url', 'favicon_url', 'color_primario', 'color_secundario', 'color_acento'],
+    });
+    if (!torneo) return res.status(404).json({ success: false, message: 'Torneo no encontrado' });
+    res.json({ success: true, data: torneo });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// PUT /torneos/:id/branding
+export const updateBranding = async (req, res) => {
+  try {
+    const torneo = await Torneo.findByPk(req.params.id);
+    if (!torneo) return res.status(404).json({ success: false, message: 'Torneo no encontrado' });
+
+    const { color_primario, color_secundario, color_acento, logo_url, favicon_url } = req.body;
+    const updates = { actualizado_en: new Date() };
+    if (color_primario !== undefined) updates.color_primario = color_primario;
+    if (color_secundario !== undefined) updates.color_secundario = color_secundario;
+    if (color_acento !== undefined) updates.color_acento = color_acento;
+    if (logo_url !== undefined) updates.logo_url = logo_url;
+    if (favicon_url !== undefined) updates.favicon_url = favicon_url;
+
+    await torneo.update(updates);
+    registrarAudit({ req, accion: 'EDITAR_BRANDING', entidad: 'torneos', entidad_id: torneo.id, despues: updates });
+
+    res.json({ success: true, data: {
+      id: torneo.id, nombre: torneo.nombre,
+      logo_url: torneo.logo_url, favicon_url: torneo.favicon_url,
+      color_primario: torneo.color_primario, color_secundario: torneo.color_secundario, color_acento: torneo.color_acento,
+    }});
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// POST /torneos/:id/upload-logo
+export const subirLogo = async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ success: false, message: 'Archivo requerido' });
+
+    const torneo = await Torneo.findByPk(req.params.id);
+    if (!torneo) return res.status(404).json({ success: false, message: 'Torneo no encontrado' });
+
+    // Borrar logo anterior si existe
+    if (torneo.logo_url) {
+      const oldPath = join(__dirname, '..', '..', torneo.logo_url);
+      if (existsSync(oldPath)) try { unlinkSync(oldPath); } catch {}
+    }
+
+    const logoUrl = `/uploads/torneos/${req.file.filename}`;
+    await torneo.update({ logo_url: logoUrl, actualizado_en: new Date() });
+
+    res.json({ success: true, data: { logo_url: logoUrl } });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

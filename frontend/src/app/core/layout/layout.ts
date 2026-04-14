@@ -1,7 +1,9 @@
 import { Component } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
+import { AsyncPipe } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { AuthService } from '../services/auth.service';
+import { BrandingService } from '../services/branding.service';
 
 interface NavItem {
   label: string;
@@ -20,7 +22,7 @@ interface NavGroup {
 @Component({
   selector: 'app-layout',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, MatIconModule],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, AsyncPipe, MatIconModule],
   template: `
     <div class="flex h-screen overflow-hidden">
 
@@ -30,20 +32,25 @@ interface NavGroup {
       }
 
       <!-- ═══ SIDEBAR ═══ -->
-      <aside class="fixed lg:static inset-y-0 left-0 z-40 flex flex-col transition-transform duration-300 bg-green-950"
+      <aside class="fixed lg:static inset-y-0 left-0 z-40 flex flex-col transition-transform duration-300"
+        [style.background-color]="(branding.branding$ | async)?.color_secundario || '#4f2f7d'"
         [class.translate-x-0]="sidebarOpen"
         [class.-translate-x-full]="!sidebarOpen"
         [class.lg:translate-x-0]="true"
         [style.width.px]="260">
 
         <!-- Logo -->
-        <div class="flex items-center gap-3 px-5 py-4 border-b border-green-800/50">
-          <div class="w-9 h-9 rounded-lg bg-green-600 flex items-center justify-center">
-            <mat-icon class="!text-white !text-xl">sports_soccer</mat-icon>
-          </div>
+        <div class="flex items-center gap-3 px-5 py-4 border-b border-white/10">
+          @if ((branding.branding$ | async)?.logo_url; as logoUrl) {
+            <img [src]="branding.resolveUrl(logoUrl)" class="w-9 h-9 rounded-lg object-cover" alt="Logo">
+          } @else {
+            <div class="w-9 h-9 rounded-lg flex items-center justify-center" [style.background-color]="(branding.branding$ | async)?.color_primario || '#762c7e'">
+              <mat-icon class="!text-white !text-xl">sports_soccer</mat-icon>
+            </div>
+          }
           <div>
-            <h1 class="text-white text-sm font-bold tracking-wide">Torneo360</h1>
-            <p class="text-green-400 text-[10px] font-medium">Gestion de Torneos</p>
+            <h1 class="text-white text-sm font-bold tracking-wide">{{ (branding.branding$ | async)?.nombre || 'Torneo360' }}</h1>
+            <p class="text-white/60 text-[10px] font-medium">Gestion de Torneos</p>
           </div>
         </div>
 
@@ -51,12 +58,12 @@ interface NavGroup {
         <nav class="flex-1 overflow-y-auto py-3 px-3 space-y-5">
           @for (group of navGroups; track group.title) {
             <div>
-              <p class="text-[10px] font-semibold uppercase tracking-wider text-green-500/70 px-3 mb-1.5">{{ group.title }}</p>
+              <p class="text-[10px] font-semibold uppercase tracking-wider text-white/40 px-3 mb-1.5">{{ group.title }}</p>
               @for (item of group.items; track item.route) {
                 @if (canShow(item)) {
                   <a [routerLink]="item.route" routerLinkActive="nav-active"
                     (click)="sidebarOpen = false"
-                    class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-300 hover:bg-green-900/50 hover:text-white transition-colors mb-0.5"
+                    class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-300 hover:bg-white/10 hover:text-white transition-colors mb-0.5"
                     [class.text-yellow-400]="item.highlight">
                     <mat-icon class="!text-lg !w-5 !h-5 !leading-5"
                       [class.text-red-400]="item.icon === 'live_tv'">{{ item.icon }}</mat-icon>
@@ -69,15 +76,16 @@ interface NavGroup {
         </nav>
 
         <!-- Usuario -->
-        <div class="border-t border-green-800/50 p-3">
+        <div class="border-t border-white/10 p-3">
           @if (auth.getUser(); as user) {
             <div class="flex items-center gap-3 px-2">
-              <div class="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+              <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
+                [style.background-color]="(branding.branding$ | async)?.color_primario || '#762c7e'">
                 {{ user.nombre.charAt(0) }}{{ user.apellido.charAt(0) }}
               </div>
               <div class="flex-1 min-w-0">
                 <p class="text-white text-xs font-medium truncate">{{ user.nombre }} {{ user.apellido }}</p>
-                <p class="text-green-400/70 text-[10px]">{{ user.rol }}</p>
+                <p class="text-white/50 text-[10px]">{{ user.rol }}</p>
               </div>
               <button (click)="auth.logout()" class="text-gray-400 hover:text-white transition-colors" title="Cerrar sesion">
                 <mat-icon class="!text-lg">logout</mat-icon>
@@ -153,7 +161,7 @@ export class LayoutComponent {
     },
   ];
 
-  constructor(public auth: AuthService) {}
+  constructor(public auth: AuthService, public branding: BrandingService) {}
 
   canShow(item: NavItem): boolean {
     if (item.adminOnly) return this.auth.isAdmin();
