@@ -163,7 +163,7 @@ import { BrandingService } from '../../core/services/branding.service';
                   <mat-form-field appearance="outline" subscriptSizing="dynamic" class="flex-1 min-w-[150px]">
                     <mat-label>Club Local</mat-label>
                     <mat-select [(ngModel)]="cruceForm.club_local_id">
-                      @for (c of clubesZona(jornada.zona_id); track c.id) {
+                      @for (c of clubesDisponibles(jornada); track c.id) {
                         <mat-option [value]="c.id">{{ c.nombre }}</mat-option>
                       }
                     </mat-select>
@@ -172,8 +172,8 @@ import { BrandingService } from '../../core/services/branding.service';
                   <mat-form-field appearance="outline" subscriptSizing="dynamic" class="flex-1 min-w-[150px]">
                     <mat-label>Club Visitante</mat-label>
                     <mat-select [(ngModel)]="cruceForm.club_visitante_id">
-                      @for (c of clubesZona(jornada.zona_id); track c.id) {
-                        <mat-option [value]="c.id">{{ c.nombre }}</mat-option>
+                      @for (c of clubesDisponibles(jornada); track c.id) {
+                        <mat-option [value]="c.id" [disabled]="c.id === cruceForm.club_local_id">{{ c.nombre }}</mat-option>
                       }
                     </mat-select>
                   </mat-form-field>
@@ -310,6 +310,19 @@ export class FixtureComponent implements OnInit {
   clubesZona(zonaId: number | null): any[] {
     if (!zonaId) return this.clubes;
     return this.clubes.filter(c => c.zona_id === zonaId);
+  }
+
+  /** Devuelve solo los clubes que aun no tienen cruce en esta jornada */
+  clubesDisponibles(jornada: any): any[] {
+    const zonaClubes = this.clubesZona(jornada.zona_id);
+    if (!jornada._cruces?.length) return zonaClubes;
+
+    const usados = new Set<number>();
+    for (const cruce of jornada._cruces) {
+      usados.add(cruce.club_local_id);
+      usados.add(cruce.club_visitante_id);
+    }
+    return zonaClubes.filter(c => !usados.has(c.id));
   }
 
   getHora(partido: any): string {
