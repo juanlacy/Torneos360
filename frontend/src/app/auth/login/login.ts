@@ -16,12 +16,12 @@ import { ToastrService } from 'ngx-toastr';
   standalone: true,
   imports: [FormsModule, RouterLink, MatCardModule, MatFormFieldModule, MatInputModule, MatButtonModule, MatIconModule, MatDividerModule, MatProgressSpinnerModule],
   template: `
-    <div class="min-h-screen flex items-center justify-center bg-slate-950 p-4">
-      <mat-card class="w-full max-w-md !bg-slate-900 !border !border-slate-700">
+    <div class="min-h-screen flex items-center justify-center bg-gray-100 p-4">
+      <mat-card class="w-full max-w-md bg-white rounded-xl shadow-lg border border-gray-200">
         <mat-card-header class="!justify-center !mb-6">
           <div class="text-center w-full">
-            <h1 class="text-2xl font-bold text-green-400 mb-1">Torneo360</h1>
-            <p class="text-slate-400 text-sm">Iniciar sesion</p>
+            <h1 class="text-2xl font-bold text-green-600 mb-1">Torneo360</h1>
+            <p class="text-gray-500 text-sm">Iniciar sesion</p>
           </div>
         </mat-card-header>
 
@@ -54,19 +54,19 @@ import { ToastrService } from 'ngx-toastr';
           <mat-divider class="!my-6"></mat-divider>
 
           <div class="space-y-3">
-            <button mat-stroked-button class="w-full !border-slate-600" (click)="onGoogleLogin()" [disabled]="loading">
+            <button mat-stroked-button class="w-full !border-gray-300" (click)="onGoogleLogin()" [disabled]="loading">
               <mat-icon class="mr-2">g_mobiledata</mat-icon>
               Continuar con Google
             </button>
-            <button mat-stroked-button class="w-full !border-slate-600" (click)="onMicrosoftLogin()" [disabled]="loading">
+            <button mat-stroked-button class="w-full !border-gray-300" (click)="onMicrosoftLogin()" [disabled]="loading">
               <mat-icon class="mr-2">window</mat-icon>
               Continuar con Microsoft
             </button>
           </div>
 
-          <div class="mt-6 text-center text-sm text-slate-400 space-y-2">
-            <p><a routerLink="/auth/forgot-password" class="text-green-400 hover:underline">Olvidaste tu contrasena?</a></p>
-            <p>No tenes cuenta? <a routerLink="/auth/register" class="text-green-400 hover:underline">Registrate</a></p>
+          <div class="mt-6 text-center text-sm text-gray-500 space-y-2">
+            <p><a routerLink="/auth/forgot-password" class="text-green-600 hover:underline">Olvidaste tu contrasena?</a></p>
+            <p>No tenes cuenta? <a routerLink="/auth/register" class="text-green-600 hover:underline">Registrate</a></p>
           </div>
         </mat-card-content>
       </mat-card>

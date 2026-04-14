@@ -21,7 +21,7 @@ import { AuthService } from '../../core/services/auth.service';
   template: `
     <div class="space-y-4">
       <div class="flex items-center justify-between">
-        <h1 class="text-2xl font-bold text-slate-200">Torneos</h1>
+        <h1 class="text-2xl font-bold text-gray-900">Torneos</h1>
         @if (auth.puede('torneos', 'crear')) {
           <button mat-flat-button color="primary" (click)="mostrarFormulario = !mostrarFormulario">
             <mat-icon>add</mat-icon> Nuevo Torneo
@@ -30,9 +30,9 @@ import { AuthService } from '../../core/services/auth.service';
       </div>
 
       @if (mostrarFormulario) {
-        <mat-card class="!bg-slate-900 !border !border-slate-700">
+        <mat-card class="bg-white rounded-xl border border-gray-200">
           <mat-card-content>
-            <h3 class="text-lg font-semibold text-slate-200 mb-4">{{ editando ? 'Editar' : 'Nuevo' }} Torneo</h3>
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ editando ? 'Editar' : 'Nuevo' }} Torneo</h3>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
               <mat-form-field appearance="outline">
                 <mat-label>Nombre</mat-label>
@@ -61,17 +61,17 @@ import { AuthService } from '../../core/services/auth.service';
       }
 
       @for (torneo of torneos; track torneo.id) {
-        <mat-card class="!bg-slate-900 !border !border-slate-700">
+        <mat-card class="bg-white rounded-xl border border-gray-200">
           <mat-card-content class="p-4">
             <div class="flex items-center justify-between">
               <div>
-                <h2 class="text-xl font-bold text-slate-200">{{ torneo.nombre }}</h2>
+                <h2 class="text-xl font-bold text-gray-900">{{ torneo.nombre }}</h2>
                 <div class="flex items-center gap-3 mt-2">
-                  <span class="text-sm text-slate-400">Anio: {{ torneo.anio }}</span>
+                  <span class="text-sm text-gray-500">Anio: {{ torneo.anio }}</span>
                   <span class="px-2 py-0.5 rounded text-xs font-medium"
                     [class]="getEstadoClass(torneo.estado)">{{ torneo.estado }}</span>
-                  <span class="text-sm text-slate-400">{{ torneo.categorias?.length || 0 }} categorias</span>
-                  <span class="text-sm text-slate-400">{{ torneo.zonas?.length || 0 }} zonas</span>
+                  <span class="text-sm text-gray-500">{{ torneo.categorias?.length || 0 }} categorias</span>
+                  <span class="text-sm text-gray-500">{{ torneo.zonas?.length || 0 }} zonas</span>
                 </div>
               </div>
               <div class="flex gap-2">
@@ -91,7 +91,7 @@ import { AuthService } from '../../core/services/auth.service';
               <div class="flex flex-wrap gap-2 mt-3">
                 @for (cat of torneo.categorias; track cat.id) {
                   <span class="px-2 py-1 rounded text-xs"
-                    [class]="cat.es_preliminar ? 'bg-yellow-900/50 text-yellow-300' : 'bg-green-900/50 text-green-300'">
+                    [class]="cat.es_preliminar ? 'bg-yellow-50 text-yellow-700' : 'bg-green-50 text-green-700'">
                     {{ cat.nombre }}
                   </span>
                 }
@@ -100,9 +100,9 @@ import { AuthService } from '../../core/services/auth.service';
           </mat-card-content>
         </mat-card>
       } @empty {
-        <mat-card class="!bg-slate-900 !border !border-slate-700">
-          <mat-card-content class="p-8 text-center text-slate-400">
-            <mat-icon class="!text-5xl text-slate-600 mb-2">emoji_events</mat-icon>
+        <mat-card class="bg-white rounded-xl border border-gray-200">
+          <mat-card-content class="p-8 text-center text-gray-500">
+            <mat-icon class="!text-5xl text-gray-400 mb-2">emoji_events</mat-icon>
             <p>No hay torneos creados</p>
           </mat-card-content>
         </mat-card>
@@ -155,11 +155,11 @@ export class TorneosComponent implements OnInit {
 
   getEstadoClass(estado: string): string {
     const map: Record<string, string> = {
-      planificacion: 'bg-slate-700/50 text-slate-300',
-      inscripcion: 'bg-blue-900/50 text-blue-300',
-      en_curso: 'bg-green-900/50 text-green-300',
-      finalizado: 'bg-red-900/50 text-red-300',
+      planificacion: 'bg-gray-100 text-gray-700',
+      inscripcion: 'bg-blue-50 text-blue-700',
+      en_curso: 'bg-green-50 text-green-700',
+      finalizado: 'bg-red-50 text-red-700',
     };
-    return map[estado] || 'bg-slate-700/50 text-slate-300';
+    return map[estado] || 'bg-gray-100 text-gray-700';
   }
 }

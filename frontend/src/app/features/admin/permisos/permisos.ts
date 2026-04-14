@@ -15,9 +15,9 @@ import { ToastrService } from 'ngx-toastr';
   imports: [FormsModule, MatCardModule, MatTabsModule, MatCheckboxModule, MatSelectModule, MatFormFieldModule],
   template: `
     <div class="space-y-4">
-      <h1 class="text-2xl font-bold text-slate-200">Permisos por Rol</h1>
+      <h1 class="text-2xl font-bold text-gray-900">Permisos por Rol</h1>
 
-      <mat-card class="!bg-slate-900 !border !border-slate-700">
+      <mat-card class="bg-white rounded-xl border border-gray-200">
         <mat-card-content>
           <mat-form-field appearance="outline" class="mb-4">
             <mat-label>Rol</mat-label>
@@ -32,17 +32,17 @@ import { ToastrService } from 'ngx-toastr';
             <div class="overflow-x-auto">
               <table class="w-full text-sm">
                 <thead>
-                  <tr class="border-b border-slate-700">
-                    <th class="text-left p-2 text-slate-400">Modulo</th>
+                  <tr class="border-b border-gray-200">
+                    <th class="text-left p-2 text-gray-500">Modulo</th>
                     @for (a of acciones; track a) {
-                      <th class="text-center p-2 text-slate-400 capitalize">{{ a }}</th>
+                      <th class="text-center p-2 text-gray-500 capitalize">{{ a }}</th>
                     }
                   </tr>
                 </thead>
                 <tbody>
                   @for (m of modulos; track m) {
-                    <tr class="border-b border-slate-800 hover:bg-slate-800/50">
-                      <td class="p-2 text-slate-200 capitalize">{{ m }}</td>
+                    <tr class="border-b border-gray-100 hover:bg-gray-50">
+                      <td class="p-2 text-gray-900 capitalize">{{ m }}</td>
                       @for (a of acciones; track a) {
                         <td class="text-center p-2">
                           <mat-checkbox

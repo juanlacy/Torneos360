@@ -18,16 +18,16 @@ import { ToastrService } from 'ngx-toastr';
   imports: [FormsModule, MatCardModule, MatButtonModule, MatIconModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatTabsModule, MatDividerModule],
   template: `
     <div class="space-y-4">
-      <h1 class="text-2xl font-bold text-slate-200">Configuracion</h1>
+      <h1 class="text-2xl font-bold text-gray-900">Configuracion</h1>
 
       <mat-tab-group>
         <!-- Tab Torneo -->
         <mat-tab label="Reglas del Torneo">
           <div class="mt-4 space-y-4">
-            <mat-card class="!bg-slate-900 !border !border-slate-700">
+            <mat-card class="bg-white rounded-xl border border-gray-200">
               <mat-card-content>
-                <h3 class="text-lg font-semibold text-slate-200 mb-4">Sistema de Puntos</h3>
-                <p class="text-sm text-slate-400 mb-4">Configura los puntos que se otorgan por resultado en cada partido. Estos valores se guardan en la configuracion del torneo.</p>
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Sistema de Puntos</h3>
+                <p class="text-sm text-gray-500 mb-4">Configura los puntos que se otorgan por resultado en cada partido. Estos valores se guardan en la configuracion del torneo.</p>
 
                 <div class="flex gap-4 items-end">
                   <mat-form-field appearance="outline" subscriptSizing="dynamic">
@@ -68,10 +68,10 @@ import { ToastrService } from 'ngx-toastr';
         <!-- Tab Integraciones IA -->
         <mat-tab label="Integraciones IA">
           <div class="mt-4 space-y-4">
-            <mat-card class="!bg-slate-900 !border !border-slate-700">
+            <mat-card class="bg-white rounded-xl border border-gray-200">
               <mat-card-content>
-                <h3 class="text-lg font-semibold text-slate-200 mb-2">Inteligencia Artificial</h3>
-                <p class="text-sm text-slate-400 mb-4">
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">Inteligencia Artificial</h3>
+                <p class="text-sm text-gray-500 mb-4">
                   Configura las claves de API para transcripcion de audio y generacion de resumenes en los informes de arbitros.
                 </p>
 
@@ -85,7 +85,7 @@ import { ToastrService } from 'ngx-toastr';
 
                 <mat-divider class="!my-4"></mat-divider>
 
-                <h4 class="text-md font-medium text-slate-300 mb-3">OpenAI</h4>
+                <h4 class="text-md font-medium text-gray-700 mb-3">OpenAI</h4>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <mat-form-field appearance="outline">
                     <mat-label>API Key</mat-label>
@@ -110,7 +110,7 @@ import { ToastrService } from 'ngx-toastr';
 
                 <mat-divider class="!my-4"></mat-divider>
 
-                <h4 class="text-md font-medium text-slate-300 mb-3">Google Gemini</h4>
+                <h4 class="text-md font-medium text-gray-700 mb-3">Google Gemini</h4>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <mat-form-field appearance="outline">
                     <mat-label>API Key</mat-label>

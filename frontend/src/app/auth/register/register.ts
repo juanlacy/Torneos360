@@ -15,12 +15,12 @@ import { ToastrService } from 'ngx-toastr';
   standalone: true,
   imports: [FormsModule, RouterLink, MatCardModule, MatFormFieldModule, MatInputModule, MatButtonModule, MatIconModule, MatProgressSpinnerModule],
   template: `
-    <div class="min-h-screen flex items-center justify-center bg-slate-950 p-4">
-      <mat-card class="w-full max-w-md !bg-slate-900 !border !border-slate-700">
+    <div class="min-h-screen flex items-center justify-center bg-gray-100 p-4">
+      <mat-card class="w-full max-w-md bg-white rounded-xl shadow-lg border border-gray-200">
         <mat-card-header class="!justify-center !mb-6">
           <div class="text-center w-full">
-            <h1 class="text-2xl font-bold text-green-400 mb-1">Torneo360</h1>
-            <p class="text-slate-400 text-sm">Crear cuenta</p>
+            <h1 class="text-2xl font-bold text-green-600 mb-1">Torneo360</h1>
+            <p class="text-gray-500 text-sm">Crear cuenta</p>
           </div>
         </mat-card-header>
 
@@ -58,8 +58,8 @@ import { ToastrService } from 'ngx-toastr';
             </button>
           </form>
 
-          <div class="mt-6 text-center text-sm text-slate-400">
-            Ya tenes cuenta? <a routerLink="/auth/login" class="text-green-400 hover:underline">Iniciar sesion</a>
+          <div class="mt-6 text-center text-sm text-gray-500">
+            Ya tenes cuenta? <a routerLink="/auth/login" class="text-green-600 hover:underline">Iniciar sesion</a>
           </div>
         </mat-card-content>
       </mat-card>

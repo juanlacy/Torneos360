@@ -21,8 +21,8 @@ import { SocketService } from '../../core/services/socket.service';
   template: `
     <div class="space-y-4">
       <div class="flex items-center justify-between">
-        <h1 class="text-2xl font-bold text-slate-200">
-          <mat-icon class="text-red-400 animate-pulse mr-1 align-middle">fiber_manual_record</mat-icon>
+        <h1 class="text-2xl font-bold text-gray-900">
+          <mat-icon class="text-red-500 animate-pulse mr-1 align-middle">fiber_manual_record</mat-icon>
           Marcador en Vivo
         </h1>
         <div class="flex gap-2 items-center">
@@ -51,17 +51,17 @@ import { SocketService } from '../../core/services/socket.service';
       <!-- Partidos agrupados por categoria -->
       @for (grupo of partidosAgrupados; track grupo.categoria) {
         <div>
-          <h3 class="text-sm font-semibold text-slate-400 uppercase mb-2">{{ grupo.categoria }}</h3>
+          <h3 class="text-sm font-semibold text-gray-500 uppercase mb-2">{{ grupo.categoria }}</h3>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
             @for (p of grupo.partidos; track p.id) {
-              <mat-card class="!bg-slate-900 !border !border-slate-700 hover:!border-slate-500 transition-colors cursor-pointer"
-                [class.!border-yellow-600]="p.estado === 'en_curso'"
-                [class.!border-green-700]="p.estado === 'finalizado'">
+              <mat-card class="bg-white rounded-xl border border-gray-200 hover:border-gray-300 transition-colors cursor-pointer"
+                [class.!border-yellow-400]="p.estado === 'en_curso'"
+                [class.!border-green-500]="p.estado === 'finalizado'">
                 <mat-card-content class="p-4">
                   <div class="flex items-center gap-4">
                     <!-- Club local -->
                     <div class="flex-1 text-right">
-                      <span class="font-semibold text-slate-200">
+                      <span class="font-semibold text-gray-900">
                         {{ p.clubLocal?.nombre_corto || p.clubLocal?.nombre }}
                       </span>
                     </div>
@@ -69,42 +69,42 @@ import { SocketService } from '../../core/services/socket.service';
                     <!-- Marcador -->
                     <div class="text-center min-w-[80px]">
                       <div class="text-2xl font-bold px-4 py-2 rounded-lg"
-                        [class]="p.estado === 'en_curso' ? 'bg-yellow-900/40 text-yellow-300 animate-pulse' :
-                                 p.estado === 'finalizado' ? 'bg-green-900/30 text-green-300' :
-                                 'bg-slate-800 text-slate-400'">
+                        [class]="p.estado === 'en_curso' ? 'bg-yellow-50 text-yellow-700 animate-pulse' :
+                                 p.estado === 'finalizado' ? 'bg-green-50 text-green-700' :
+                                 'bg-gray-100 text-gray-400'">
                         {{ p.goles_local }} - {{ p.goles_visitante }}
                       </div>
                       <div class="mt-1">
                         @if (p.estado === 'en_curso') {
-                          <span class="text-xs text-yellow-400 flex items-center justify-center gap-1">
+                          <span class="text-xs text-yellow-600 flex items-center justify-center gap-1">
                             <mat-icon class="!text-xs">fiber_manual_record</mat-icon> EN VIVO
                           </span>
                         } @else if (p.estado === 'finalizado') {
-                          <span class="text-xs text-green-400">FINAL</span>
+                          <span class="text-xs text-green-600">FINAL</span>
                         } @else {
-                          <span class="text-xs text-slate-500">{{ p.estado }}</span>
+                          <span class="text-xs text-gray-400">{{ p.estado }}</span>
                         }
                       </div>
                     </div>
 
                     <!-- Club visitante -->
                     <div class="flex-1 text-left">
-                      <span class="font-semibold text-slate-200">
+                      <span class="font-semibold text-gray-900">
                         {{ p.clubVisitante?.nombre_corto || p.clubVisitante?.nombre }}
                       </span>
                     </div>
 
                     <!-- Link al detalle -->
-                    <a [routerLink]="['/partidos', p.id]" class="text-slate-500 hover:text-slate-300">
+                    <a [routerLink]="['/partidos', p.id]" class="text-gray-400 hover:text-gray-600">
                       <mat-icon>open_in_new</mat-icon>
                     </a>
                   </div>
 
                   <!-- Ultimo evento -->
                   @if (p._ultimoEvento) {
-                    <div class="mt-2 text-xs text-slate-400 text-center border-t border-slate-800 pt-2">
+                    <div class="mt-2 text-xs text-gray-500 text-center border-t border-gray-200 pt-2">
                       <mat-icon class="!text-xs align-middle mr-1"
-                        [class]="p._ultimoEvento.tipo === 'gol' ? 'text-green-400' : p._ultimoEvento.tipo === 'amarilla' ? 'text-yellow-400' : p._ultimoEvento.tipo === 'roja' ? 'text-red-400' : 'text-slate-400'">
+                        [class]="p._ultimoEvento.tipo === 'gol' ? 'text-green-600' : p._ultimoEvento.tipo === 'amarilla' ? 'text-yellow-500' : p._ultimoEvento.tipo === 'roja' ? 'text-red-500' : 'text-gray-400'">
                         {{ p._ultimoEvento.tipo === 'gol' ? 'sports_soccer' : p._ultimoEvento.tipo === 'amarilla' ? 'square' : p._ultimoEvento.tipo === 'roja' ? 'square' : 'info' }}
                       </mat-icon>
                       {{ p._ultimoEvento.minuto ? p._ultimoEvento.minuto + "'" : '' }}
@@ -117,10 +117,10 @@ import { SocketService } from '../../core/services/socket.service';
           </div>
         </div>
       } @empty {
-        <mat-card class="!bg-slate-900 !border !border-slate-700">
-          <mat-card-content class="p-8 text-center text-slate-400">
+        <mat-card class="bg-white rounded-xl border border-gray-200">
+          <mat-card-content class="p-8 text-center text-gray-500">
             @if (!jornadaId) {
-              <mat-icon class="!text-5xl text-slate-600 mb-2">live_tv</mat-icon>
+              <mat-icon class="!text-5xl text-gray-400 mb-2">live_tv</mat-icon>
               <p>Selecciona un torneo y una jornada para ver el marcador en vivo</p>
             } @else {
               <p>No hay partidos para esta jornada</p>

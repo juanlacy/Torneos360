@@ -25,30 +25,30 @@ import { SocketService } from '../../core/services/socket.service';
     @if (partido) {
       <div class="space-y-4">
         <!-- Header con resultado -->
-        <mat-card class="!bg-slate-900 !border !border-slate-700">
+        <mat-card class="bg-white rounded-xl border border-gray-200">
           <mat-card-content class="p-6">
             <div class="text-center mb-2">
-              <span class="text-sm text-slate-400">
+              <span class="text-sm text-gray-500">
                 Fecha {{ partido.jornada?.numero_jornada }} — {{ partido.jornada?.fase | uppercase }}
                 · {{ partido.categoria?.nombre }}
               </span>
             </div>
             <div class="flex items-center justify-center gap-8">
               <div class="text-center flex-1">
-                <div class="text-xl font-bold text-slate-200">{{ partido.clubLocal?.nombre }}</div>
-                <div class="text-sm text-slate-400">Local</div>
+                <div class="text-xl font-bold text-gray-900">{{ partido.clubLocal?.nombre }}</div>
+                <div class="text-sm text-gray-500">Local</div>
               </div>
               <div class="text-center">
                 <div class="text-4xl font-bold px-6 py-3 rounded-lg"
-                  [class]="partido.estado === 'finalizado' ? 'bg-green-900/30 text-green-300' : partido.estado === 'en_curso' ? 'bg-yellow-900/30 text-yellow-300' : 'bg-slate-800 text-slate-300'">
+                  [class]="partido.estado === 'finalizado' ? 'bg-green-50 text-green-700' : partido.estado === 'en_curso' ? 'bg-yellow-50 text-yellow-700' : 'bg-gray-100 text-gray-700'">
                   {{ partido.goles_local }} - {{ partido.goles_visitante }}
                 </div>
                 <span class="px-3 py-1 rounded text-xs font-medium mt-2 inline-block"
                   [class]="getEstadoClass(partido.estado)">{{ partido.estado }}</span>
               </div>
               <div class="text-center flex-1">
-                <div class="text-xl font-bold text-slate-200">{{ partido.clubVisitante?.nombre }}</div>
-                <div class="text-sm text-slate-400">Visitante</div>
+                <div class="text-xl font-bold text-gray-900">{{ partido.clubVisitante?.nombre }}</div>
+                <div class="text-sm text-gray-500">Visitante</div>
               </div>
             </div>
 
@@ -70,7 +70,7 @@ import { SocketService } from '../../core/services/socket.service';
                 </button>
               }
               @if (partido.confirmado_arbitro) {
-                <span class="flex items-center gap-1 text-green-400 text-sm">
+                <span class="flex items-center gap-1 text-green-600 text-sm">
                   <mat-icon class="!text-lg">verified</mat-icon> Confirmado por arbitro
                 </span>
               }
@@ -80,9 +80,9 @@ import { SocketService } from '../../core/services/socket.service';
 
         <!-- Registrar evento (solo en curso) -->
         @if (partido.estado === 'en_curso' && auth.puede('partidos', 'editar')) {
-          <mat-card class="!bg-slate-900 !border !border-slate-700">
+          <mat-card class="bg-white rounded-xl border border-gray-200">
             <mat-card-content>
-              <h3 class="text-lg font-semibold text-slate-200 mb-3">Registrar evento</h3>
+              <h3 class="text-lg font-semibold text-gray-900 mb-3">Registrar evento</h3>
               <div class="flex flex-wrap gap-3 items-end">
                 <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-36">
                   <mat-label>Tipo</mat-label>
@@ -118,17 +118,17 @@ import { SocketService } from '../../core/services/socket.service';
         }
 
         <!-- Timeline de eventos -->
-        <mat-card class="!bg-slate-900 !border !border-slate-700">
+        <mat-card class="bg-white rounded-xl border border-gray-200">
           <mat-card-content>
-            <h3 class="text-lg font-semibold text-slate-200 mb-3">Eventos del partido</h3>
+            <h3 class="text-lg font-semibold text-gray-900 mb-3">Eventos del partido</h3>
             @if (partido.eventos?.length) {
               <div class="space-y-2">
                 @for (ev of partido.eventos; track ev.id) {
-                  <div class="flex items-center gap-3 p-2 rounded bg-slate-800/50">
-                    <span class="text-xs text-slate-500 w-10 text-right">{{ ev.minuto ? ev.minuto + "'" : '' }}</span>
+                  <div class="flex items-center gap-3 p-2 rounded bg-gray-50">
+                    <span class="text-xs text-gray-400 w-10 text-right">{{ ev.minuto ? ev.minuto + "'" : '' }}</span>
                     <mat-icon class="!text-lg" [class]="getEventoIconClass(ev.tipo)">{{ getEventoIcon(ev.tipo) }}</mat-icon>
                     <div class="flex-1">
-                      <span class="text-slate-200">
+                      <span class="text-gray-900">
                         @if (ev.jugador) {
                           {{ ev.jugador.apellido }} {{ ev.jugador.nombre }}
                           @if (ev.jugador.numero_camiseta) { (#{{ ev.jugador.numero_camiseta }}) }
@@ -136,21 +136,21 @@ import { SocketService } from '../../core/services/socket.service';
                         @if (ev.detalle) { — {{ ev.detalle }} }
                       </span>
                     </div>
-                    <span class="text-xs text-slate-500">{{ ev.club?.nombre_corto }}</span>
+                    <span class="text-xs text-gray-400">{{ ev.club?.nombre_corto }}</span>
                   </div>
                 }
               </div>
             } @else {
-              <p class="text-slate-400 text-center py-4">Sin eventos registrados</p>
+              <p class="text-gray-500 text-center py-4">Sin eventos registrados</p>
             }
           </mat-card-content>
         </mat-card>
         <!-- Informes del arbitro -->
         @if (partido.estado === 'finalizado' || partido.estado === 'en_curso') {
-          <mat-card class="!bg-slate-900 !border !border-slate-700">
+          <mat-card class="bg-white rounded-xl border border-gray-200">
             <mat-card-content>
               <div class="flex items-center justify-between mb-3">
-                <h3 class="text-lg font-semibold text-slate-200">Informes del arbitro</h3>
+                <h3 class="text-lg font-semibold text-gray-900">Informes del arbitro</h3>
                 @if (auth.getUser()?.rol === 'arbitro' || auth.isAdmin()) {
                   <button mat-stroked-button color="primary" (click)="crearInforme()">
                     <mat-icon>note_add</mat-icon> Nuevo informe
@@ -159,28 +159,28 @@ import { SocketService } from '../../core/services/socket.service';
               </div>
 
               @for (inf of informes; track inf.id) {
-                <div class="p-3 rounded bg-slate-800/50 mb-2">
+                <div class="p-3 rounded bg-gray-50 mb-2">
                   <div class="flex items-center justify-between mb-2">
                     <div class="flex items-center gap-2">
                       <span class="px-2 py-0.5 rounded text-xs font-medium"
-                        [class]="inf.tipo === 'disciplinario' ? 'bg-red-900/50 text-red-300' : inf.tipo === 'incidente' ? 'bg-yellow-900/50 text-yellow-300' : 'bg-slate-700/50 text-slate-300'">
+                        [class]="inf.tipo === 'disciplinario' ? 'bg-red-50 text-red-700' : inf.tipo === 'incidente' ? 'bg-yellow-50 text-yellow-700' : 'bg-gray-100 text-gray-700'">
                         {{ inf.tipo }}
                       </span>
-                      <span class="px-2 py-0.5 rounded text-xs" [class]="inf.estado === 'confirmado' ? 'bg-green-900/50 text-green-300' : 'bg-slate-700/50 text-slate-300'">
+                      <span class="px-2 py-0.5 rounded text-xs" [class]="inf.estado === 'confirmado' ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-700'">
                         {{ inf.estado }}
                       </span>
                     </div>
-                    <span class="text-xs text-slate-500">{{ inf.usuario?.nombre }} {{ inf.usuario?.apellido }}</span>
+                    <span class="text-xs text-gray-400">{{ inf.usuario?.nombre }} {{ inf.usuario?.apellido }}</span>
                   </div>
 
                   @if (inf.resumen) {
-                    <p class="text-sm text-slate-300 mb-1"><strong>Resumen IA:</strong> {{ inf.resumen }}</p>
+                    <p class="text-sm text-gray-700 mb-1"><strong>Resumen IA:</strong> {{ inf.resumen }}</p>
                   }
                   @if (inf.texto_manual) {
-                    <p class="text-sm text-slate-400">{{ inf.texto_manual }}</p>
+                    <p class="text-sm text-gray-500">{{ inf.texto_manual }}</p>
                   }
                   @if (inf.audio_url && !inf.transcripcion) {
-                    <p class="text-sm text-yellow-400">Audio pendiente de transcripcion</p>
+                    <p class="text-sm text-yellow-600">Audio pendiente de transcripcion</p>
                   }
 
                   <div class="flex gap-2 mt-2">
@@ -200,16 +200,16 @@ import { SocketService } from '../../core/services/socket.service';
                   </div>
                 </div>
               } @empty {
-                <p class="text-slate-400 text-center py-4">Sin informes</p>
+                <p class="text-gray-500 text-center py-4">Sin informes</p>
               }
 
               <!-- Grabador de audio -->
               @if (grabando || audioBlob) {
-                <div class="mt-4 p-4 rounded bg-slate-800 border border-slate-600">
-                  <h4 class="text-sm font-medium text-slate-300 mb-2">Grabacion de audio</h4>
+                <div class="mt-4 p-4 rounded bg-gray-50 border border-gray-200">
+                  <h4 class="text-sm font-medium text-gray-700 mb-2">Grabacion de audio</h4>
                   @if (grabando) {
                     <div class="flex items-center gap-3">
-                      <span class="animate-pulse text-red-400 flex items-center gap-1">
+                      <span class="animate-pulse text-red-500 flex items-center gap-1">
                         <mat-icon class="!text-lg">fiber_manual_record</mat-icon> Grabando...
                       </span>
                       <button mat-flat-button color="warn" (click)="detenerGrabacion()">
@@ -357,12 +357,12 @@ export class PartidoDetalleComponent implements OnInit, OnDestroy {
 
   getEstadoClass(estado: string): string {
     const map: Record<string, string> = {
-      programado: 'bg-slate-700/50 text-slate-300',
-      en_curso: 'bg-yellow-900/50 text-yellow-300',
-      finalizado: 'bg-green-900/50 text-green-300',
-      suspendido: 'bg-red-900/50 text-red-300',
+      programado: 'bg-gray-100 text-gray-700',
+      en_curso: 'bg-yellow-50 text-yellow-700',
+      finalizado: 'bg-green-50 text-green-700',
+      suspendido: 'bg-red-50 text-red-700',
     };
-    return map[estado] || 'bg-slate-700/50 text-slate-300';
+    return map[estado] || 'bg-gray-100 text-gray-700';
   }
 
   getEventoIcon(tipo: string): string {
@@ -371,8 +371,8 @@ export class PartidoDetalleComponent implements OnInit, OnDestroy {
   }
 
   getEventoIconClass(tipo: string): string {
-    const map: Record<string, string> = { gol: 'text-green-400', amarilla: 'text-yellow-400', roja: 'text-red-400', sustitucion: 'text-blue-400', informe: 'text-slate-400', inicio: 'text-cyan-400', fin: 'text-slate-400' };
-    return map[tipo] || 'text-slate-400';
+    const map: Record<string, string> = { gol: 'text-green-600', amarilla: 'text-yellow-500', roja: 'text-red-500', sustitucion: 'text-blue-500', informe: 'text-gray-400', inicio: 'text-cyan-500', fin: 'text-gray-400' };
+    return map[tipo] || 'text-gray-400';
   }
 
   // ─── Informes ─────────────────────────────────────────────────

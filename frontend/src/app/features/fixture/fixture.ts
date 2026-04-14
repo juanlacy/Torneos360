@@ -21,7 +21,7 @@ import { AuthService } from '../../core/services/auth.service';
   template: `
     <div class="space-y-4">
       <div class="flex items-center justify-between">
-        <h1 class="text-2xl font-bold text-slate-200">Fixture</h1>
+        <h1 class="text-2xl font-bold text-gray-900">Fixture</h1>
         <div class="flex gap-2 items-center">
           <mat-form-field appearance="outline" subscriptSizing="dynamic">
             <mat-label>Torneo</mat-label>
@@ -70,12 +70,12 @@ import { AuthService } from '../../core/services/auth.service';
 
       <!-- Jornadas -->
       @for (jornada of jornadasFiltradas; track jornada.id) {
-        <mat-expansion-panel class="!bg-slate-900 !border !border-slate-700">
+        <mat-expansion-panel class="bg-white rounded-xl border border-gray-200">
           <mat-expansion-panel-header>
-            <mat-panel-title class="!text-slate-200">
+            <mat-panel-title class="!text-gray-900">
               Fecha {{ jornada.numero_jornada }} — {{ jornada.fase | uppercase }}
             </mat-panel-title>
-            <mat-panel-description class="!text-slate-400">
+            <mat-panel-description class="!text-gray-500">
               @if (jornada.zona) {
                 <span class="mr-3">Zona {{ jornada.zona.nombre }}</span>
               }
@@ -94,24 +94,24 @@ import { AuthService } from '../../core/services/auth.service';
             } @else {
               <div class="space-y-2">
                 @for (partido of jornada._partidos; track partido.id) {
-                  <div class="flex items-center gap-3 p-3 rounded bg-slate-800/50 hover:bg-slate-800">
-                    <span class="text-xs text-slate-500 w-16">{{ partido.categoria?.nombre }}</span>
+                  <div class="flex items-center gap-3 p-3 rounded bg-gray-50 hover:bg-gray-100">
+                    <span class="text-xs text-gray-400 w-16">{{ partido.categoria?.nombre }}</span>
                     <div class="flex-1 flex items-center justify-center gap-4">
-                      <span class="text-right flex-1 font-medium text-slate-200">
+                      <span class="text-right flex-1 font-medium text-gray-900">
                         {{ partido.clubLocal?.nombre_corto || partido.clubLocal?.nombre }}
                       </span>
-                      <div class="px-3 py-1 rounded bg-slate-700 min-w-[60px] text-center font-bold"
-                        [class]="partido.estado === 'finalizado' ? '!bg-green-900/50 text-green-300' : 'text-slate-300'">
+                      <div class="px-3 py-1 rounded bg-gray-100 min-w-[60px] text-center font-bold"
+                        [class]="partido.estado === 'finalizado' ? 'bg-green-50 text-green-700' : 'text-gray-700'">
                         {{ partido.goles_local }} - {{ partido.goles_visitante }}
                       </div>
-                      <span class="text-left flex-1 font-medium text-slate-200">
+                      <span class="text-left flex-1 font-medium text-gray-900">
                         {{ partido.clubVisitante?.nombre_corto || partido.clubVisitante?.nombre }}
                       </span>
                     </div>
                     <span class="px-2 py-0.5 rounded text-xs" [class]="getEstadoClass(partido.estado)">
                       {{ partido.estado }}
                     </span>
-                    <a mat-icon-button [routerLink]="['/partidos', partido.id]" class="!text-slate-400">
+                    <a mat-icon-button [routerLink]="['/partidos', partido.id]" class="!text-gray-400">
                       <mat-icon class="!text-lg">open_in_new</mat-icon>
                     </a>
                   </div>
@@ -121,12 +121,12 @@ import { AuthService } from '../../core/services/auth.service';
           </div>
         </mat-expansion-panel>
       } @empty {
-        <mat-card class="!bg-slate-900 !border !border-slate-700">
-          <mat-card-content class="p-8 text-center text-slate-400">
+        <mat-card class="bg-white rounded-xl border border-gray-200">
+          <mat-card-content class="p-8 text-center text-gray-500">
             @if (!torneoId) {
               <p>Selecciona un torneo</p>
             } @else {
-              <mat-icon class="!text-5xl text-slate-600 mb-2">calendar_month</mat-icon>
+              <mat-icon class="!text-5xl text-gray-400 mb-2">calendar_month</mat-icon>
               <p>No hay fixture generado para este torneo</p>
             }
           </mat-card-content>
@@ -202,11 +202,11 @@ export class FixtureComponent implements OnInit {
 
   getEstadoClass(estado: string): string {
     const map: Record<string, string> = {
-      programada: 'bg-slate-700/50 text-slate-300', programado: 'bg-slate-700/50 text-slate-300',
-      en_curso: 'bg-yellow-900/50 text-yellow-300',
-      finalizada: 'bg-green-900/50 text-green-300', finalizado: 'bg-green-900/50 text-green-300',
-      suspendida: 'bg-red-900/50 text-red-300', suspendido: 'bg-red-900/50 text-red-300',
+      programada: 'bg-gray-100 text-gray-700', programado: 'bg-gray-100 text-gray-700',
+      en_curso: 'bg-yellow-50 text-yellow-700',
+      finalizada: 'bg-green-50 text-green-700', finalizado: 'bg-green-50 text-green-700',
+      suspendida: 'bg-red-50 text-red-700', suspendido: 'bg-red-50 text-red-700',
     };
-    return map[estado] || 'bg-slate-700/50 text-slate-300';
+    return map[estado] || 'bg-gray-100 text-gray-700';
   }
 }

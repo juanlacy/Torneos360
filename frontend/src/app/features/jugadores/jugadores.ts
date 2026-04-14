@@ -21,7 +21,7 @@ import { AuthService } from '../../core/services/auth.service';
   template: `
     <div class="space-y-4">
       <div class="flex items-center justify-between">
-        <h1 class="text-2xl font-bold text-slate-200">Jugadores</h1>
+        <h1 class="text-2xl font-bold text-gray-900">Jugadores</h1>
         @if (auth.puede('jugadores', 'crear')) {
           <button mat-flat-button color="primary" (click)="mostrarForm = !mostrarForm">
             <mat-icon>person_add</mat-icon> Nuevo Jugador
@@ -30,7 +30,7 @@ import { AuthService } from '../../core/services/auth.service';
       </div>
 
       <!-- Filtros -->
-      <mat-card class="!bg-slate-900 !border !border-slate-700">
+      <mat-card class="bg-white rounded-xl border border-gray-200">
         <mat-card-content class="flex flex-wrap gap-4 items-center">
           <mat-form-field appearance="outline" subscriptSizing="dynamic">
             <mat-label>Club</mat-label>
@@ -69,9 +69,9 @@ import { AuthService } from '../../core/services/auth.service';
 
       <!-- Formulario nuevo jugador -->
       @if (mostrarForm) {
-        <mat-card class="!bg-slate-900 !border !border-slate-700">
+        <mat-card class="bg-white rounded-xl border border-gray-200">
           <mat-card-content>
-            <h3 class="text-lg font-semibold text-slate-200 mb-4">{{ editando ? 'Editar' : 'Nuevo' }} Jugador</h3>
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ editando ? 'Editar' : 'Nuevo' }} Jugador</h3>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
               <mat-form-field appearance="outline">
                 <mat-label>Nombre</mat-label>
@@ -119,38 +119,38 @@ import { AuthService } from '../../core/services/auth.service';
       }
 
       <!-- Tabla de jugadores -->
-      <mat-card class="!bg-slate-900 !border !border-slate-700">
+      <mat-card class="bg-white rounded-xl border border-gray-200">
         <mat-card-content>
           <table mat-table [dataSource]="jugadores" class="w-full !bg-transparent">
             <ng-container matColumnDef="jugador">
-              <th mat-header-cell *matHeaderCellDef class="!text-slate-400">Jugador</th>
-              <td mat-cell *matCellDef="let j" class="!text-slate-200">
+              <th mat-header-cell *matHeaderCellDef class="!text-gray-500">Jugador</th>
+              <td mat-cell *matCellDef="let j" class="!text-gray-900">
                 <div class="flex items-center gap-2">
                   <span class="font-medium">{{ j.apellido }}, {{ j.nombre }}</span>
                   @if (j.numero_camiseta) {
-                    <span class="text-xs bg-slate-700 px-1.5 py-0.5 rounded">#{{ j.numero_camiseta }}</span>
+                    <span class="text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">#{{ j.numero_camiseta }}</span>
                   }
                 </div>
               </td>
             </ng-container>
 
             <ng-container matColumnDef="dni">
-              <th mat-header-cell *matHeaderCellDef class="!text-slate-400">DNI</th>
-              <td mat-cell *matCellDef="let j" class="!text-slate-300">{{ j.dni }}</td>
+              <th mat-header-cell *matHeaderCellDef class="!text-gray-500">DNI</th>
+              <td mat-cell *matCellDef="let j" class="!text-gray-700">{{ j.dni }}</td>
             </ng-container>
 
             <ng-container matColumnDef="club">
-              <th mat-header-cell *matHeaderCellDef class="!text-slate-400">Club</th>
-              <td mat-cell *matCellDef="let j" class="!text-slate-300">{{ j.club?.nombre_corto || j.club?.nombre }}</td>
+              <th mat-header-cell *matHeaderCellDef class="!text-gray-500">Club</th>
+              <td mat-cell *matCellDef="let j" class="!text-gray-700">{{ j.club?.nombre_corto || j.club?.nombre }}</td>
             </ng-container>
 
             <ng-container matColumnDef="categoria">
-              <th mat-header-cell *matHeaderCellDef class="!text-slate-400">Cat.</th>
-              <td mat-cell *matCellDef="let j" class="!text-slate-300">{{ j.categoria?.nombre }}</td>
+              <th mat-header-cell *matHeaderCellDef class="!text-gray-500">Cat.</th>
+              <td mat-cell *matCellDef="let j" class="!text-gray-700">{{ j.categoria?.nombre }}</td>
             </ng-container>
 
             <ng-container matColumnDef="fichaje">
-              <th mat-header-cell *matHeaderCellDef class="!text-slate-400">Fichaje</th>
+              <th mat-header-cell *matHeaderCellDef class="!text-gray-500">Fichaje</th>
               <td mat-cell *matCellDef="let j">
                 <span class="px-2 py-0.5 rounded text-xs font-medium" [class]="getFichajeClass(j.estado_fichaje)">
                   {{ j.estado_fichaje }}
@@ -159,7 +159,7 @@ import { AuthService } from '../../core/services/auth.service';
             </ng-container>
 
             <ng-container matColumnDef="acciones">
-              <th mat-header-cell *matHeaderCellDef class="!text-slate-400 w-20">Acc.</th>
+              <th mat-header-cell *matHeaderCellDef class="!text-gray-500 w-20">Acc.</th>
               <td mat-cell *matCellDef="let j">
                 <button mat-icon-button [matMenuTriggerFor]="menuJugador">
                   <mat-icon>more_vert</mat-icon>
@@ -177,11 +177,11 @@ import { AuthService } from '../../core/services/auth.service';
             </ng-container>
 
             <tr mat-header-row *matHeaderRowDef="columnas"></tr>
-            <tr mat-row *matRowDef="let row; columns: columnas;" class="hover:!bg-slate-800"></tr>
+            <tr mat-row *matRowDef="let row; columns: columnas;" class="hover:bg-gray-50"></tr>
           </table>
 
           @if (!jugadores.length) {
-            <div class="p-8 text-center text-slate-400">
+            <div class="p-8 text-center text-gray-500">
               <p>No se encontraron jugadores</p>
             </div>
           }
@@ -265,11 +265,11 @@ export class JugadoresComponent implements OnInit {
 
   getFichajeClass(estado: string): string {
     const map: Record<string, string> = {
-      pendiente: 'bg-yellow-900/50 text-yellow-300',
-      aprobado: 'bg-green-900/50 text-green-300',
-      rechazado: 'bg-red-900/50 text-red-300',
-      baja: 'bg-slate-700/50 text-slate-300',
+      pendiente: 'bg-yellow-50 text-yellow-700',
+      aprobado: 'bg-green-50 text-green-700',
+      rechazado: 'bg-red-50 text-red-700',
+      baja: 'bg-gray-100 text-gray-700',
     };
-    return map[estado] || 'bg-slate-700/50 text-slate-300';
+    return map[estado] || 'bg-gray-100 text-gray-700';
   }
 }

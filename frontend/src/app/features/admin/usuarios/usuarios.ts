@@ -21,10 +21,10 @@ import { ToastrService } from 'ngx-toastr';
   template: `
     <div class="space-y-4">
       <div class="flex items-center justify-between">
-        <h1 class="text-2xl font-bold text-slate-200">Usuarios</h1>
+        <h1 class="text-2xl font-bold text-gray-900">Usuarios</h1>
       </div>
 
-      <mat-card class="!bg-slate-900 !border !border-slate-700">
+      <mat-card class="bg-white rounded-xl border border-gray-200">
         <mat-card-content>
           <div class="flex gap-4 mb-4 items-center">
             <mat-form-field appearance="outline" class="flex-1">
@@ -45,17 +45,17 @@ import { ToastrService } from 'ngx-toastr';
 
           <table mat-table [dataSource]="usuarios" class="w-full !bg-transparent">
             <ng-container matColumnDef="nombre">
-              <th mat-header-cell *matHeaderCellDef class="!text-slate-400">Nombre</th>
-              <td mat-cell *matCellDef="let u" class="!text-slate-200">{{ u.nombre }} {{ u.apellido }}</td>
+              <th mat-header-cell *matHeaderCellDef class="!text-gray-500">Nombre</th>
+              <td mat-cell *matCellDef="let u" class="!text-gray-900">{{ u.nombre }} {{ u.apellido }}</td>
             </ng-container>
 
             <ng-container matColumnDef="email">
-              <th mat-header-cell *matHeaderCellDef class="!text-slate-400">Email</th>
-              <td mat-cell *matCellDef="let u" class="!text-slate-300">{{ u.email }}</td>
+              <th mat-header-cell *matHeaderCellDef class="!text-gray-500">Email</th>
+              <td mat-cell *matCellDef="let u" class="!text-gray-700">{{ u.email }}</td>
             </ng-container>
 
             <ng-container matColumnDef="rol">
-              <th mat-header-cell *matHeaderCellDef class="!text-slate-400">Rol</th>
+              <th mat-header-cell *matHeaderCellDef class="!text-gray-500">Rol</th>
               <td mat-cell *matCellDef="let u">
                 <span class="px-2 py-1 rounded text-xs font-medium"
                   [class]="getRolClass(u.rol)">{{ u.rol }}</span>
@@ -63,16 +63,16 @@ import { ToastrService } from 'ngx-toastr';
             </ng-container>
 
             <ng-container matColumnDef="activo">
-              <th mat-header-cell *matHeaderCellDef class="!text-slate-400">Estado</th>
+              <th mat-header-cell *matHeaderCellDef class="!text-gray-500">Estado</th>
               <td mat-cell *matCellDef="let u">
-                <span [class]="u.activo ? 'text-green-400' : 'text-red-400'">
+                <span [class]="u.activo ? 'text-green-600' : 'text-red-500'">
                   {{ u.activo ? 'Activo' : 'Inactivo' }}
                 </span>
               </td>
             </ng-container>
 
             <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-            <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="hover:!bg-slate-800 cursor-pointer"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="hover:bg-gray-50 cursor-pointer"></tr>
           </table>
 
           <mat-paginator
@@ -126,14 +126,14 @@ export class UsuariosComponent implements OnInit {
 
   getRolClass(rol: string): string {
     const map: Record<string, string> = {
-      admin_sistema: 'bg-red-900/50 text-red-300',
-      admin_torneo:  'bg-orange-900/50 text-orange-300',
-      delegado:      'bg-blue-900/50 text-blue-300',
-      arbitro:       'bg-purple-900/50 text-purple-300',
-      veedor:        'bg-cyan-900/50 text-cyan-300',
-      entrenador:    'bg-green-900/50 text-green-300',
-      publico:       'bg-slate-700/50 text-slate-300',
+      admin_sistema: 'bg-red-50 text-red-700',
+      admin_torneo:  'bg-orange-50 text-orange-700',
+      delegado:      'bg-blue-50 text-blue-700',
+      arbitro:       'bg-purple-50 text-purple-700',
+      veedor:        'bg-cyan-50 text-cyan-700',
+      entrenador:    'bg-green-50 text-green-700',
+      publico:       'bg-gray-100 text-gray-700',
     };
-    return map[rol] || 'bg-slate-700/50 text-slate-300';
+    return map[rol] || 'bg-gray-100 text-gray-700';
   }
 }

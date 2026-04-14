@@ -1,128 +1,163 @@
 import { Component } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
-import { MatSidenavModule } from '@angular/material/sidenav';
-import { MatToolbarModule } from '@angular/material/toolbar';
-import { MatListModule } from '@angular/material/list';
 import { MatIconModule } from '@angular/material/icon';
-import { MatButtonModule } from '@angular/material/button';
-import { MatMenuModule } from '@angular/material/menu';
 import { AuthService } from '../services/auth.service';
+
+interface NavItem {
+  label: string;
+  icon: string;
+  route: string;
+  permiso?: { modulo: string; accion: string };
+  adminOnly?: boolean;
+  highlight?: boolean;
+}
+
+interface NavGroup {
+  title: string;
+  items: NavItem[];
+}
 
 @Component({
   selector: 'app-layout',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, MatSidenavModule, MatToolbarModule, MatListModule, MatIconModule, MatButtonModule, MatMenuModule],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, MatIconModule],
   template: `
-    <mat-sidenav-container class="h-full">
-      <mat-sidenav #sidenav mode="side" opened class="w-64 bg-slate-900 border-r border-slate-700">
-        <div class="p-4 border-b border-slate-700">
-          <h1 class="text-xl font-bold text-green-400">Torneo360</h1>
-          <p class="text-xs text-slate-400 mt-1">Gestion de Torneos</p>
+    <div class="flex h-screen overflow-hidden">
+
+      <!-- ═══ Overlay mobile ═══ -->
+      @if (sidebarOpen) {
+        <div class="fixed inset-0 bg-black/40 z-30 lg:hidden" (click)="sidebarOpen = false"></div>
+      }
+
+      <!-- ═══ SIDEBAR ═══ -->
+      <aside class="fixed lg:static inset-y-0 left-0 z-40 flex flex-col transition-transform duration-300 bg-green-950"
+        [class.translate-x-0]="sidebarOpen"
+        [class.-translate-x-full]="!sidebarOpen"
+        [class.lg:translate-x-0]="true"
+        [style.width.px]="260">
+
+        <!-- Logo -->
+        <div class="flex items-center gap-3 px-5 py-4 border-b border-green-800/50">
+          <div class="w-9 h-9 rounded-lg bg-green-600 flex items-center justify-center">
+            <mat-icon class="!text-white !text-xl">sports_soccer</mat-icon>
+          </div>
+          <div>
+            <h1 class="text-white text-sm font-bold tracking-wide">Torneo360</h1>
+            <p class="text-green-400 text-[10px] font-medium">Gestion de Torneos</p>
+          </div>
         </div>
 
-        <mat-nav-list>
-          <a mat-list-item routerLink="/dashboard" routerLinkActive="!bg-slate-800">
-            <mat-icon matListItemIcon>dashboard</mat-icon>
-            <span matListItemTitle>Dashboard</span>
-          </a>
+        <!-- Navegacion -->
+        <nav class="flex-1 overflow-y-auto py-3 px-3 space-y-5">
+          @for (group of navGroups; track group.title) {
+            <div>
+              <p class="text-[10px] font-semibold uppercase tracking-wider text-green-500/70 px-3 mb-1.5">{{ group.title }}</p>
+              @for (item of group.items; track item.route) {
+                @if (canShow(item)) {
+                  <a [routerLink]="item.route" routerLinkActive="nav-active"
+                    (click)="sidebarOpen = false"
+                    class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-300 hover:bg-green-900/50 hover:text-white transition-colors mb-0.5"
+                    [class.text-yellow-400]="item.highlight">
+                    <mat-icon class="!text-lg !w-5 !h-5 !leading-5"
+                      [class.text-red-400]="item.icon === 'live_tv'">{{ item.icon }}</mat-icon>
+                    <span>{{ item.label }}</span>
+                  </a>
+                }
+              }
+            </div>
+          }
+        </nav>
 
-          @if (auth.puede('torneos', 'ver')) {
-            <div class="px-4 pt-4 pb-1 text-xs font-semibold text-slate-500 uppercase">Torneo</div>
-            <a mat-list-item routerLink="/torneos" routerLinkActive="!bg-slate-800">
-              <mat-icon matListItemIcon>emoji_events</mat-icon>
-              <span matListItemTitle>Torneos</span>
-            </a>
+        <!-- Usuario -->
+        <div class="border-t border-green-800/50 p-3">
+          @if (auth.getUser(); as user) {
+            <div class="flex items-center gap-3 px-2">
+              <div class="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                {{ user.nombre.charAt(0) }}{{ user.apellido.charAt(0) }}
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="text-white text-xs font-medium truncate">{{ user.nombre }} {{ user.apellido }}</p>
+                <p class="text-green-400/70 text-[10px]">{{ user.rol }}</p>
+              </div>
+              <button (click)="auth.logout()" class="text-gray-400 hover:text-white transition-colors" title="Cerrar sesion">
+                <mat-icon class="!text-lg">logout</mat-icon>
+              </button>
+            </div>
           }
-          @if (auth.puede('clubes', 'ver')) {
-            <a mat-list-item routerLink="/clubes" routerLinkActive="!bg-slate-800">
-              <mat-icon matListItemIcon>groups</mat-icon>
-              <span matListItemTitle>Clubes</span>
-            </a>
-          }
-          @if (auth.puede('jugadores', 'ver')) {
-            <a mat-list-item routerLink="/jugadores" routerLinkActive="!bg-slate-800">
-              <mat-icon matListItemIcon>sports_soccer</mat-icon>
-              <span matListItemTitle>Jugadores</span>
-            </a>
-          }
-          @if (auth.puede('fixture', 'ver')) {
-            <a mat-list-item routerLink="/fixture" routerLinkActive="!bg-slate-800">
-              <mat-icon matListItemIcon>calendar_month</mat-icon>
-              <span matListItemTitle>Fixture</span>
-            </a>
-          }
-          @if (auth.puede('partidos', 'ver')) {
-            <a mat-list-item routerLink="/partidos/en-vivo" routerLinkActive="!bg-slate-800">
-              <mat-icon matListItemIcon class="text-red-400">live_tv</mat-icon>
-              <span matListItemTitle>En Vivo</span>
-            </a>
-          }
-          @if (auth.puede('posiciones', 'ver')) {
-            <a mat-list-item routerLink="/posiciones" routerLinkActive="!bg-slate-800">
-              <mat-icon matListItemIcon>leaderboard</mat-icon>
-              <span matListItemTitle>Posiciones</span>
-            </a>
-          }
+        </div>
+      </aside>
 
-          @if (auth.isAdmin()) {
-            <div class="px-4 pt-4 pb-1 text-xs font-semibold text-slate-500 uppercase">Admin</div>
-            <a mat-list-item routerLink="/admin/usuarios" routerLinkActive="!bg-slate-800">
-              <mat-icon matListItemIcon>manage_accounts</mat-icon>
-              <span matListItemTitle>Usuarios</span>
-            </a>
-            <a mat-list-item routerLink="/admin/permisos" routerLinkActive="!bg-slate-800">
-              <mat-icon matListItemIcon>security</mat-icon>
-              <span matListItemTitle>Permisos</span>
-            </a>
-            <a mat-list-item routerLink="/admin/configuracion" routerLinkActive="!bg-slate-800">
-              <mat-icon matListItemIcon>settings</mat-icon>
-              <span matListItemTitle>Configuracion</span>
-            </a>
-          }
-        </mat-nav-list>
-      </mat-sidenav>
+      <!-- ═══ CONTENIDO PRINCIPAL ═══ -->
+      <div class="flex-1 flex flex-col min-w-0">
 
-      <mat-sidenav-content class="bg-slate-950">
-        <mat-toolbar class="!bg-slate-900 border-b border-slate-700">
-          <button mat-icon-button (click)="sidenav.toggle()">
+        <!-- Top bar -->
+        <header class="flex items-center h-14 px-4 bg-white border-b border-gray-200 flex-shrink-0">
+          <button (click)="sidebarOpen = !sidebarOpen" class="text-gray-500 hover:text-gray-700 mr-3">
             <mat-icon>menu</mat-icon>
           </button>
+
           <span class="flex-1"></span>
 
           @if (auth.getUser(); as user) {
-            <button mat-button [matMenuTriggerFor]="userMenu" class="!text-slate-300">
-              <mat-icon class="mr-1">person</mat-icon>
-              {{ user.nombre }} {{ user.apellido }}
-            </button>
-            <mat-menu #userMenu="matMenu">
-              <div class="px-4 py-2 text-xs text-slate-400">{{ user.email }}</div>
-              <div class="px-4 pb-2 text-xs text-green-400">{{ user.rol }}</div>
-              <mat-divider></mat-divider>
-              <button mat-menu-item routerLink="/perfil">
-                <mat-icon>person</mat-icon>
-                <span>Mi perfil</span>
-              </button>
-              <button mat-menu-item (click)="auth.logout()">
-                <mat-icon>logout</mat-icon>
-                <span>Cerrar sesion</span>
-              </button>
-            </mat-menu>
+            <div class="flex items-center gap-2 text-sm text-gray-500">
+              <span class="hidden sm:inline">{{ user.nombre }} {{ user.apellido }}</span>
+              <span class="badge badge-aprobado !text-[10px]">{{ user.rol }}</span>
+            </div>
           }
-        </mat-toolbar>
+        </header>
 
-        <main class="p-6">
+        <!-- Main content -->
+        <main class="flex-1 overflow-auto p-4 md:p-6 bg-gray-50">
           <router-outlet />
         </main>
-      </mat-sidenav-content>
-    </mat-sidenav-container>
+      </div>
+    </div>
   `,
   styles: [`
     :host { display: block; height: 100vh; }
-    mat-sidenav { background-color: #0f172a !important; }
-    mat-sidenav-content { background-color: #020617 !important; }
-    mat-toolbar { height: 56px !important; }
   `],
 })
 export class LayoutComponent {
+  sidebarOpen = false;
+
+  navGroups: NavGroup[] = [
+    {
+      title: 'Principal',
+      items: [
+        { label: 'Dashboard', icon: 'dashboard', route: '/dashboard' },
+      ],
+    },
+    {
+      title: 'Torneo',
+      items: [
+        { label: 'Torneos', icon: 'emoji_events', route: '/torneos', permiso: { modulo: 'torneos', accion: 'ver' } },
+        { label: 'Clubes', icon: 'groups', route: '/clubes', permiso: { modulo: 'clubes', accion: 'ver' } },
+        { label: 'Jugadores', icon: 'sports_soccer', route: '/jugadores', permiso: { modulo: 'jugadores', accion: 'ver' } },
+      ],
+    },
+    {
+      title: 'Competencia',
+      items: [
+        { label: 'Fixture', icon: 'calendar_month', route: '/fixture', permiso: { modulo: 'fixture', accion: 'ver' } },
+        { label: 'En Vivo', icon: 'live_tv', route: '/partidos/en-vivo', permiso: { modulo: 'partidos', accion: 'ver' }, highlight: true },
+        { label: 'Posiciones', icon: 'leaderboard', route: '/posiciones', permiso: { modulo: 'posiciones', accion: 'ver' } },
+      ],
+    },
+    {
+      title: 'Administracion',
+      items: [
+        { label: 'Usuarios', icon: 'manage_accounts', route: '/admin/usuarios', adminOnly: true },
+        { label: 'Permisos', icon: 'security', route: '/admin/permisos', adminOnly: true },
+        { label: 'Configuracion', icon: 'settings', route: '/admin/configuracion', adminOnly: true },
+      ],
+    },
+  ];
+
   constructor(public auth: AuthService) {}
+
+  canShow(item: NavItem): boolean {
+    if (item.adminOnly) return this.auth.isAdmin();
+    if (item.permiso) return this.auth.puede(item.permiso.modulo, item.permiso.accion);
+    return true;
+  }
 }

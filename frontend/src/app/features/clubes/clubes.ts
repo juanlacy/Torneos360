@@ -20,7 +20,7 @@ import { AuthService } from '../../core/services/auth.service';
   template: `
     <div class="space-y-4">
       <div class="flex items-center justify-between">
-        <h1 class="text-2xl font-bold text-slate-200">Clubes</h1>
+        <h1 class="text-2xl font-bold text-gray-900">Clubes</h1>
         <div class="flex gap-2 items-center">
           <mat-form-field appearance="outline" class="!w-48" subscriptSizing="dynamic">
             <mat-label>Torneo</mat-label>
@@ -39,9 +39,9 @@ import { AuthService } from '../../core/services/auth.service';
       </div>
 
       @if (mostrarForm) {
-        <mat-card class="!bg-slate-900 !border !border-slate-700">
+        <mat-card class="bg-white rounded-xl border border-gray-200">
           <mat-card-content>
-            <h3 class="text-lg font-semibold text-slate-200 mb-4">{{ editando ? 'Editar' : 'Nuevo' }} Club</h3>
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ editando ? 'Editar' : 'Nuevo' }} Club</h3>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
               <mat-form-field appearance="outline">
                 <mat-label>Nombre</mat-label>
@@ -79,7 +79,7 @@ import { AuthService } from '../../core/services/auth.service';
 
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         @for (club of clubes; track club.id) {
-          <mat-card class="!bg-slate-900 !border !border-slate-700">
+          <mat-card class="bg-white rounded-xl border border-gray-200">
             <mat-card-content class="p-4">
               <div class="flex items-center gap-3">
                 @if (club.escudo_url) {
@@ -92,9 +92,9 @@ import { AuthService } from '../../core/services/auth.service';
                   </div>
                 }
                 <div class="flex-1">
-                  <h3 class="font-semibold text-slate-200">{{ club.nombre }}</h3>
+                  <h3 class="font-semibold text-gray-900">{{ club.nombre }}</h3>
                   @if (club.zona) {
-                    <span class="text-xs text-slate-400">Zona {{ club.zona.nombre }}</span>
+                    <span class="text-xs text-gray-500">Zona {{ club.zona.nombre }}</span>
                   }
                 </div>
                 <div class="flex gap-1">
@@ -106,8 +106,8 @@ import { AuthService } from '../../core/services/auth.service';
             </mat-card-content>
           </mat-card>
         } @empty {
-          <mat-card class="!bg-slate-900 !border !border-slate-700 col-span-full">
-            <mat-card-content class="p-8 text-center text-slate-400">
+          <mat-card class="bg-white rounded-xl border border-gray-200 col-span-full">
+            <mat-card-content class="p-8 text-center text-gray-500">
               @if (!filtroTorneo) {
                 <p>Selecciona un torneo para ver los clubes</p>
               } @else {
