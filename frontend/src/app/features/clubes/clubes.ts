@@ -18,10 +18,14 @@ import { AuthService } from '../../core/services/auth.service';
   standalone: true,
   imports: [FormsModule, MatCardModule, MatButtonModule, MatIconModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatTableModule, MatChipsModule],
   template: `
-    <div class="space-y-4">
+    <div class="space-y-6">
+      <!-- Header -->
       <div class="flex items-center justify-between">
-        <h1 class="text-2xl font-bold text-gray-900">Clubes</h1>
-        <div class="flex gap-2 items-center">
+        <div>
+          <h1 class="text-2xl font-bold text-gray-900">Clubes</h1>
+          <p class="text-sm text-gray-500 mt-0.5">Gestion de clubes del torneo</p>
+        </div>
+        <div class="flex gap-3 items-center">
           <mat-form-field appearance="outline" class="!w-48" subscriptSizing="dynamic">
             <mat-label>Torneo</mat-label>
             <mat-select [(ngModel)]="filtroTorneo" (selectionChange)="cargar()">
@@ -31,16 +35,19 @@ import { AuthService } from '../../core/services/auth.service';
             </mat-select>
           </mat-form-field>
           @if (auth.puede('clubes', 'crear')) {
-            <button mat-flat-button color="primary" (click)="mostrarForm = !mostrarForm">
+            <button mat-flat-button color="primary" (click)="mostrarForm = !mostrarForm"
+              class="!rounded-lg">
               <mat-icon>add</mat-icon> Nuevo Club
             </button>
           }
         </div>
       </div>
 
+      <!-- Formulario -->
       @if (mostrarForm) {
-        <mat-card class="bg-white rounded-xl border border-gray-200">
-          <mat-card-content>
+        <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div class="h-1 rounded-full bg-gradient-to-r from-[var(--color-primario)] to-[var(--color-acento)]"></div>
+          <div class="p-6">
             <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ editando ? 'Editar' : 'Nuevo' }} Club</h3>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
               <mat-form-field appearance="outline">
@@ -69,52 +76,82 @@ import { AuthService } from '../../core/services/auth.service';
                 <input matInput type="color" [(ngModel)]="form.color_secundario">
               </mat-form-field>
             </div>
-            <div class="flex gap-2 mt-2">
+            <div class="flex gap-2 mt-4">
               <button mat-flat-button color="primary" (click)="guardar()">{{ editando ? 'Actualizar' : 'Crear' }}</button>
               <button mat-stroked-button (click)="cancelar()">Cancelar</button>
             </div>
-          </mat-card-content>
-        </mat-card>
+          </div>
+        </div>
       }
 
+      <!-- Club Cards Grid -->
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         @for (club of clubes; track club.id) {
-          <mat-card class="bg-white rounded-xl border border-gray-200">
-            <mat-card-content class="p-4">
-              <div class="flex items-center gap-3">
+          <div class="bg-white rounded-xl border border-gray-200 hover:shadow-md transition-all duration-200 p-5">
+            <div class="flex items-center gap-4">
+              <!-- Escudo / Avatar with upload overlay -->
+              <div class="relative group shrink-0">
                 @if (club.escudo_url) {
-                  <img [src]="getEscudoUrl(club.escudo_url)" class="w-12 h-12 rounded object-cover" alt="Escudo">
+                  <img [src]="getEscudoUrl(club.escudo_url)" class="w-16 h-16 rounded-xl object-cover border border-gray-100" alt="Escudo">
                 } @else {
-                  <div class="w-12 h-12 rounded flex items-center justify-center text-xl font-bold"
+                  <div class="w-16 h-16 rounded-xl flex items-center justify-center text-2xl font-bold shadow-sm"
                     [style.background-color]="club.color_primario || '#334155'"
                     [style.color]="club.color_secundario || '#fff'">
                     {{ (club.nombre_corto || club.nombre).substring(0, 2).toUpperCase() }}
                   </div>
                 }
-                <div class="flex-1">
-                  <h3 class="font-semibold text-gray-900">{{ club.nombre }}</h3>
-                  @if (club.zona) {
-                    <span class="text-xs text-gray-500">Zona {{ club.zona.nombre }}</span>
-                  }
-                </div>
-                <div class="flex gap-1">
-                  @if (auth.puede('clubes', 'editar')) {
-                    <button mat-icon-button (click)="editar(club)"><mat-icon class="!text-sm">edit</mat-icon></button>
-                  }
-                </div>
+                @if (auth.puede('clubes', 'editar')) {
+                  <button
+                    class="absolute inset-0 w-16 h-16 rounded-xl bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                    (click)="escudoInput.click()">
+                    <mat-icon class="text-white !text-xl">photo_camera</mat-icon>
+                  </button>
+                  <input #escudoInput type="file" accept="image/*" class="hidden" (change)="onEscudoChange($event, club)">
+                }
               </div>
-            </mat-card-content>
-          </mat-card>
+
+              <!-- Info -->
+              <div class="flex-1 min-w-0">
+                <h3 class="font-semibold text-gray-900 truncate">{{ club.nombre }}</h3>
+                @if (club.nombre_corto) {
+                  <p class="text-[10px] text-gray-400 uppercase tracking-wide">{{ club.nombre_corto }}</p>
+                }
+                @if (club.zona) {
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700 mt-1.5">
+                    Zona {{ club.zona.nombre }}
+                  </span>
+                }
+              </div>
+
+              <!-- Actions -->
+              <div class="flex flex-col gap-1 shrink-0">
+                @if (auth.puede('clubes', 'editar')) {
+                  <button
+                    class="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                    (click)="editar(club)">
+                    <mat-icon class="!text-lg">edit</mat-icon>
+                  </button>
+                }
+              </div>
+            </div>
+
+            <!-- Color strip -->
+            <div class="flex gap-1 mt-3">
+              <div class="h-1 flex-1 rounded-full" [style.background-color]="club.color_primario || '#e2e8f0'"></div>
+              <div class="h-1 flex-1 rounded-full" [style.background-color]="club.color_secundario || '#f1f5f9'"></div>
+            </div>
+          </div>
         } @empty {
-          <mat-card class="bg-white rounded-xl border border-gray-200 col-span-full">
-            <mat-card-content class="p-8 text-center text-gray-500">
-              @if (!filtroTorneo) {
-                <p>Selecciona un torneo para ver los clubes</p>
-              } @else {
-                <p>No hay clubes en este torneo</p>
-              }
-            </mat-card-content>
-          </mat-card>
+          <div class="bg-white rounded-xl border border-gray-200 col-span-full py-12 text-center">
+            @if (!filtroTorneo) {
+              <mat-icon class="!text-5xl text-gray-300 mb-3">sports_soccer</mat-icon>
+              <p class="text-sm text-gray-500">Selecciona un torneo para ver los clubes</p>
+            } @else {
+              <mat-icon class="!text-5xl text-gray-300 mb-3">groups</mat-icon>
+              <p class="text-sm text-gray-500">No hay clubes en este torneo</p>
+              <p class="text-[10px] text-gray-400 mt-1">Crea el primer club para comenzar</p>
+            }
+          </div>
         }
       </div>
     </div>
@@ -176,5 +213,19 @@ export class ClubesComponent implements OnInit {
 
   getEscudoUrl(url: string): string {
     return url.startsWith('http') ? url : `${environment.apiUrl}${url}`;
+  }
+
+  onEscudoChange(event: Event, club: any) {
+    const input = event.target as HTMLInputElement;
+    if (!input.files?.length) return;
+    const formData = new FormData();
+    formData.append('escudo', input.files[0]);
+    this.http.post<any>(`${environment.apiUrl}/clubes/${club.id}/escudo`, formData).subscribe({
+      next: (res) => {
+        this.toastr.success('Escudo actualizado');
+        club.escudo_url = res.data?.escudo_url || res.escudo_url;
+      },
+      error: (e: any) => this.toastr.error(e.error?.message || 'Error al subir escudo'),
+    });
   }
 }

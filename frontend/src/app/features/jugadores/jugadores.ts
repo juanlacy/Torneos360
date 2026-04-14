@@ -7,7 +7,6 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
-import { MatTableModule } from '@angular/material/table';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatMenuModule } from '@angular/material/menu';
 import { environment } from '../../../environments/environment';
@@ -17,21 +16,25 @@ import { AuthService } from '../../core/services/auth.service';
 @Component({
   selector: 'app-jugadores',
   standalone: true,
-  imports: [FormsModule, MatCardModule, MatButtonModule, MatIconModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatTableModule, MatChipsModule, MatMenuModule],
+  imports: [FormsModule, MatCardModule, MatButtonModule, MatIconModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatChipsModule, MatMenuModule],
   template: `
-    <div class="space-y-4">
+    <div class="space-y-6">
+      <!-- Header -->
       <div class="flex items-center justify-between">
-        <h1 class="text-2xl font-bold text-gray-900">Jugadores</h1>
+        <div>
+          <h1 class="text-2xl font-bold text-gray-900">Jugadores</h1>
+          <p class="text-sm text-gray-500 mt-0.5">Registro y fichaje de jugadores</p>
+        </div>
         @if (auth.puede('jugadores', 'crear')) {
-          <button mat-flat-button color="primary" (click)="mostrarForm = !mostrarForm">
+          <button mat-flat-button color="primary" (click)="mostrarForm = !mostrarForm" class="!rounded-lg">
             <mat-icon>person_add</mat-icon> Nuevo Jugador
           </button>
         }
       </div>
 
       <!-- Filtros -->
-      <mat-card class="bg-white rounded-xl border border-gray-200">
-        <mat-card-content class="flex flex-wrap gap-4 items-center">
+      <div class="bg-white rounded-xl border border-gray-200 p-4">
+        <div class="flex flex-wrap gap-4 items-center">
           <mat-form-field appearance="outline" subscriptSizing="dynamic">
             <mat-label>Club</mat-label>
             <mat-select [(ngModel)]="filtros.club_id" (selectionChange)="cargar()">
@@ -64,13 +67,14 @@ import { AuthService } from '../../core/services/auth.service';
             <input matInput [(ngModel)]="filtros.search" (keyup.enter)="cargar()" placeholder="Nombre, apellido o DNI">
             <mat-icon matPrefix>search</mat-icon>
           </mat-form-field>
-        </mat-card-content>
-      </mat-card>
+        </div>
+      </div>
 
       <!-- Formulario nuevo jugador -->
       @if (mostrarForm) {
-        <mat-card class="bg-white rounded-xl border border-gray-200">
-          <mat-card-content>
+        <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div class="h-1 rounded-full bg-gradient-to-r from-[var(--color-primario)] to-[var(--color-acento)]"></div>
+          <div class="p-6">
             <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ editando ? 'Editar' : 'Nuevo' }} Jugador</h3>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
               <mat-form-field appearance="outline">
@@ -106,87 +110,96 @@ import { AuthService } from '../../core/services/auth.service';
                 </mat-select>
               </mat-form-field>
               <mat-form-field appearance="outline">
-                <mat-label>N° camiseta</mat-label>
+                <mat-label>N camiseta</mat-label>
                 <input matInput type="number" [(ngModel)]="form.numero_camiseta">
               </mat-form-field>
             </div>
-            <div class="flex gap-2 mt-2">
+            <div class="flex gap-2 mt-4">
               <button mat-flat-button color="primary" (click)="guardar()">{{ editando ? 'Actualizar' : 'Crear' }}</button>
               <button mat-stroked-button (click)="cancelarForm()">Cancelar</button>
             </div>
-          </mat-card-content>
-        </mat-card>
+          </div>
+        </div>
       }
 
       <!-- Tabla de jugadores -->
-      <mat-card class="bg-white rounded-xl border border-gray-200">
-        <mat-card-content>
-          <table mat-table [dataSource]="jugadores" class="w-full !bg-transparent">
-            <ng-container matColumnDef="jugador">
-              <th mat-header-cell *matHeaderCellDef class="!text-gray-500">Jugador</th>
-              <td mat-cell *matCellDef="let j" class="!text-gray-900">
-                <div class="flex items-center gap-2">
-                  <span class="font-medium">{{ j.apellido }}, {{ j.nombre }}</span>
-                  @if (j.numero_camiseta) {
-                    <span class="text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">#{{ j.numero_camiseta }}</span>
-                  }
-                </div>
-              </td>
-            </ng-container>
-
-            <ng-container matColumnDef="dni">
-              <th mat-header-cell *matHeaderCellDef class="!text-gray-500">DNI</th>
-              <td mat-cell *matCellDef="let j" class="!text-gray-700">{{ j.dni }}</td>
-            </ng-container>
-
-            <ng-container matColumnDef="club">
-              <th mat-header-cell *matHeaderCellDef class="!text-gray-500">Club</th>
-              <td mat-cell *matCellDef="let j" class="!text-gray-700">{{ j.club?.nombre_corto || j.club?.nombre }}</td>
-            </ng-container>
-
-            <ng-container matColumnDef="categoria">
-              <th mat-header-cell *matHeaderCellDef class="!text-gray-500">Cat.</th>
-              <td mat-cell *matCellDef="let j" class="!text-gray-700">{{ j.categoria?.nombre }}</td>
-            </ng-container>
-
-            <ng-container matColumnDef="fichaje">
-              <th mat-header-cell *matHeaderCellDef class="!text-gray-500">Fichaje</th>
-              <td mat-cell *matCellDef="let j">
-                <span class="px-2 py-0.5 rounded text-xs font-medium" [class]="getFichajeClass(j.estado_fichaje)">
-                  {{ j.estado_fichaje }}
-                </span>
-              </td>
-            </ng-container>
-
-            <ng-container matColumnDef="acciones">
-              <th mat-header-cell *matHeaderCellDef class="!text-gray-500 w-20">Acc.</th>
-              <td mat-cell *matCellDef="let j">
-                <button mat-icon-button [matMenuTriggerFor]="menuJugador">
-                  <mat-icon>more_vert</mat-icon>
-                </button>
-                <mat-menu #menuJugador="matMenu">
-                  @if (auth.puede('jugadores', 'editar')) {
-                    <button mat-menu-item (click)="editarJugador(j)"><mat-icon>edit</mat-icon> Editar</button>
-                  }
-                  @if (auth.isAdmin() && j.estado_fichaje === 'pendiente') {
-                    <button mat-menu-item (click)="cambiarFichaje(j, 'aprobado')"><mat-icon>check_circle</mat-icon> Aprobar fichaje</button>
-                    <button mat-menu-item (click)="cambiarFichaje(j, 'rechazado')"><mat-icon>cancel</mat-icon> Rechazar fichaje</button>
-                  }
-                </mat-menu>
-              </td>
-            </ng-container>
-
-            <tr mat-header-row *matHeaderRowDef="columnas"></tr>
-            <tr mat-row *matRowDef="let row; columns: columnas;" class="hover:bg-gray-50"></tr>
+      <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        @if (jugadores.length) {
+          <table class="w-full">
+            <thead class="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Jugador</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">DNI</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Club</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Cat.</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Fichaje</th>
+                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wide w-20">Acc.</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (j of jugadores; track j.id) {
+                <tr class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                  <!-- Jugador -->
+                  <td class="px-4 py-3">
+                    <div class="flex items-center gap-3">
+                      <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs font-bold text-gray-600 shrink-0"
+                        [style.background-color]="j.club?.color_primario || '#e2e8f0'"
+                        [style.color]="j.club?.color_secundario || '#475569'">
+                        {{ (j.nombre?.charAt(0) || '') + (j.apellido?.charAt(0) || '') }}
+                      </div>
+                      <div>
+                        <span class="font-medium text-gray-900 text-sm">{{ j.apellido }}, {{ j.nombre }}</span>
+                        @if (j.numero_camiseta) {
+                          <span class="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-500">#{{ j.numero_camiseta }}</span>
+                        }
+                      </div>
+                    </div>
+                  </td>
+                  <!-- DNI -->
+                  <td class="px-4 py-3 text-sm text-gray-600">{{ j.dni }}</td>
+                  <!-- Club -->
+                  <td class="px-4 py-3 text-sm text-gray-600">{{ j.club?.nombre_corto || j.club?.nombre }}</td>
+                  <!-- Categoria -->
+                  <td class="px-4 py-3">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
+                      {{ j.categoria?.nombre }}
+                    </span>
+                  </td>
+                  <!-- Fichaje -->
+                  <td class="px-4 py-3">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" [class]="getFichajeClass(j.estado_fichaje)">
+                      {{ j.estado_fichaje }}
+                    </span>
+                  </td>
+                  <!-- Acciones -->
+                  <td class="px-4 py-3 text-right">
+                    <button
+                      class="w-8 h-8 rounded-lg inline-flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+                      [matMenuTriggerFor]="menuJugador">
+                      <mat-icon class="!text-lg">more_vert</mat-icon>
+                    </button>
+                    <mat-menu #menuJugador="matMenu">
+                      @if (auth.puede('jugadores', 'editar')) {
+                        <button mat-menu-item (click)="editarJugador(j)"><mat-icon>edit</mat-icon> Editar</button>
+                      }
+                      @if (auth.isAdmin() && j.estado_fichaje === 'pendiente') {
+                        <button mat-menu-item (click)="cambiarFichaje(j, 'aprobado')"><mat-icon>check_circle</mat-icon> Aprobar fichaje</button>
+                        <button mat-menu-item (click)="cambiarFichaje(j, 'rechazado')"><mat-icon>cancel</mat-icon> Rechazar fichaje</button>
+                      }
+                    </mat-menu>
+                  </td>
+                </tr>
+              }
+            </tbody>
           </table>
-
-          @if (!jugadores.length) {
-            <div class="p-8 text-center text-gray-500">
-              <p>No se encontraron jugadores</p>
-            </div>
-          }
-        </mat-card-content>
-      </mat-card>
+        } @else {
+          <div class="py-12 text-center">
+            <mat-icon class="!text-5xl text-gray-300 mb-3">person_search</mat-icon>
+            <p class="text-sm text-gray-500">No se encontraron jugadores</p>
+            <p class="text-[10px] text-gray-400 mt-1">Ajusta los filtros o agrega nuevos jugadores</p>
+          </div>
+        }
+      </div>
     </div>
   `,
 })
@@ -265,9 +278,9 @@ export class JugadoresComponent implements OnInit {
 
   getFichajeClass(estado: string): string {
     const map: Record<string, string> = {
-      pendiente: 'bg-yellow-50 text-yellow-700',
-      aprobado: 'bg-green-50 text-green-700',
-      rechazado: 'bg-red-50 text-red-700',
+      pendiente: 'bg-yellow-100 text-yellow-700',
+      aprobado: 'bg-green-100 text-green-700',
+      rechazado: 'bg-red-100 text-red-700',
       baja: 'bg-gray-100 text-gray-700',
     };
     return map[estado] || 'bg-gray-100 text-gray-700';

@@ -21,6 +21,7 @@ export { TablaPosiciones } from './TablaPosiciones.js';
 export { TablaPosicionesClub } from './TablaPosicionesClub.js';
 export { Configuracion } from './Configuracion.js';
 export { InformeArbitro } from './InformeArbitro.js';
+export { Documento } from './Documento.js';
 
 // ─── Asociaciones ───────────────────────────────────────────────────────────
 import { Usuario } from './Usuario.js';

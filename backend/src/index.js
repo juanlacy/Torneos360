@@ -31,6 +31,7 @@ import partidosRoutes   from './routes/partidos.js';
 import posicionesRoutes      from './routes/posiciones.js';
 import configuracionRoutes   from './routes/configuracion.js';
 import informesRoutes        from './routes/informes.js';
+import documentosRoutes      from './routes/documentos.js';
 
 // ─── Swagger ─────────────────────────────────────────────────────────────────
 import swaggerJsdoc from 'swagger-jsdoc';
@@ -121,6 +122,7 @@ mkdirSync(join(__dirname, '..', 'uploads', 'escudos'), { recursive: true });
 mkdirSync(join(__dirname, '..', 'uploads', 'jugadores'), { recursive: true });
 mkdirSync(join(__dirname, '..', 'uploads', 'informes'), { recursive: true });
 mkdirSync(join(__dirname, '..', 'uploads', 'torneos'), { recursive: true });
+mkdirSync(join(__dirname, '..', 'uploads', 'documentos'), { recursive: true });
 app.use('/uploads', express.static(join(__dirname, '..', 'uploads')));
 
 // ─── Rutas protegidas ───────────────────────────────────────────────────────
@@ -137,6 +139,7 @@ app.use('/partidos',   apiLimiter, partidosRoutes);
 app.use('/posiciones',    apiLimiter, posicionesRoutes);
 app.use('/configuracion', apiLimiter, configuracionRoutes);
 app.use('/informes',      apiLimiter, informesRoutes);
+app.use('/documentos',    apiLimiter, documentosRoutes);
 
 // ─── Health check ───────────────────────────────────────────────────────────
 app.get('/health', async (req, res) => {

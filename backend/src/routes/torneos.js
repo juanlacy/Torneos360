@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { authenticateToken, requireAdminTorneo, requirePermiso } from '../middleware/authMiddleware.js';
 import {
   listar, obtener, crear, actualizar, generarCategorias, crearZona, eliminarZona,
-  getBranding, updateBranding, uploadLogo, subirLogo,
+  getBranding, updateBranding, uploadLogo, subirLogo, getStats,
 } from '../controllers/torneosController.js';
 
 const router = Router();
@@ -18,6 +18,9 @@ router.put('/:id', requireAdminTorneo, actualizar);
 router.post('/:id/generar-categorias', requireAdminTorneo, generarCategorias);
 router.post('/:id/zonas', requireAdminTorneo, crearZona);
 router.delete('/:torneoId/zonas/:id', requireAdminTorneo, eliminarZona);
+
+// Stats (dashboard)
+router.get('/:id/stats', requirePermiso('torneos', 'ver'), getStats);
 
 // Branding
 router.get('/:id/branding', requirePermiso('torneos', 'ver'), getBranding);

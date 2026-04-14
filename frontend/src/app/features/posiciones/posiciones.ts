@@ -6,7 +6,6 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatTableModule } from '@angular/material/table';
 import { MatTabsModule } from '@angular/material/tabs';
 import { environment } from '../../../environments/environment';
 import { ToastrService } from 'ngx-toastr';
@@ -15,12 +14,16 @@ import { AuthService } from '../../core/services/auth.service';
 @Component({
   selector: 'app-posiciones',
   standalone: true,
-  imports: [FormsModule, MatCardModule, MatButtonModule, MatIconModule, MatSelectModule, MatFormFieldModule, MatTableModule, MatTabsModule],
+  imports: [FormsModule, MatCardModule, MatButtonModule, MatIconModule, MatSelectModule, MatFormFieldModule, MatTabsModule],
   template: `
-    <div class="space-y-4">
+    <div class="space-y-6">
+      <!-- Header -->
       <div class="flex items-center justify-between">
-        <h1 class="text-2xl font-bold text-gray-900">Tabla de Posiciones</h1>
-        <div class="flex gap-2 items-center">
+        <div>
+          <h1 class="text-2xl font-bold text-gray-900">Tabla de Posiciones</h1>
+          <p class="text-sm text-gray-500 mt-0.5">Clasificacion general y por categoria</p>
+        </div>
+        <div class="flex gap-3 items-center">
           <mat-form-field appearance="outline" subscriptSizing="dynamic">
             <mat-label>Torneo</mat-label>
             <mat-select [(ngModel)]="torneoId" (selectionChange)="cargar()">
@@ -30,7 +33,7 @@ import { AuthService } from '../../core/services/auth.service';
             </mat-select>
           </mat-form-field>
           @if (auth.isAdmin() && torneoId) {
-            <button mat-stroked-button (click)="recalcular()">
+            <button mat-stroked-button (click)="recalcular()" class="!rounded-lg">
               <mat-icon>refresh</mat-icon> Recalcular
             </button>
           }
@@ -40,34 +43,63 @@ import { AuthService } from '../../core/services/auth.service';
       <mat-tab-group class="posiciones-tabs" (selectedTabChange)="onTabChange($event)">
         <!-- Tab General -->
         <mat-tab label="General Club">
-          <mat-card class="bg-white rounded-xl border border-gray-200 mt-4">
-            <mat-card-content>
-              <table mat-table [dataSource]="posicionesClub" class="w-full !bg-transparent">
-                <ng-container matColumnDef="pos">
-                  <th mat-header-cell *matHeaderCellDef class="!text-gray-500 w-12">#</th>
-                  <td mat-cell *matCellDef="let p; let i = index" class="!text-gray-700 font-bold">{{ i + 1 }}</td>
-                </ng-container>
-                <ng-container matColumnDef="club">
-                  <th mat-header-cell *matHeaderCellDef class="!text-gray-500">Club</th>
-                  <td mat-cell *matCellDef="let p" class="!text-gray-900 font-medium">{{ p.club?.nombre }}</td>
-                </ng-container>
-                <ng-container matColumnDef="puntos">
-                  <th mat-header-cell *matHeaderCellDef class="!text-gray-500 text-center">Pts</th>
-                  <td mat-cell *matCellDef="let p" class="!text-green-600 font-bold text-center text-lg">{{ p.puntos_totales }}</td>
-                </ng-container>
-                <tr mat-header-row *matHeaderRowDef="['pos', 'club', 'puntos']"></tr>
-                <tr mat-row *matRowDef="let row; columns: ['pos', 'club', 'puntos'];" class="hover:bg-gray-50"></tr>
+          <div class="bg-white rounded-xl border border-gray-200 overflow-hidden mt-4">
+            @if (posicionesClub.length) {
+              <table class="w-full">
+                <thead class="bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wide w-14">#</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Club</th>
+                    <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wide w-24">Puntos</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (p of posicionesClub; track p.club?.id; let i = $index) {
+                    <tr class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                      <!-- Position -->
+                      <td class="px-4 py-3 text-center">
+                        @if (i === 0) {
+                          <span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-yellow-100 text-yellow-700 text-xs font-bold">1</span>
+                        } @else if (i === 1) {
+                          <span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-gray-200 text-gray-600 text-xs font-bold">2</span>
+                        } @else if (i === 2) {
+                          <span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-amber-100 text-amber-700 text-xs font-bold">3</span>
+                        } @else {
+                          <span class="text-sm text-gray-500 font-medium">{{ i + 1 }}</span>
+                        }
+                      </td>
+                      <!-- Club -->
+                      <td class="px-4 py-3">
+                        <div class="flex items-center gap-3">
+                          <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
+                            [style.background-color]="p.club?.color_primario || '#e2e8f0'"
+                            [style.color]="p.club?.color_secundario || '#475569'">
+                            {{ (p.club?.nombre_corto || p.club?.nombre || '--').substring(0, 2).toUpperCase() }}
+                          </div>
+                          <span class="font-medium text-gray-900">{{ p.club?.nombre }}</span>
+                        </div>
+                      </td>
+                      <!-- Points -->
+                      <td class="px-4 py-3 text-center">
+                        <span class="text-xl font-bold text-[var(--color-primario)]">{{ p.puntos_totales }}</span>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
               </table>
-              @if (!posicionesClub.length) {
-                <p class="text-center text-gray-500 py-6">Sin datos. Los puntos se calculan al finalizar partidos.</p>
-              }
-            </mat-card-content>
-          </mat-card>
+            } @else {
+              <div class="py-12 text-center">
+                <mat-icon class="!text-5xl text-gray-300 mb-3">leaderboard</mat-icon>
+                <p class="text-sm text-gray-500">Sin datos de posiciones</p>
+                <p class="text-[10px] text-gray-400 mt-1">Los puntos se calculan al finalizar partidos</p>
+              </div>
+            }
+          </div>
         </mat-tab>
 
         <!-- Tab por Categoria -->
         <mat-tab label="Por Categoria">
-          <div class="mt-4 mb-2">
+          <div class="mt-4 mb-3">
             <mat-form-field appearance="outline" subscriptSizing="dynamic">
               <mat-label>Categoria</mat-label>
               <mat-select [(ngModel)]="filtroCategoria" (selectionChange)="cargarPorCategoria()">
@@ -78,65 +110,85 @@ import { AuthService } from '../../core/services/auth.service';
             </mat-form-field>
           </div>
 
-          <mat-card class="bg-white rounded-xl border border-gray-200">
-            <mat-card-content>
-              <table mat-table [dataSource]="posicionesCategoria" class="w-full !bg-transparent">
-                <ng-container matColumnDef="pos">
-                  <th mat-header-cell *matHeaderCellDef class="!text-gray-500 w-12">#</th>
-                  <td mat-cell *matCellDef="let p; let i = index" class="!text-gray-700 font-bold">{{ i + 1 }}</td>
-                </ng-container>
-                <ng-container matColumnDef="club">
-                  <th mat-header-cell *matHeaderCellDef class="!text-gray-500">Club</th>
-                  <td mat-cell *matCellDef="let p" class="!text-gray-900 font-medium">{{ p.club?.nombre_corto || p.club?.nombre }}</td>
-                </ng-container>
-                <ng-container matColumnDef="pj">
-                  <th mat-header-cell *matHeaderCellDef class="!text-gray-500 text-center">PJ</th>
-                  <td mat-cell *matCellDef="let p" class="!text-gray-700 text-center">{{ p.pj }}</td>
-                </ng-container>
-                <ng-container matColumnDef="pg">
-                  <th mat-header-cell *matHeaderCellDef class="!text-gray-500 text-center">PG</th>
-                  <td mat-cell *matCellDef="let p" class="!text-gray-700 text-center">{{ p.pg }}</td>
-                </ng-container>
-                <ng-container matColumnDef="pe">
-                  <th mat-header-cell *matHeaderCellDef class="!text-gray-500 text-center">PE</th>
-                  <td mat-cell *matCellDef="let p" class="!text-gray-700 text-center">{{ p.pe }}</td>
-                </ng-container>
-                <ng-container matColumnDef="pp">
-                  <th mat-header-cell *matHeaderCellDef class="!text-gray-500 text-center">PP</th>
-                  <td mat-cell *matCellDef="let p" class="!text-gray-700 text-center">{{ p.pp }}</td>
-                </ng-container>
-                <ng-container matColumnDef="gf">
-                  <th mat-header-cell *matHeaderCellDef class="!text-gray-500 text-center">GF</th>
-                  <td mat-cell *matCellDef="let p" class="!text-gray-700 text-center">{{ p.gf }}</td>
-                </ng-container>
-                <ng-container matColumnDef="gc">
-                  <th mat-header-cell *matHeaderCellDef class="!text-gray-500 text-center">GC</th>
-                  <td mat-cell *matCellDef="let p" class="!text-gray-700 text-center">{{ p.gc }}</td>
-                </ng-container>
-                <ng-container matColumnDef="dg">
-                  <th mat-header-cell *matHeaderCellDef class="!text-gray-500 text-center">DG</th>
-                  <td mat-cell *matCellDef="let p" class="!text-gray-700 text-center">{{ p.dg }}</td>
-                </ng-container>
-                <ng-container matColumnDef="pts">
-                  <th mat-header-cell *matHeaderCellDef class="!text-gray-500 text-center">Pts</th>
-                  <td mat-cell *matCellDef="let p" class="!text-green-600 font-bold text-center">{{ p.puntos }}</td>
-                </ng-container>
-                <tr mat-header-row *matHeaderRowDef="columnasCategoria"></tr>
-                <tr mat-row *matRowDef="let row; columns: columnasCategoria;" class="hover:bg-gray-50"></tr>
-              </table>
-              @if (!posicionesCategoria.length) {
-                <p class="text-center text-gray-500 py-6">Selecciona una categoria para ver las posiciones</p>
-              }
-            </mat-card-content>
-          </mat-card>
+          <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            @if (posicionesCategoria.length) {
+              <div class="overflow-x-auto">
+                <table class="w-full">
+                  <thead class="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                      <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wide w-14">#</th>
+                      <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Club</th>
+                      <th class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wide">PJ</th>
+                      <th class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wide">PG</th>
+                      <th class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wide">PE</th>
+                      <th class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wide">PP</th>
+                      <th class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wide">GF</th>
+                      <th class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wide">GC</th>
+                      <th class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wide">DG</th>
+                      <th class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wide font-bold">Pts</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (p of posicionesCategoria; track p.club?.id; let i = $index) {
+                      <tr class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                        <!-- Position -->
+                        <td class="px-4 py-3 text-center">
+                          @if (i === 0) {
+                            <span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-yellow-100 text-yellow-700 text-xs font-bold">1</span>
+                          } @else if (i === 1) {
+                            <span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-gray-200 text-gray-600 text-xs font-bold">2</span>
+                          } @else if (i === 2) {
+                            <span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-amber-100 text-amber-700 text-xs font-bold">3</span>
+                          } @else {
+                            <span class="text-sm text-gray-500 font-medium">{{ i + 1 }}</span>
+                          }
+                        </td>
+                        <!-- Club -->
+                        <td class="px-4 py-3">
+                          <div class="flex items-center gap-3">
+                            <div class="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0"
+                              [style.background-color]="p.club?.color_primario || '#e2e8f0'"
+                              [style.color]="p.club?.color_secundario || '#475569'">
+                              {{ (p.club?.nombre_corto || p.club?.nombre || '--').substring(0, 2).toUpperCase() }}
+                            </div>
+                            <span class="font-medium text-gray-900 text-sm">{{ p.club?.nombre_corto || p.club?.nombre }}</span>
+                          </div>
+                        </td>
+                        <!-- Stats -->
+                        <td class="px-3 py-3 text-center text-sm text-gray-600">{{ p.pj }}</td>
+                        <td class="px-3 py-3 text-center text-sm text-gray-600">{{ p.pg }}</td>
+                        <td class="px-3 py-3 text-center text-sm text-gray-600">{{ p.pe }}</td>
+                        <td class="px-3 py-3 text-center text-sm text-gray-600">{{ p.pp }}</td>
+                        <td class="px-3 py-3 text-center text-sm text-gray-600">{{ p.gf }}</td>
+                        <td class="px-3 py-3 text-center text-sm text-gray-600">{{ p.gc }}</td>
+                        <td class="px-3 py-3 text-center text-sm font-medium"
+                          [class]="(p.dg > 0 ? 'text-green-600' : p.dg < 0 ? 'text-red-600' : 'text-gray-500')">
+                          {{ p.dg > 0 ? '+' : '' }}{{ p.dg }}
+                        </td>
+                        <!-- Points -->
+                        <td class="px-3 py-3 text-center">
+                          <span class="text-lg font-bold text-[var(--color-primario)]">{{ p.puntos }}</span>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            } @else {
+              <div class="py-12 text-center">
+                <mat-icon class="!text-5xl text-gray-300 mb-3">format_list_numbered</mat-icon>
+                <p class="text-sm text-gray-500">Selecciona una categoria para ver las posiciones</p>
+              </div>
+            }
+          </div>
         </mat-tab>
       </mat-tab-group>
     </div>
   `,
   styles: [`
     ::ng-deep .posiciones-tabs .mdc-tab { color: #6b7280 !important; }
-    ::ng-deep .posiciones-tabs .mdc-tab--active { color: #16a34a !important; }
-    ::ng-deep .posiciones-tabs .mdc-tab-indicator__content--underline { border-color: #16a34a !important; }
+    ::ng-deep .posiciones-tabs .mdc-tab--active { color: var(--color-primario, #762c7e) !important; }
+    ::ng-deep .posiciones-tabs .mdc-tab-indicator__content--underline { border-color: var(--color-primario, #762c7e) !important; }
   `],
 })
 export class PosicionesComponent implements OnInit {

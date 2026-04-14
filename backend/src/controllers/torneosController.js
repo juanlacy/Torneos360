@@ -1,4 +1,4 @@
-import { Torneo, Zona, Categoria, Club } from '../models/index.js';
+import { Torneo, Zona, Categoria, Club, Jugador, Partido, FixtureJornada } from '../models/index.js';
 import { registrarAudit } from '../services/auditService.js';
 import multer from 'multer';
 import { fileURLToPath } from 'url';
@@ -141,6 +141,45 @@ export const eliminarZona = async (req, res) => {
     const deleted = await Zona.destroy({ where: { id: req.params.id, torneo_id: req.params.torneoId } });
     if (!deleted) return res.status(404).json({ success: false, message: 'Zona no encontrada' });
     res.json({ success: true, message: 'Zona eliminada' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// GET /torneos/:id/stats  (para el dashboard)
+export const getStats = async (req, res) => {
+  try {
+    const torneoId = parseInt(req.params.id);
+    const clubIds = (await Club.findAll({ where: { torneo_id: torneoId, activo: true }, attributes: ['id'] })).map(c => c.id);
+    const jornadaIds = (await FixtureJornada.findAll({ where: { torneo_id: torneoId }, attributes: ['id'] })).map(j => j.id);
+
+    const [clubes, jugadores, jornadas, partidos, enCurso, finalizados, pendientes] = await Promise.all([
+      Club.count({ where: { torneo_id: torneoId, activo: true } }),
+      clubIds.length ? Jugador.count({ where: { club_id: clubIds, activo: true } }) : 0,
+      FixtureJornada.count({ where: { torneo_id: torneoId } }),
+      jornadaIds.length ? Partido.count({ where: { jornada_id: jornadaIds } }) : 0,
+      jornadaIds.length ? Partido.count({ where: { jornada_id: jornadaIds, estado: 'en_curso' } }) : 0,
+      jornadaIds.length ? Partido.count({ where: { jornada_id: jornadaIds, estado: 'finalizado' } }) : 0,
+      jornadaIds.length ? Partido.count({ where: { jornada_id: jornadaIds, estado: 'programado' } }) : 0,
+    ]);
+
+    // Proximos partidos (programados, con fecha)
+    const proximosPartidos = jornadaIds.length ? await Partido.findAll({
+      where: { jornada_id: jornadaIds, estado: 'programado' },
+      include: [
+        { model: Club, as: 'clubLocal', attributes: ['id', 'nombre', 'nombre_corto', 'escudo_url'] },
+        { model: Club, as: 'clubVisitante', attributes: ['id', 'nombre', 'nombre_corto', 'escudo_url'] },
+        { model: Categoria, as: 'categoria', attributes: ['id', 'nombre'] },
+        { model: FixtureJornada, as: 'jornada', attributes: ['numero_jornada', 'fase', 'fecha'] },
+      ],
+      order: [[{ model: FixtureJornada, as: 'jornada' }, 'fecha', 'ASC'], ['hora_inicio', 'ASC']],
+      limit: 10,
+    }) : [];
+
+    res.json({
+      success: true,
+      data: { clubes, jugadores, jornadas, partidos, enCurso, finalizados, pendientes, proximosPartidos },
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

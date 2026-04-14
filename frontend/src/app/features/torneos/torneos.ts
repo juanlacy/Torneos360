@@ -19,19 +19,25 @@ import { AuthService } from '../../core/services/auth.service';
   standalone: true,
   imports: [FormsModule, RouterLink, MatCardModule, MatButtonModule, MatIconModule, MatChipsModule, MatFormFieldModule, MatInputModule, MatSelectModule],
   template: `
-    <div class="space-y-4">
+    <div class="space-y-6">
+      <!-- Header -->
       <div class="flex items-center justify-between">
-        <h1 class="text-2xl font-bold text-gray-900">Torneos</h1>
+        <div>
+          <h1 class="text-2xl font-bold text-gray-900">Torneos</h1>
+          <p class="text-sm text-gray-500 mt-0.5">Administracion de torneos</p>
+        </div>
         @if (auth.puede('torneos', 'crear')) {
-          <button mat-flat-button color="primary" (click)="mostrarFormulario = !mostrarFormulario">
+          <button mat-flat-button color="primary" (click)="mostrarFormulario = !mostrarFormulario" class="!rounded-lg">
             <mat-icon>add</mat-icon> Nuevo Torneo
           </button>
         }
       </div>
 
+      <!-- Formulario -->
       @if (mostrarFormulario) {
-        <mat-card class="bg-white rounded-xl border border-gray-200">
-          <mat-card-content>
+        <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div class="h-1 rounded-full bg-gradient-to-r from-[var(--color-primario)] to-[var(--color-acento)]"></div>
+          <div class="p-6">
             <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ editando ? 'Editar' : 'Nuevo' }} Torneo</h3>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
               <mat-form-field appearance="outline">
@@ -52,60 +58,83 @@ import { AuthService } from '../../core/services/auth.service';
                 </mat-select>
               </mat-form-field>
             </div>
-            <div class="flex gap-2 mt-2">
+            <div class="flex gap-2 mt-4">
               <button mat-flat-button color="primary" (click)="guardar()">{{ editando ? 'Actualizar' : 'Crear' }}</button>
               <button mat-stroked-button (click)="cancelar()">Cancelar</button>
             </div>
-          </mat-card-content>
-        </mat-card>
+          </div>
+        </div>
       }
 
+      <!-- Torneo Cards -->
       @for (torneo of torneos; track torneo.id) {
-        <mat-card class="bg-white rounded-xl border border-gray-200">
-          <mat-card-content class="p-4">
-            <div class="flex items-center justify-between">
-              <div>
-                <h2 class="text-xl font-bold text-gray-900">{{ torneo.nombre }}</h2>
-                <div class="flex items-center gap-3 mt-2">
-                  <span class="text-sm text-gray-500">Anio: {{ torneo.anio }}</span>
-                  <span class="px-2 py-0.5 rounded text-xs font-medium"
+        <div class="bg-white rounded-xl border border-gray-200 hover:shadow-md transition-shadow overflow-hidden">
+          <!-- Brand bar -->
+          <div class="h-1 rounded-full bg-gradient-to-r from-[var(--color-primario)] to-[var(--color-acento)]"></div>
+
+          <div class="p-6">
+            <div class="flex items-start justify-between">
+              <div class="flex-1">
+                <div class="flex items-center gap-3">
+                  <h2 class="text-xl font-bold text-gray-900">{{ torneo.nombre }}</h2>
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
                     [class]="getEstadoClass(torneo.estado)">{{ torneo.estado }}</span>
-                  <span class="text-sm text-gray-500">{{ torneo.categorias?.length || 0 }} categorias</span>
-                  <span class="text-sm text-gray-500">{{ torneo.zonas?.length || 0 }} zonas</span>
+                </div>
+                <div class="flex items-center gap-4 mt-2">
+                  <span class="text-sm text-gray-500">
+                    <mat-icon class="!text-sm align-middle mr-0.5">calendar_today</mat-icon>
+                    {{ torneo.anio }}
+                  </span>
+                  <span class="text-sm text-gray-500">
+                    <mat-icon class="!text-sm align-middle mr-0.5">category</mat-icon>
+                    {{ torneo.categorias?.length || 0 }} categorias
+                  </span>
+                  <span class="text-sm text-gray-500">
+                    <mat-icon class="!text-sm align-middle mr-0.5">map</mat-icon>
+                    {{ torneo.zonas?.length || 0 }} zonas
+                  </span>
                 </div>
               </div>
-              <div class="flex gap-2">
+
+              <div class="flex gap-2 items-center shrink-0">
                 @if (auth.puede('torneos', 'editar')) {
                   @if (!torneo.categorias?.length) {
-                    <button mat-stroked-button color="primary" (click)="generarCategorias(torneo)">
-                      <mat-icon>auto_fix_high</mat-icon> Generar Categorias
+                    <button mat-stroked-button color="primary" (click)="generarCategorias(torneo)" class="!rounded-lg !text-sm">
+                      <mat-icon class="!text-lg">auto_fix_high</mat-icon> Generar Categorias
                     </button>
                   }
-                  <button mat-icon-button (click)="editar(torneo)"><mat-icon>edit</mat-icon></button>
+                  <button
+                    class="w-9 h-9 rounded-lg flex items-center justify-center text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                    (click)="editar(torneo)">
+                    <mat-icon class="!text-xl">edit</mat-icon>
+                  </button>
                 }
-                <a mat-icon-button [routerLink]="['/torneos', torneo.id]"><mat-icon>visibility</mat-icon></a>
+                <a class="w-9 h-9 rounded-lg flex items-center justify-center text-gray-400 hover:text-[var(--color-primario)] hover:bg-purple-50 transition-colors"
+                  [routerLink]="['/torneos', torneo.id]">
+                  <mat-icon class="!text-xl">visibility</mat-icon>
+                </a>
               </div>
             </div>
 
+            <!-- Categories chips -->
             @if (torneo.categorias?.length) {
-              <div class="flex flex-wrap gap-2 mt-3">
+              <div class="flex flex-wrap gap-1.5 mt-4 pt-4 border-t border-gray-100">
                 @for (cat of torneo.categorias; track cat.id) {
-                  <span class="px-2 py-1 rounded text-xs"
-                    [class]="cat.es_preliminar ? 'bg-yellow-50 text-yellow-700' : 'bg-green-50 text-green-700'">
+                  <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium"
+                    [class]="cat.es_preliminar ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-green-50 text-green-700 border border-green-200'">
                     {{ cat.nombre }}
                   </span>
                 }
               </div>
             }
-          </mat-card-content>
-        </mat-card>
+          </div>
+        </div>
       } @empty {
-        <mat-card class="bg-white rounded-xl border border-gray-200">
-          <mat-card-content class="p-8 text-center text-gray-500">
-            <mat-icon class="!text-5xl text-gray-400 mb-2">emoji_events</mat-icon>
-            <p>No hay torneos creados</p>
-          </mat-card-content>
-        </mat-card>
+        <div class="bg-white rounded-xl border border-gray-200 py-12 text-center">
+          <mat-icon class="!text-5xl text-gray-300 mb-3">emoji_events</mat-icon>
+          <p class="text-sm text-gray-500">No hay torneos creados</p>
+          <p class="text-[10px] text-gray-400 mt-1">Crea el primer torneo para comenzar</p>
+        </div>
       }
     </div>
   `,
@@ -156,9 +185,9 @@ export class TorneosComponent implements OnInit {
   getEstadoClass(estado: string): string {
     const map: Record<string, string> = {
       planificacion: 'bg-gray-100 text-gray-700',
-      inscripcion: 'bg-blue-50 text-blue-700',
-      en_curso: 'bg-green-50 text-green-700',
-      finalizado: 'bg-red-50 text-red-700',
+      inscripcion: 'bg-blue-100 text-blue-700',
+      en_curso: 'bg-green-100 text-green-700',
+      finalizado: 'bg-red-100 text-red-700',
     };
     return map[estado] || 'bg-gray-100 text-gray-700';
   }
