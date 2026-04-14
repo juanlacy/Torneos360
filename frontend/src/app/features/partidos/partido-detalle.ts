@@ -1,4 +1,5 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Subscription } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -14,6 +15,7 @@ import { MatInputModule } from '@angular/material/input';
 import { environment } from '../../../environments/environment';
 import { ToastrService } from 'ngx-toastr';
 import { AuthService } from '../../core/services/auth.service';
+import { SocketService } from '../../core/services/socket.service';
 
 @Component({
   selector: 'app-partido-detalle',
@@ -234,7 +236,7 @@ import { AuthService } from '../../core/services/auth.service';
     }
   `,
 })
-export class PartidoDetalleComponent implements OnInit {
+export class PartidoDetalleComponent implements OnInit, OnDestroy {
   partido: any = null;
   evento: any = { tipo: 'gol', club_id: null, minuto: null, detalle: '' };
   informes: any[] = [];
@@ -247,15 +249,72 @@ export class PartidoDetalleComponent implements OnInit {
   private mediaRecorder: MediaRecorder | null = null;
   private audioChunks: Blob[] = [];
   private informeActual: any = null;
+  private subs: Subscription[] = [];
+  private partidoId: number | null = null;
 
-  constructor(private http: HttpClient, private route: ActivatedRoute, public auth: AuthService, private toastr: ToastrService) {}
+  constructor(
+    private http: HttpClient, private route: ActivatedRoute,
+    public auth: AuthService, private toastr: ToastrService,
+    private socket: SocketService,
+  ) {}
 
   ngOnInit() { this.cargar(); }
+
+  ngOnDestroy() {
+    if (this.partidoId) this.socket.leaveMatch(this.partidoId);
+    this.subs.forEach(s => s.unsubscribe());
+  }
+
+  private setupSocketListeners() {
+    if (!this.partido) return;
+    this.partidoId = this.partido.id;
+    this.socket.joinMatch(this.partido.id);
+
+    // Escuchar eventos en tiempo real
+    this.subs.push(
+      this.socket.on('match:event').subscribe((data: any) => {
+        if (data.partido_id === this.partido.id) {
+          this.partido.goles_local = data.goles_local;
+          this.partido.goles_visitante = data.goles_visitante;
+          if (data.evento) {
+            this.partido.eventos = [...(this.partido.eventos || []), data.evento];
+          }
+        }
+      }),
+      this.socket.on('match:score').subscribe((data: any) => {
+        if (data.partido_id === this.partido.id) {
+          this.partido.goles_local = data.goles_local;
+          this.partido.goles_visitante = data.goles_visitante;
+        }
+      }),
+      this.socket.on('match:start').subscribe((data: any) => {
+        if (data.partido_id === this.partido.id) {
+          this.partido.estado = 'en_curso';
+          this.partido.hora_inicio = data.hora_inicio;
+          this.toastr.info('El partido ha comenzado');
+        }
+      }),
+      this.socket.on('match:end').subscribe((data: any) => {
+        if (data.partido_id === this.partido.id) {
+          this.partido.estado = 'finalizado';
+          this.partido.goles_local = data.goles_local;
+          this.partido.goles_visitante = data.goles_visitante;
+          this.toastr.info('Partido finalizado');
+        }
+      }),
+      this.socket.on('match:confirm').subscribe((data: any) => {
+        if (data.partido_id === this.partido.id) {
+          this.partido.confirmado_arbitro = true;
+          this.toastr.success('Partido confirmado por el arbitro');
+        }
+      }),
+    );
+  }
 
   cargar() {
     const id = this.route.snapshot.paramMap.get('id');
     this.http.get<any>(`${environment.apiUrl}/partidos/${id}`).subscribe({
-      next: res => { this.partido = res.data; this.cargarInformes(); },
+      next: res => { this.partido = res.data; this.cargarInformes(); if (!this.partidoId) this.setupSocketListeners(); },
       error: () => this.toastr.error('Error al cargar partido'),
     });
   }

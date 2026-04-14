@@ -1,6 +1,7 @@
 import { Partido, PartidoEvento, Club, Categoria, Arbitro, Veedor, Jugador, FixtureJornada } from '../models/index.js';
 import { recalcularDespuesDePartido } from '../services/standingsCalculatorService.js';
 import { registrarAudit } from '../services/auditService.js';
+import { emitMatchStart, emitMatchEventNew, emitMatchScore, emitMatchEnd, emitMatchConfirm, emitStandingsUpdate } from '../sockets/matchSocket.js';
 
 // GET /partidos/:id
 export const obtener = async (req, res) => {
@@ -67,6 +68,7 @@ export const iniciar = async (req, res) => {
     });
 
     registrarAudit({ req, accion: 'INICIAR_PARTIDO', entidad: 'partidos', entidad_id: partido.id });
+    emitMatchStart(partido);
     res.json({ success: true, data: partido, message: 'Partido iniciado' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -107,6 +109,10 @@ export const registrarEvento = async (req, res) => {
       ],
     });
 
+    // Emitir via Socket.io
+    await partido.reload();
+    emitMatchEventNew(partido, eventoCompleto.toJSON());
+
     res.status(201).json({ success: true, data: eventoCompleto });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -146,6 +152,12 @@ export const finalizar = async (req, res) => {
     }
 
     registrarAudit({ req, accion: 'FINALIZAR_PARTIDO', entidad: 'partidos', entidad_id: partido.id, despues: { goles_local: partido.goles_local, goles_visitante: partido.goles_visitante } });
+    emitMatchEnd(partido);
+
+    // Emitir actualizacion de posiciones
+    const jornada = await FixtureJornada.findByPk(partido.jornada_id, { attributes: ['torneo_id'] });
+    if (jornada) emitStandingsUpdate(jornada.torneo_id);
+
     res.json({ success: true, data: partido, message: 'Partido finalizado' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -164,6 +176,7 @@ export const confirmar = async (req, res) => {
     await partido.update({ confirmado_arbitro: true, actualizado_en: new Date() });
 
     registrarAudit({ req, accion: 'CONFIRMAR_PARTIDO', entidad: 'partidos', entidad_id: partido.id });
+    emitMatchConfirm(partido);
     res.json({ success: true, data: partido, message: 'Partido confirmado por el arbitro' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

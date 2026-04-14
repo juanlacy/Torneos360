@@ -48,6 +48,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/fixture/fixture').then(m => m.FixtureComponent),
       },
       {
+        path: 'partidos/en-vivo',
+        loadComponent: () => import('./features/partidos/marcador-vivo').then(m => m.MarcadorVivoComponent),
+      },
+      {
         path: 'partidos/:id',
         loadComponent: () => import('./features/partidos/partido-detalle').then(m => m.PartidoDetalleComponent),
       },

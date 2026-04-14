@@ -43,12 +43,41 @@
 | 1 | Fundacion (Auth, Permisos, Layout) | Completada |
 | 2 | Entidades Core (Clubes, Jugadores, Staff) | Completada |
 | 3 | Competencia (Fixture, Partidos, Posiciones) | Completada |
-| 4 | Control de Partidos en Tiempo Real | Pendiente |
+| 4 | Control de Partidos en Tiempo Real | Completada |
 | 5 | PWA, Estadisticas y Reportes | Pendiente |
 
 ---
 
 ## Registro de Cambios
+
+### 2026-04-14 — Fase 4: Control de Partidos en Tiempo Real (Socket.io)
+
+#### Backend
+- **matchSocket.js**: handlers de emision para todos los eventos del partido
+  - `match:start` — partido iniciado
+  - `match:event` — nuevo evento (gol, tarjeta, sustitucion) con marcador actualizado
+  - `match:score` — actualizacion de marcador
+  - `match:end` — partido finalizado
+  - `match:confirm` — arbitro confirmo resultado
+  - `standings:update` — posiciones recalculadas
+  - `global:match_update` — broadcast global para dashboards
+- **partidosController** actualizado: cada accion (iniciar, evento, finalizar, confirmar) emite via Socket.io
+- Rooms por partido (`match:${id}`) y por jornada (`jornada:${id}`) para segmentar audiencia
+
+#### Frontend
+- **Partido Detalle** ahora es en tiempo real:
+  - Se suscribe a la room del partido al entrar
+  - Recibe goles, tarjetas y cambios de estado sin recargar
+  - Se desuscribe al salir (OnDestroy)
+- **Marcador en Vivo** (nueva pantalla):
+  - Muestra todos los partidos de una jornada en tiempo real
+  - Cards con marcador grande, indicador "EN VIVO" con animacion pulse
+  - Ultimo evento visible debajo del marcador
+  - Agrupado por categoria
+  - Se actualiza instantaneamente via Socket.io al recibir eventos
+- Menu lateral: nuevo item "En Vivo" con icono rojo
+
+---
 
 ### 2026-04-14 — Configuracion, Informes de Arbitro e Integraciones IA
 

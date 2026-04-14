@@ -52,9 +52,9 @@ import { AuthService } from '../services/auth.service';
             </a>
           }
           @if (auth.puede('partidos', 'ver')) {
-            <a mat-list-item routerLink="/partidos" routerLinkActive="!bg-slate-800">
-              <mat-icon matListItemIcon>scoreboard</mat-icon>
-              <span matListItemTitle>Partidos</span>
+            <a mat-list-item routerLink="/partidos/en-vivo" routerLinkActive="!bg-slate-800">
+              <mat-icon matListItemIcon class="text-red-400">live_tv</mat-icon>
+              <span matListItemTitle>En Vivo</span>
             </a>
           }
           @if (auth.puede('posiciones', 'ver')) {
