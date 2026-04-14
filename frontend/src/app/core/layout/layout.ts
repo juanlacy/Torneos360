@@ -104,6 +104,38 @@ interface NavGroup {
             <mat-icon>menu</mat-icon>
           </button>
 
+          <!-- Selector de torneo -->
+          @if ((branding.torneos$ | async); as torneos) {
+            @if (torneos.length > 1) {
+              <div class="relative">
+                <button (click)="torneoDropdown = !torneoDropdown"
+                  class="flex items-center gap-2 px-3 py-1.5 border border-gray-200 bg-gray-50 hover:bg-gray-100 rounded-lg text-sm transition-colors">
+                  <mat-icon class="!text-base" [style.color]="(branding.branding$ | async)?.color_primario">emoji_events</mat-icon>
+                  <span class="text-gray-700 font-medium hidden sm:inline">{{ (branding.branding$ | async)?.nombre }}</span>
+                  <mat-icon class="!text-sm text-gray-400">expand_more</mat-icon>
+                </button>
+                @if (torneoDropdown) {
+                  <div class="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[200px]">
+                    @for (t of torneos; track t.id) {
+                      <button (click)="cambiarTorneo(t.id)"
+                        class="w-full px-4 py-2.5 text-left text-sm hover:bg-gray-50 flex items-center justify-between transition-colors first:rounded-t-lg last:rounded-b-lg"
+                        [class.font-semibold]="t.id === branding.torneoActivoId"
+                        [style.color]="t.id === branding.torneoActivoId ? (branding.branding$ | async)?.color_primario : ''">
+                        <span>{{ t.nombre }}</span>
+                        @if (t.id === branding.torneoActivoId) {
+                          <mat-icon class="!text-base">check</mat-icon>
+                        }
+                      </button>
+                    }
+                  </div>
+                  <div class="fixed inset-0 z-40" (click)="torneoDropdown = false"></div>
+                }
+              </div>
+            } @else if (torneos.length === 1) {
+              <span class="text-sm text-gray-500 font-medium hidden sm:inline">{{ torneos[0].nombre }}</span>
+            }
+          }
+
           <span class="flex-1"></span>
 
           @if (auth.getUser(); as user) {
@@ -127,6 +159,7 @@ interface NavGroup {
 })
 export class LayoutComponent {
   sidebarOpen = false;
+  torneoDropdown = false;
 
   navGroups: NavGroup[] = [
     {
@@ -167,5 +200,10 @@ export class LayoutComponent {
     if (item.adminOnly) return this.auth.isAdmin();
     if (item.permiso) return this.auth.puede(item.permiso.modulo, item.permiso.accion);
     return true;
+  }
+
+  cambiarTorneo(id: number): void {
+    this.torneoDropdown = false;
+    this.branding.seleccionarTorneo(id);
   }
 }

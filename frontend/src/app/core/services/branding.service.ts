@@ -14,6 +14,13 @@ export interface TorneoBranding {
   color_acento: string;
 }
 
+export interface TorneoResumen {
+  id: number;
+  nombre: string;
+  anio: number;
+  estado: string;
+}
+
 const DEFAULTS: TorneoBranding = {
   id: 0,
   nombre: 'Torneo360',
@@ -22,63 +29,79 @@ const DEFAULTS: TorneoBranding = {
   color_acento: '#8cb24d',
 };
 
+const STORAGE_KEY = 'torneo360_torneo_activo';
+
 @Injectable({ providedIn: 'root' })
 export class BrandingService {
   private brandingSubject = new BehaviorSubject<TorneoBranding>(DEFAULTS);
   branding$ = this.brandingSubject.asObservable();
 
-  private torneoActivoId: number | null = null;
+  private torneosSubject = new BehaviorSubject<TorneoResumen[]>([]);
+  torneos$ = this.torneosSubject.asObservable();
+
+  private torneoActivoIdSubject = new BehaviorSubject<number | null>(null);
+  torneoActivoId$ = this.torneoActivoIdSubject.asObservable();
 
   constructor(private http: HttpClient, private auth: AuthService) {
-    // Cargar branding al loguearse
     this.auth.currentUser$.subscribe(user => {
       if (user) {
-        this.cargarTorneoActivo();
+        this.cargarTorneos();
       } else {
         this.reset();
       }
     });
   }
 
-  /** Carga el branding del primer torneo activo */
-  cargarTorneoActivo(): void {
+  /** ID del torneo activo */
+  get torneoActivoId(): number | null {
+    return this.torneoActivoIdSubject.value;
+  }
+
+  /** Carga la lista de torneos y selecciona el activo */
+  cargarTorneos(): void {
     this.http.get<any>(`${environment.apiUrl}/torneos`).subscribe({
       next: (res) => {
-        if (res.data?.length) {
-          const torneo = res.data[0];
-          this.aplicar(torneo.id);
-        }
+        const torneos: TorneoResumen[] = (res.data || []).map((t: any) => ({
+          id: t.id, nombre: t.nombre, anio: t.anio, estado: t.estado,
+        }));
+        this.torneosSubject.next(torneos);
+
+        if (!torneos.length) return;
+
+        // Restaurar seleccion guardada o usar el primero
+        const guardado = localStorage.getItem(STORAGE_KEY);
+        const guardadoId = guardado ? parseInt(guardado) : null;
+        const existe = torneos.find(t => t.id === guardadoId);
+
+        this.seleccionarTorneo(existe ? guardadoId! : torneos[0].id);
       },
     });
   }
 
-  /** Aplica branding de un torneo especifico */
-  aplicar(torneoId: number): void {
-    if (this.torneoActivoId === torneoId) return;
-    this.torneoActivoId = torneoId;
+  /** Cambia el torneo activo */
+  seleccionarTorneo(torneoId: number): void {
+    localStorage.setItem(STORAGE_KEY, String(torneoId));
+    this.torneoActivoIdSubject.next(torneoId);
 
     this.http.get<any>(`${environment.apiUrl}/torneos/${torneoId}/branding`).subscribe({
       next: (res) => {
-        if (res.data) {
-          this.setBranding(res.data);
-        }
+        if (res.data) this.setBranding(res.data);
       },
     });
   }
 
-  /** Fuerza recarga del branding actual (despues de editar) */
+  /** Fuerza recarga del branding actual */
   recargar(): void {
-    if (this.torneoActivoId) {
-      const id = this.torneoActivoId;
-      this.torneoActivoId = null; // Reset para forzar recarga
-      this.aplicar(id);
+    const id = this.torneoActivoId;
+    if (id) {
+      this.torneoActivoIdSubject.next(null);
+      this.seleccionarTorneo(id);
     }
   }
 
   private setBranding(cfg: TorneoBranding): void {
     this.brandingSubject.next(cfg);
 
-    // Aplicar CSS custom properties al :root
     const root = document.documentElement;
     root.style.setProperty('--color-primario', cfg.color_primario || DEFAULTS.color_primario);
     root.style.setProperty('--color-secundario', cfg.color_secundario || DEFAULTS.color_secundario);
@@ -95,7 +118,8 @@ export class BrandingService {
   }
 
   private reset(): void {
-    this.torneoActivoId = null;
+    this.torneoActivoIdSubject.next(null);
+    this.torneosSubject.next([]);
     this.brandingSubject.next(DEFAULTS);
     const root = document.documentElement;
     root.style.setProperty('--color-primario', DEFAULTS.color_primario);
