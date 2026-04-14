@@ -1,6 +1,13 @@
 import { FixtureJornada, Partido, Club, Categoria, Zona, Arbitro, Veedor } from '../models/index.js';
 import { generarFixture } from '../services/fixtureGeneratorService.js';
 import { registrarAudit } from '../services/auditService.js';
+import { Op } from 'sequelize';
+
+// Horario fijo por categoria (anio_nacimiento -> hora)
+const HORARIOS_CATEGORIA = {
+  2013: '14:00', 2019: '15:00', 2014: '16:00', 2018: '17:00',
+  2017: '18:00', 2016: '19:00', 2015: '20:00',
+};
 
 // POST /fixture/generar/:torneoId
 export const generar = async (req, res) => {
@@ -103,4 +110,151 @@ export const actualizarJornada = async (req, res) => {
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Creacion manual de fixture
+// ═══════════════════════════════════════════════════════════════════════════
+
+// POST /fixture/jornada  (crear jornada manualmente)
+export const crearJornada = async (req, res) => {
+  try {
+    const { torneo_id, zona_id, numero_jornada, fase, fecha } = req.body;
+    if (!torneo_id || !numero_jornada) {
+      return res.status(400).json({ success: false, message: 'torneo_id y numero_jornada son requeridos' });
+    }
+
+    const jornada = await FixtureJornada.create({
+      torneo_id, zona_id: zona_id || null,
+      numero_jornada, fase: fase || 'ida', fecha: fecha || null,
+    });
+
+    res.status(201).json({ success: true, data: jornada });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// DELETE /fixture/jornada/:jornadaId
+export const eliminarJornada = async (req, res) => {
+  try {
+    await Partido.destroy({ where: { jornada_id: req.params.jornadaId } });
+    const deleted = await FixtureJornada.destroy({ where: { id: req.params.jornadaId } });
+    if (!deleted) return res.status(404).json({ success: false, message: 'Jornada no encontrada' });
+    res.json({ success: true, message: 'Jornada y sus partidos eliminados' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+/**
+ * POST /fixture/jornada/:jornadaId/enfrentamiento
+ *
+ * Agrega un cruce (enfrentamiento) a la jornada.
+ * Genera automaticamente 7 partidos (uno por categoria) con horarios fijos.
+ *
+ * Body: { club_local_id, club_visitante_id }
+ */
+export const agregarEnfrentamiento = async (req, res) => {
+  try {
+    const jornadaId = parseInt(req.params.jornadaId);
+    const { club_local_id, club_visitante_id } = req.body;
+
+    if (!club_local_id || !club_visitante_id) {
+      return res.status(400).json({ success: false, message: 'club_local_id y club_visitante_id son requeridos' });
+    }
+    if (club_local_id === club_visitante_id) {
+      return res.status(400).json({ success: false, message: 'Un club no puede jugar contra si mismo' });
+    }
+
+    const jornada = await FixtureJornada.findByPk(jornadaId);
+    if (!jornada) return res.status(404).json({ success: false, message: 'Jornada no encontrada' });
+
+    // Verificar que no exista ya este cruce en la jornada
+    const yaExiste = await Partido.findOne({
+      where: {
+        jornada_id: jornadaId,
+        [Op.or]: [
+          { club_local_id, club_visitante_id },
+          { club_local_id: club_visitante_id, club_visitante_id: club_local_id },
+        ],
+      },
+    });
+    if (yaExiste) {
+      return res.status(409).json({ success: false, message: 'Este cruce ya existe en la jornada' });
+    }
+
+    // Obtener categorias del torneo
+    const categorias = await Categoria.findAll({
+      where: { torneo_id: jornada.torneo_id },
+      order: [['orden', 'ASC']],
+    });
+
+    // Crear un partido por categoria con horario asignado
+    const partidos = [];
+    for (const cat of categorias) {
+      const hora = HORARIOS_CATEGORIA[cat.anio_nacimiento];
+      let horaInicio = null;
+      if (hora && jornada.fecha) {
+        horaInicio = new Date(`${jornada.fecha}T${hora}:00`);
+      }
+
+      const partido = await Partido.create({
+        jornada_id: jornadaId,
+        categoria_id: cat.id,
+        club_local_id,
+        club_visitante_id,
+        cancha: req.body.cancha || null,
+        hora_inicio: horaInicio,
+      });
+      partidos.push(partido);
+    }
+
+    // Recargar con includes
+    const partidosCompletos = await Partido.findAll({
+      where: { id: partidos.map(p => p.id) },
+      include: [
+        { model: Club, as: 'clubLocal', attributes: ['id', 'nombre', 'nombre_corto'] },
+        { model: Club, as: 'clubVisitante', attributes: ['id', 'nombre', 'nombre_corto'] },
+        { model: Categoria, as: 'categoria', attributes: ['id', 'nombre', 'anio_nacimiento'] },
+      ],
+      order: [['hora_inicio', 'ASC']],
+    });
+
+    registrarAudit({ req, accion: 'CREAR_ENFRENTAMIENTO', entidad: 'fixture_jornadas', entidad_id: jornadaId,
+      despues: { club_local_id, club_visitante_id, partidos: partidos.length } });
+
+    res.status(201).json({
+      success: true,
+      data: partidosCompletos,
+      message: `Cruce creado: ${categorias.length} partidos generados con horarios`,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// DELETE /fixture/jornada/:jornadaId/enfrentamiento  (eliminar un cruce)
+// Body: { club_local_id, club_visitante_id }
+export const eliminarEnfrentamiento = async (req, res) => {
+  try {
+    const jornadaId = parseInt(req.params.jornadaId);
+    const { club_local_id, club_visitante_id } = req.body;
+
+    const deleted = await Partido.destroy({
+      where: {
+        jornada_id: jornadaId,
+        club_local_id, club_visitante_id,
+      },
+    });
+
+    res.json({ success: true, message: `${deleted} partidos eliminados` });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// GET /fixture/horarios  (devuelve los horarios fijos por categoria)
+export const getHorarios = (req, res) => {
+  res.json({ success: true, data: HORARIOS_CATEGORIA });
 };
