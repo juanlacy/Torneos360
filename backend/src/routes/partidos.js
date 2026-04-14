@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { authenticateToken, requirePermiso, requireAdminTorneo, requireArbitro, requireDelegado } from '../middleware/authMiddleware.js';
-import { obtener, actualizar, iniciar, registrarEvento, finalizar, confirmar, suspender } from '../controllers/partidosController.js';
+import { obtener, jugadoresDisponibles, actualizar, iniciar, registrarEvento, finalizar, confirmar, suspender } from '../controllers/partidosController.js';
 
 const router = Router();
 
@@ -8,6 +8,7 @@ router.use(authenticateToken);
 
 // Consultar partido
 router.get('/:id', requirePermiso('partidos', 'ver'), obtener);
+router.get('/:id/jugadores-disponibles', requirePermiso('partidos', 'ver'), jugadoresDisponibles);
 
 // Actualizar datos (arbitro, cancha)
 router.put('/:id', requirePermiso('partidos', 'editar'), actualizar);

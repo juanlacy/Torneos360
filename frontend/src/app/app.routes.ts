@@ -56,6 +56,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/partidos/partido-detalle').then(m => m.PartidoDetalleComponent),
       },
       {
+        path: 'partidos/:id/control',
+        loadComponent: () => import('./features/partidos/panel-control').then(m => m.PanelControlComponent),
+      },
+      {
         path: 'posiciones',
         loadComponent: () => import('./features/posiciones/posiciones').then(m => m.PosicionesComponent),
       },

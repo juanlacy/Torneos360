@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -20,7 +20,7 @@ import { SocketService } from '../../core/services/socket.service';
 @Component({
   selector: 'app-partido-detalle',
   standalone: true,
-  imports: [FormsModule, UpperCasePipe, MatCardModule, MatButtonModule, MatIconModule, MatDividerModule, MatChipsModule, MatSelectModule, MatFormFieldModule, MatInputModule],
+  imports: [FormsModule, RouterLink, UpperCasePipe, MatCardModule, MatButtonModule, MatIconModule, MatDividerModule, MatChipsModule, MatSelectModule, MatFormFieldModule, MatInputModule],
   template: `
     @if (partido) {
       <div class="space-y-4">
@@ -53,14 +53,19 @@ import { SocketService } from '../../core/services/socket.service';
             </div>
 
             <!-- Acciones segun estado -->
-            <div class="flex justify-center gap-3 mt-6">
+            <div class="flex justify-center gap-3 mt-6 flex-wrap">
+              @if (auth.puede('partidos', 'editar') && partido.estado !== 'finalizado') {
+                <a [routerLink]="['/partidos', partido.id, 'control']" mat-flat-button color="primary" class="!bg-[var(--color-primario)]">
+                  <mat-icon>settings_remote</mat-icon> Panel de Control
+                </a>
+              }
               @if (partido.estado === 'programado' && auth.puede('partidos', 'editar')) {
-                <button mat-flat-button color="primary" (click)="iniciarPartido()">
+                <button mat-stroked-button (click)="iniciarPartido()">
                   <mat-icon>play_arrow</mat-icon> Iniciar Partido
                 </button>
               }
               @if (partido.estado === 'en_curso' && auth.puede('partidos', 'editar')) {
-                <button mat-flat-button color="warn" (click)="finalizarPartido()">
+                <button mat-stroked-button color="warn" (click)="finalizarPartido()">
                   <mat-icon>stop</mat-icon> Finalizar Partido
                 </button>
               }

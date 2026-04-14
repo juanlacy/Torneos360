@@ -110,10 +110,16 @@ import { SocketService } from '../../core/services/socket.service';
                       </span>
                     </div>
 
-                    <!-- Link al detalle -->
-                    <a [routerLink]="['/partidos', p.id]" class="text-gray-400 hover:text-gray-600 shrink-0">
-                      <mat-icon>open_in_new</mat-icon>
-                    </a>
+                    <!-- Acciones -->
+                    <div class="flex flex-col gap-1 shrink-0">
+                      <a [routerLink]="['/partidos', p.id, 'control']" class="text-[var(--color-primario)] hover:scale-110 transition-transform"
+                        title="Panel de control">
+                        <mat-icon class="!text-base !w-5 !h-5">settings_remote</mat-icon>
+                      </a>
+                      <a [routerLink]="['/partidos', p.id]" class="text-gray-400 hover:text-gray-600" title="Detalle">
+                        <mat-icon class="!text-base !w-5 !h-5">open_in_new</mat-icon>
+                      </a>
+                    </div>
                   </div>
 
                   <!-- Ultimo evento -->

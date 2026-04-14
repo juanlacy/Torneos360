@@ -31,6 +31,40 @@ export const obtener = async (req, res) => {
   }
 };
 
+// GET /partidos/:id/jugadores-disponibles
+// Devuelve los jugadores aprobados de ambos clubes en la categoria del partido
+export const jugadoresDisponibles = async (req, res) => {
+  try {
+    const partido = await Partido.findByPk(req.params.id);
+    if (!partido) return res.status(404).json({ success: false, message: 'Partido no encontrado' });
+
+    const local = await Jugador.findAll({
+      where: {
+        club_id: partido.club_local_id,
+        categoria_id: partido.categoria_id,
+        activo: true,
+        estado_fichaje: 'aprobado',
+      },
+      attributes: ['id', 'nombre', 'apellido', 'dni', 'numero_camiseta', 'foto_url', 'club_id'],
+      order: [['numero_camiseta', 'ASC'], ['apellido', 'ASC']],
+    });
+    const visitante = await Jugador.findAll({
+      where: {
+        club_id: partido.club_visitante_id,
+        categoria_id: partido.categoria_id,
+        activo: true,
+        estado_fichaje: 'aprobado',
+      },
+      attributes: ['id', 'nombre', 'apellido', 'dni', 'numero_camiseta', 'foto_url', 'club_id'],
+      order: [['numero_camiseta', 'ASC'], ['apellido', 'ASC']],
+    });
+
+    res.json({ success: true, data: { local, visitante } });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 // PUT /partidos/:id  (actualizar datos basicos: arbitro, cancha, etc.)
 export const actualizar = async (req, res) => {
   try {
