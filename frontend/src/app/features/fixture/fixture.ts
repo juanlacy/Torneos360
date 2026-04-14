@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -91,7 +91,8 @@ import { BrandingService } from '../../core/services/branding.service';
 
       <!-- ═══ Jornadas ═══ -->
       @for (jornada of jornadasFiltradas; track jornada.id) {
-        <mat-expansion-panel class="bg-white rounded-xl border border-gray-200 !shadow-none">
+        <mat-expansion-panel class="bg-white rounded-xl border border-gray-200 !shadow-none"
+          (opened)="!jornada._partidos && cargarPartidos(jornada)">
           <mat-expansion-panel-header>
             <mat-panel-title class="text-gray-900 font-semibold">
               Fecha {{ jornada.numero_jornada }} — {{ jornada.fase | uppercase }}
@@ -108,11 +109,10 @@ import { BrandingService } from '../../core/services/branding.service';
           </mat-expansion-panel-header>
 
           <div class="mt-2">
-            <!-- Boton cargar partidos -->
-            @if (!jornada._partidos) {
-              <button mat-stroked-button (click)="cargarPartidos(jornada)">
-                <mat-icon>sports_soccer</mat-icon> Ver partidos
-              </button>
+            @if (jornada._loading) {
+              <p class="text-gray-400 text-sm py-3 text-center">Cargando partidos...</p>
+            } @else if (!jornada._partidos) {
+              <p class="text-gray-400 text-sm py-3 text-center">Expandir para cargar</p>
             } @else {
               <!-- Cruces agrupados -->
               @for (cruce of jornada._cruces; track cruce.key) {
@@ -239,6 +239,7 @@ export class FixtureComponent implements OnInit {
   constructor(
     private http: HttpClient, public auth: AuthService,
     private toastr: ToastrService, private branding: BrandingService,
+    private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit() {
@@ -276,9 +277,13 @@ export class FixtureComponent implements OnInit {
   }
 
   cargarPartidos(jornada: any) {
+    jornada._loading = true;
+    this.cdr.detectChanges();
+
     this.http.get<any>(`${environment.apiUrl}/fixture/jornada/${jornada.id}/partidos`).subscribe({
       next: res => {
         jornada._partidos = res.data;
+        jornada._loading = false;
         // Agrupar por cruce (local+visitante)
         const cruces: Record<string, any> = {};
         for (const p of res.data) {
@@ -296,8 +301,9 @@ export class FixtureComponent implements OnInit {
           cruces[key].partidos++;
         }
         jornada._cruces = Object.values(cruces);
+        this.cdr.detectChanges();
       },
-      error: () => this.toastr.error('Error al cargar partidos'),
+      error: () => { jornada._loading = false; this.toastr.error('Error al cargar partidos'); this.cdr.detectChanges(); },
     });
   }
 
@@ -335,10 +341,20 @@ export class FixtureComponent implements OnInit {
     if (!this.cruceForm.club_local_id || !this.cruceForm.club_visitante_id) {
       this.toastr.warning('Selecciona ambos clubes'); return;
     }
+    if (this.cruceForm.club_local_id === this.cruceForm.club_visitante_id) {
+      this.toastr.warning('Selecciona clubes diferentes'); return;
+    }
+
+    const localNombre = this.clubes.find((c: any) => c.id === this.cruceForm.club_local_id)?.nombre_corto || '?';
+    const visitNombre = this.clubes.find((c: any) => c.id === this.cruceForm.club_visitante_id)?.nombre_corto || '?';
+
     this.http.post<any>(`${environment.apiUrl}/fixture/jornada/${jornada.id}/enfrentamiento`, this.cruceForm).subscribe({
       next: (res) => {
-        this.toastr.success(res.message);
+        this.toastr.success(`${localNombre} vs ${visitNombre} — ${res.data?.length || 7} partidos creados`);
         this.cruceForm = { club_local_id: null, club_visitante_id: null };
+        // Recargar partidos de la jornada para mostrar el nuevo cruce
+        jornada._partidos = null;
+        jornada._cruces = null;
         this.cargarPartidos(jornada);
       },
       error: (e: any) => this.toastr.error(e.error?.message || 'Error'),
@@ -346,11 +362,16 @@ export class FixtureComponent implements OnInit {
   }
 
   eliminarCruce(jornada: any, cruce: any) {
-    if (!confirm(`Eliminar cruce ${cruce.local} vs ${cruce.visitante}?`)) return;
+    if (!confirm(`Eliminar cruce ${cruce.local} vs ${cruce.visitante} y sus ${cruce.partidos} partidos?`)) return;
     this.http.delete<any>(`${environment.apiUrl}/fixture/jornada/${jornada.id}/enfrentamiento`, {
       body: { club_local_id: cruce.club_local_id, club_visitante_id: cruce.club_visitante_id },
     }).subscribe({
-      next: () => { this.toastr.success('Cruce eliminado'); this.cargarPartidos(jornada); },
+      next: () => {
+        this.toastr.success(`${cruce.local} vs ${cruce.visitante} eliminado`);
+        jornada._partidos = null;
+        jornada._cruces = null;
+        this.cargarPartidos(jornada);
+      },
       error: (e: any) => this.toastr.error(e.error?.message || 'Error'),
     });
   }
