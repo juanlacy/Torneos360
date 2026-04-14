@@ -5,8 +5,8 @@
  *  - 1 Torneo (CAFI 2026)
  *  - 2 Zonas (Blanca, Celeste)
  *  - 7 Categorias (2013-2019)
- *  - 20 Clubes (10 por zona)
- *  - 20 jugadores ficticios por club por categoria (2.800 jugadores total)
+ *  - 28 Clubes (14 por zona)
+ *  - 20 jugadores ficticios por club por categoria (3.920 jugadores total)
  *
  * Uso: cd backend && node src/seeders/cafi-2026-data.js
  *
@@ -25,29 +25,37 @@ import { Jugador } from '../models/Jugador.js';
 // ─── Datos ──────────────────────────────────────────────────────────────────
 
 const CLUBES_BLANCA = [
-  { nombre: 'Industrial',     nombre_corto: 'IND', color_primario: '#1e40af', color_secundario: '#ffffff' },
-  { nombre: 'Defensores',     nombre_corto: 'DEF', color_primario: '#dc2626', color_secundario: '#ffffff' },
-  { nombre: 'Alt. Botania',   nombre_corto: 'BOT', color_primario: '#16a34a', color_secundario: '#ffffff' },
-  { nombre: 'Deportivo',      nombre_corto: 'DEP', color_primario: '#7c3aed', color_secundario: '#ffffff' },
-  { nombre: '12 de Octubre',  nombre_corto: '12O', color_primario: '#ea580c', color_secundario: '#ffffff' },
-  { nombre: 'Sarmiento',      nombre_corto: 'SAR', color_primario: '#0891b2', color_secundario: '#ffffff' },
-  { nombre: 'Florida Club',   nombre_corto: 'FLO', color_primario: '#4f46e5', color_secundario: '#ffffff' },
-  { nombre: 'Puebla',         nombre_corto: 'PUE', color_primario: '#be185d', color_secundario: '#ffffff' },
-  { nombre: 'Platense',       nombre_corto: 'PLA', color_primario: '#854d0e', color_secundario: '#ffffff' },
-  { nombre: 'C.A.F.I.',       nombre_corto: 'CAFI', color_primario: '#762c7e', color_secundario: '#8cb24d' },
+  { nombre: 'Industrial de Munro',                nombre_corto: 'IND',   color_primario: '#1e40af', color_secundario: '#ffffff' },
+  { nombre: 'Barrio Habana',                      nombre_corto: 'HAB',   color_primario: '#dc2626', color_secundario: '#ffffff' },
+  { nombre: 'UVVA',                               nombre_corto: 'UVVA',  color_primario: '#16a34a', color_secundario: '#ffffff' },
+  { nombre: 'Aristobulo del Valle',               nombre_corto: 'ADV',   color_primario: '#7c3aed', color_secundario: '#ffffff' },
+  { nombre: '25 de Mayo',                          nombre_corto: '25M',   color_primario: '#0891b2', color_secundario: '#ffffff' },
+  { nombre: 'Sarmiento',                           nombre_corto: 'SAR',   color_primario: '#ea580c', color_secundario: '#ffffff' },
+  { nombre: 'Socie de Munro',                     nombre_corto: 'SOC',   color_primario: '#be185d', color_secundario: '#ffffff' },
+  { nombre: 'CALE',                               nombre_corto: 'CALE',  color_primario: '#4f46e5', color_secundario: '#ffffff' },
+  { nombre: 'Florida Club',                        nombre_corto: 'FLO',   color_primario: '#0d9488', color_secundario: '#ffffff' },
+  { nombre: 'UVAFO',                              nombre_corto: 'UVAFO', color_primario: '#854d0e', color_secundario: '#ffffff' },
+  { nombre: 'Padilla',                             nombre_corto: 'PAD',   color_primario: '#a21caf', color_secundario: '#ffffff' },
+  { nombre: 'Caseros',                             nombre_corto: 'CAS',   color_primario: '#059669', color_secundario: '#ffffff' },
+  { nombre: '12 de Octubre "A"',                   nombre_corto: '12A',   color_primario: '#f97316', color_secundario: '#ffffff' },
+  { nombre: 'Drysdale',                            nombre_corto: 'DRY',   color_primario: '#65a30d', color_secundario: '#ffffff' },
 ];
 
 const CLUBES_CELESTE = [
-  { nombre: 'C.V. Norte',       nombre_corto: 'CVN', color_primario: '#0d9488', color_secundario: '#ffffff' },
-  { nombre: 'Estrella Federal', nombre_corto: 'EFE', color_primario: '#eab308', color_secundario: '#1e293b' },
-  { nombre: 'Halcon',           nombre_corto: 'HAL', color_primario: '#ef4444', color_secundario: '#000000' },
-  { nombre: 'Rio de Florida',   nombre_corto: 'RFL', color_primario: '#2563eb', color_secundario: '#ffffff' },
-  { nombre: 'Villa Martelli',   nombre_corto: 'VMA', color_primario: '#059669', color_secundario: '#ffffff' },
-  { nombre: '3° Deportivo',     nombre_corto: '3DE', color_primario: '#f97316', color_secundario: '#ffffff' },
-  { nombre: 'Cipolletti',       nombre_corto: 'CIP', color_primario: '#6366f1', color_secundario: '#ffffff' },
-  { nombre: 'Gral. Las Heras',  nombre_corto: 'GLH', color_primario: '#0284c7', color_secundario: '#ffffff' },
-  { nombre: 'El Talar',         nombre_corto: 'TAL', color_primario: '#65a30d', color_secundario: '#ffffff' },
-  { nombre: 'Chipoletti',       nombre_corto: 'CHI', color_primario: '#a21caf', color_secundario: '#ffffff' },
+  { nombre: 'CIRES Norte',                        nombre_corto: 'CIR',   color_primario: '#2563eb', color_secundario: '#ffffff' },
+  { nombre: 'Barrio Gaynor',                      nombre_corto: 'GAY',   color_primario: '#ef4444', color_secundario: '#ffffff' },
+  { nombre: 'J.M. Las Hormiguitas',               nombre_corto: 'HOR',   color_primario: '#eab308', color_secundario: '#1e293b' },
+  { nombre: 'Platense',                            nombre_corto: 'PLA',   color_primario: '#854d0e', color_secundario: '#ffffff' },
+  { nombre: 'Defensores de Florida',               nombre_corto: 'DEF',   color_primario: '#dc2626', color_secundario: '#ffffff' },
+  { nombre: 'Colegiales',                          nombre_corto: 'COL',   color_primario: '#1e40af', color_secundario: '#dc2626' },
+  { nombre: 'Union de Florida',                    nombre_corto: 'UFL',   color_primario: '#4f46e5', color_secundario: '#ffffff' },
+  { nombre: 'Villa Martelli',                      nombre_corto: 'VMA',   color_primario: '#059669', color_secundario: '#ffffff' },
+  { nombre: 'Jose Hernandez',                     nombre_corto: 'JHE',   color_primario: '#0284c7', color_secundario: '#ffffff' },
+  { nombre: 'CUM',                                nombre_corto: 'CUM',   color_primario: '#6366f1', color_secundario: '#ffffff' },
+  { nombre: 'El Ciclon',                           nombre_corto: 'CIC',   color_primario: '#be185d', color_secundario: '#ffffff' },
+  { nombre: '12 de Octubre "B"',                   nombre_corto: '12B',   color_primario: '#f97316', color_secundario: '#ffffff' },
+  { nombre: 'Grossville',                          nombre_corto: 'GRO',   color_primario: '#0d9488', color_secundario: '#ffffff' },
+  { nombre: 'Estrella Federal',                    nombre_corto: 'EFE',   color_primario: '#a21caf', color_secundario: '#ffffff' },
 ];
 
 // Nombres ficticios argentinos para generar jugadores
