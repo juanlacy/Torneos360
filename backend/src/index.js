@@ -28,7 +28,9 @@ import arbitrosRoutes   from './routes/arbitros.js';
 import veedoresRoutes   from './routes/veedores.js';
 import fixtureRoutes    from './routes/fixture.js';
 import partidosRoutes   from './routes/partidos.js';
-import posicionesRoutes from './routes/posiciones.js';
+import posicionesRoutes      from './routes/posiciones.js';
+import configuracionRoutes   from './routes/configuracion.js';
+import informesRoutes        from './routes/informes.js';
 
 // ─── Swagger ─────────────────────────────────────────────────────────────────
 import swaggerJsdoc from 'swagger-jsdoc';
@@ -117,6 +119,7 @@ const __dirname  = dirname(__filename);
 mkdirSync(join(__dirname, '..', 'uploads', 'avatars'), { recursive: true });
 mkdirSync(join(__dirname, '..', 'uploads', 'escudos'), { recursive: true });
 mkdirSync(join(__dirname, '..', 'uploads', 'jugadores'), { recursive: true });
+mkdirSync(join(__dirname, '..', 'uploads', 'informes'), { recursive: true });
 app.use('/uploads', express.static(join(__dirname, '..', 'uploads')));
 
 // ─── Rutas protegidas ───────────────────────────────────────────────────────
@@ -130,7 +133,9 @@ app.use('/arbitros',   apiLimiter, arbitrosRoutes);
 app.use('/veedores',   apiLimiter, veedoresRoutes);
 app.use('/fixture',    apiLimiter, fixtureRoutes);
 app.use('/partidos',   apiLimiter, partidosRoutes);
-app.use('/posiciones', apiLimiter, posicionesRoutes);
+app.use('/posiciones',    apiLimiter, posicionesRoutes);
+app.use('/configuracion', apiLimiter, configuracionRoutes);
+app.use('/informes',      apiLimiter, informesRoutes);
 
 // ─── Health check ───────────────────────────────────────────────────────────
 app.get('/health', async (req, res) => {

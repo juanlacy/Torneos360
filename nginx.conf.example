@@ -50,7 +50,7 @@ server
     }
 
     # ─── Backend API (Express en puerto 7300) ────────────────────
-    location ~ ^/(auth|admin|permisos|torneos|clubes|jugadores|staff|arbitros|veedores|fixture|partidos|posiciones|health|api-docs|uploads) {
+    location ~ ^/(auth|admin|permisos|torneos|clubes|jugadores|staff|arbitros|veedores|fixture|partidos|posiciones|configuracion|informes|health|api-docs|uploads) {
         proxy_pass http://127.0.0.1:7300;
         proxy_http_version 1.1;
         proxy_set_header Host $host;

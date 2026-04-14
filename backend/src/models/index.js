@@ -19,6 +19,8 @@ export { Partido } from './Partido.js';
 export { PartidoEvento } from './PartidoEvento.js';
 export { TablaPosiciones } from './TablaPosiciones.js';
 export { TablaPosicionesClub } from './TablaPosicionesClub.js';
+export { Configuracion } from './Configuracion.js';
+export { InformeArbitro } from './InformeArbitro.js';
 
 // ─── Asociaciones ───────────────────────────────────────────────────────────
 import { Usuario } from './Usuario.js';
@@ -117,3 +119,11 @@ TablaPosiciones.belongsTo(Club, { foreignKey: 'club_id', as: 'club' });
 TablaPosicionesClub.belongsTo(Torneo, { foreignKey: 'torneo_id', as: 'torneo' });
 TablaPosicionesClub.belongsTo(Zona, { foreignKey: 'zona_id', as: 'zona' });
 TablaPosicionesClub.belongsTo(Club, { foreignKey: 'club_id', as: 'club' });
+
+// ─── Informes ───────────────────────────────────────────────────────────────
+import { InformeArbitro } from './InformeArbitro.js';
+
+Partido.hasMany(InformeArbitro, { foreignKey: 'partido_id', as: 'informes' });
+InformeArbitro.belongsTo(Partido, { foreignKey: 'partido_id', as: 'partido' });
+InformeArbitro.belongsTo(Arbitro, { foreignKey: 'arbitro_id', as: 'arbitro' });
+InformeArbitro.belongsTo(Usuario, { foreignKey: 'usuario_id', as: 'usuario' });

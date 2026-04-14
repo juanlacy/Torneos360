@@ -50,6 +50,40 @@
 
 ## Registro de Cambios
 
+### 2026-04-14 — Configuracion, Informes de Arbitro e Integraciones IA
+
+#### Reglas configurables del torneo
+- El campo `config` JSONB del torneo ahora almacena `puntos_victoria` y `puntos_empate`
+- CAFI usa **2 puntos por victoria** y **1 punto por empate** (diferente al default de 3)
+- El calculador de posiciones lee estos valores dinamicamente del torneo
+- Pantalla de admin para configurar el sistema de puntos por torneo
+
+#### Informes del arbitro con audio + IA
+- **Modelo InformeArbitro**: tipo (general, disciplinario, incidente, suspension), audio, transcripcion, resumen, metadata
+- El arbitro puede **grabar audio** desde el celular/tablet directamente en la pantalla del partido
+- El audio se envia al backend y se procesa con IA:
+  - **OpenAI**: Whisper (transcripcion) + GPT-4o-mini (resumen)
+  - **Google Gemini**: transcripcion + resumen en una sola llamada
+- Fallback automatico: si la IA principal falla, intenta con la secundaria
+- Si la IA no esta configurada, el audio se guarda igual (transcripcion pendiente)
+- El arbitro puede editar la transcripcion y confirmar el informe
+
+#### Modulo de Configuraciones
+- **Tabla `configuraciones`**: clave-valor con JSONB, reutilizable para cualquier config futura
+- **Tab "Reglas del Torneo"**: puntos por victoria/empate/derrota por torneo
+- **Tab "Integraciones IA"**: configurar API keys de OpenAI y Gemini, elegir IA principal, seleccionar modelos
+- Las API keys se sanitizan: nunca se devuelven al frontend (solo `***configurada***`)
+- Fallback a variables de entorno (`OPENAI_API_KEY`, `GEMINI_API_KEY`) si no hay config en BD
+
+#### Frontend
+- **Pantalla Configuracion** en Admin: dos tabs (Reglas Torneo + Integraciones IA)
+- **Pantalla Partido Detalle** ampliada con seccion de Informes:
+  - Crear informe, grabar audio con MediaRecorder API, reproducir, enviar y transcribir
+  - Indicador visual de grabacion, boton para generar resumen IA
+  - Timeline de informes con tipo, estado, resumen y audio player
+
+---
+
 ### 2026-04-14 — Fase 3: Competencia (Fixture, Partidos, Posiciones)
 
 #### Backend

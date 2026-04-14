@@ -143,6 +143,93 @@ import { AuthService } from '../../core/services/auth.service';
             }
           </mat-card-content>
         </mat-card>
+        <!-- Informes del arbitro -->
+        @if (partido.estado === 'finalizado' || partido.estado === 'en_curso') {
+          <mat-card class="!bg-slate-900 !border !border-slate-700">
+            <mat-card-content>
+              <div class="flex items-center justify-between mb-3">
+                <h3 class="text-lg font-semibold text-slate-200">Informes del arbitro</h3>
+                @if (auth.getUser()?.rol === 'arbitro' || auth.isAdmin()) {
+                  <button mat-stroked-button color="primary" (click)="crearInforme()">
+                    <mat-icon>note_add</mat-icon> Nuevo informe
+                  </button>
+                }
+              </div>
+
+              @for (inf of informes; track inf.id) {
+                <div class="p-3 rounded bg-slate-800/50 mb-2">
+                  <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center gap-2">
+                      <span class="px-2 py-0.5 rounded text-xs font-medium"
+                        [class]="inf.tipo === 'disciplinario' ? 'bg-red-900/50 text-red-300' : inf.tipo === 'incidente' ? 'bg-yellow-900/50 text-yellow-300' : 'bg-slate-700/50 text-slate-300'">
+                        {{ inf.tipo }}
+                      </span>
+                      <span class="px-2 py-0.5 rounded text-xs" [class]="inf.estado === 'confirmado' ? 'bg-green-900/50 text-green-300' : 'bg-slate-700/50 text-slate-300'">
+                        {{ inf.estado }}
+                      </span>
+                    </div>
+                    <span class="text-xs text-slate-500">{{ inf.usuario?.nombre }} {{ inf.usuario?.apellido }}</span>
+                  </div>
+
+                  @if (inf.resumen) {
+                    <p class="text-sm text-slate-300 mb-1"><strong>Resumen IA:</strong> {{ inf.resumen }}</p>
+                  }
+                  @if (inf.texto_manual) {
+                    <p class="text-sm text-slate-400">{{ inf.texto_manual }}</p>
+                  }
+                  @if (inf.audio_url && !inf.transcripcion) {
+                    <p class="text-sm text-yellow-400">Audio pendiente de transcripcion</p>
+                  }
+
+                  <div class="flex gap-2 mt-2">
+                    @if (!inf.audio_url) {
+                      <button mat-stroked-button class="!text-xs" (click)="grabarAudio(inf)">
+                        <mat-icon class="!text-sm">mic</mat-icon> Grabar audio
+                      </button>
+                    }
+                    @if (inf.audio_url) {
+                      <audio [src]="getAudioUrl(inf.audio_url)" controls class="h-8"></audio>
+                    }
+                    @if ((inf.transcripcion || inf.texto_manual) && !inf.resumen) {
+                      <button mat-stroked-button class="!text-xs" (click)="generarResumen(inf)">
+                        <mat-icon class="!text-sm">auto_awesome</mat-icon> Generar resumen IA
+                      </button>
+                    }
+                  </div>
+                </div>
+              } @empty {
+                <p class="text-slate-400 text-center py-4">Sin informes</p>
+              }
+
+              <!-- Grabador de audio -->
+              @if (grabando || audioBlob) {
+                <div class="mt-4 p-4 rounded bg-slate-800 border border-slate-600">
+                  <h4 class="text-sm font-medium text-slate-300 mb-2">Grabacion de audio</h4>
+                  @if (grabando) {
+                    <div class="flex items-center gap-3">
+                      <span class="animate-pulse text-red-400 flex items-center gap-1">
+                        <mat-icon class="!text-lg">fiber_manual_record</mat-icon> Grabando...
+                      </span>
+                      <button mat-flat-button color="warn" (click)="detenerGrabacion()">
+                        <mat-icon>stop</mat-icon> Detener
+                      </button>
+                    </div>
+                  }
+                  @if (audioBlob && !grabando) {
+                    <div class="flex items-center gap-3">
+                      <audio [src]="audioPreviewUrl" controls class="h-8"></audio>
+                      <button mat-flat-button color="primary" (click)="enviarAudio()" [disabled]="enviandoAudio">
+                        <mat-icon>{{ enviandoAudio ? 'hourglass_top' : 'cloud_upload' }}</mat-icon>
+                        {{ enviandoAudio ? 'Procesando con IA...' : 'Enviar y transcribir' }}
+                      </button>
+                      <button mat-stroked-button (click)="cancelarAudio()">Cancelar</button>
+                    </div>
+                  }
+                </div>
+              }
+            </mat-card-content>
+          </mat-card>
+        }
       </div>
     }
   `,
@@ -150,6 +237,16 @@ import { AuthService } from '../../core/services/auth.service';
 export class PartidoDetalleComponent implements OnInit {
   partido: any = null;
   evento: any = { tipo: 'gol', club_id: null, minuto: null, detalle: '' };
+  informes: any[] = [];
+
+  // Grabacion de audio
+  grabando = false;
+  audioBlob: Blob | null = null;
+  audioPreviewUrl = '';
+  enviandoAudio = false;
+  private mediaRecorder: MediaRecorder | null = null;
+  private audioChunks: Blob[] = [];
+  private informeActual: any = null;
 
   constructor(private http: HttpClient, private route: ActivatedRoute, public auth: AuthService, private toastr: ToastrService) {}
 
@@ -158,8 +255,14 @@ export class PartidoDetalleComponent implements OnInit {
   cargar() {
     const id = this.route.snapshot.paramMap.get('id');
     this.http.get<any>(`${environment.apiUrl}/partidos/${id}`).subscribe({
-      next: res => this.partido = res.data,
+      next: res => { this.partido = res.data; this.cargarInformes(); },
       error: () => this.toastr.error('Error al cargar partido'),
+    });
+  }
+
+  cargarInformes() {
+    this.http.get<any>(`${environment.apiUrl}/informes`, { params: { partido_id: this.partido.id } }).subscribe({
+      next: res => this.informes = res.data,
     });
   }
 
@@ -211,5 +314,88 @@ export class PartidoDetalleComponent implements OnInit {
   getEventoIconClass(tipo: string): string {
     const map: Record<string, string> = { gol: 'text-green-400', amarilla: 'text-yellow-400', roja: 'text-red-400', sustitucion: 'text-blue-400', informe: 'text-slate-400', inicio: 'text-cyan-400', fin: 'text-slate-400' };
     return map[tipo] || 'text-slate-400';
+  }
+
+  // ─── Informes ─────────────────────────────────────────────────
+
+  crearInforme() {
+    this.http.post<any>(`${environment.apiUrl}/informes`, { partido_id: this.partido.id, tipo: 'general' }).subscribe({
+      next: (res) => {
+        this.toastr.success('Informe creado');
+        this.cargarInformes();
+        // Abrir grabador automaticamente
+        this.informeActual = res.data;
+      },
+      error: (e: any) => this.toastr.error(e.error?.message || 'Error'),
+    });
+  }
+
+  getAudioUrl(url: string): string {
+    return url.startsWith('http') ? url : `${environment.apiUrl}${url}`;
+  }
+
+  async grabarAudio(informe: any) {
+    this.informeActual = informe;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      this.mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+      this.audioChunks = [];
+
+      this.mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) this.audioChunks.push(e.data);
+      };
+
+      this.mediaRecorder.onstop = () => {
+        this.audioBlob = new Blob(this.audioChunks, { type: 'audio/webm' });
+        this.audioPreviewUrl = URL.createObjectURL(this.audioBlob);
+        stream.getTracks().forEach(t => t.stop());
+      };
+
+      this.mediaRecorder.start();
+      this.grabando = true;
+    } catch (err) {
+      this.toastr.error('No se pudo acceder al microfono. Verifica los permisos.');
+    }
+  }
+
+  detenerGrabacion() {
+    this.mediaRecorder?.stop();
+    this.grabando = false;
+  }
+
+  enviarAudio() {
+    if (!this.audioBlob || !this.informeActual) return;
+    this.enviandoAudio = true;
+
+    const formData = new FormData();
+    formData.append('audio', this.audioBlob, `informe-${Date.now()}.webm`);
+
+    this.http.post<any>(`${environment.apiUrl}/informes/${this.informeActual.id}/audio`, formData).subscribe({
+      next: (res) => {
+        this.enviandoAudio = false;
+        this.toastr.success(res.message || 'Audio procesado');
+        if (res.warning) this.toastr.warning(res.warning);
+        this.cancelarAudio();
+        this.cargarInformes();
+      },
+      error: (e: any) => {
+        this.enviandoAudio = false;
+        this.toastr.error(e.error?.message || 'Error al procesar audio');
+      },
+    });
+  }
+
+  cancelarAudio() {
+    this.audioBlob = null;
+    this.audioPreviewUrl = '';
+    this.grabando = false;
+    this.informeActual = null;
+  }
+
+  generarResumen(informe: any) {
+    this.http.post<any>(`${environment.apiUrl}/informes/${informe.id}/resumir`, {}).subscribe({
+      next: () => { this.toastr.success('Resumen generado'); this.cargarInformes(); },
+      error: (e: any) => this.toastr.error(e.error?.message || 'Error'),
+    });
   }
 }

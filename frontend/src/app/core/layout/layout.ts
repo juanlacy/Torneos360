@@ -74,6 +74,10 @@ import { AuthService } from '../services/auth.service';
               <mat-icon matListItemIcon>security</mat-icon>
               <span matListItemTitle>Permisos</span>
             </a>
+            <a mat-list-item routerLink="/admin/configuracion" routerLinkActive="!bg-slate-800">
+              <mat-icon matListItemIcon>settings</mat-icon>
+              <span matListItemTitle>Configuracion</span>
+            </a>
           }
         </mat-nav-list>
       </mat-sidenav>
