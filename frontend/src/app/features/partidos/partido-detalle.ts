@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -260,7 +260,7 @@ export class PartidoDetalleComponent implements OnInit, OnDestroy {
   constructor(
     private http: HttpClient, private route: ActivatedRoute,
     public auth: AuthService, private toastr: ToastrService,
-    private socket: SocketService,
+    private socket: SocketService, private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit() { this.cargar(); }
@@ -284,12 +284,14 @@ export class PartidoDetalleComponent implements OnInit, OnDestroy {
           if (data.evento) {
             this.partido.eventos = [...(this.partido.eventos || []), data.evento];
           }
+          this.cdr.detectChanges();
         }
       }),
       this.socket.on('match:score').subscribe((data: any) => {
         if (data.partido_id === this.partido.id) {
           this.partido.goles_local = data.goles_local;
           this.partido.goles_visitante = data.goles_visitante;
+          this.cdr.detectChanges();
         }
       }),
       this.socket.on('match:start').subscribe((data: any) => {
@@ -297,6 +299,7 @@ export class PartidoDetalleComponent implements OnInit, OnDestroy {
           this.partido.estado = 'en_curso';
           this.partido.hora_inicio = data.hora_inicio;
           this.toastr.info('El partido ha comenzado');
+          this.cdr.detectChanges();
         }
       }),
       this.socket.on('match:end').subscribe((data: any) => {
@@ -305,12 +308,14 @@ export class PartidoDetalleComponent implements OnInit, OnDestroy {
           this.partido.goles_local = data.goles_local;
           this.partido.goles_visitante = data.goles_visitante;
           this.toastr.info('Partido finalizado');
+          this.cdr.detectChanges();
         }
       }),
       this.socket.on('match:confirm').subscribe((data: any) => {
         if (data.partido_id === this.partido.id) {
           this.partido.confirmado_arbitro = true;
           this.toastr.success('Partido confirmado por el arbitro');
+          this.cdr.detectChanges();
         }
       }),
     );
@@ -319,14 +324,19 @@ export class PartidoDetalleComponent implements OnInit, OnDestroy {
   cargar() {
     const id = this.route.snapshot.paramMap.get('id');
     this.http.get<any>(`${environment.apiUrl}/partidos/${id}`).subscribe({
-      next: res => { this.partido = res.data; this.cargarInformes(); if (!this.partidoId) this.setupSocketListeners(); },
+      next: res => {
+        this.partido = res.data;
+        this.cargarInformes();
+        if (!this.partidoId) this.setupSocketListeners();
+        this.cdr.detectChanges();
+      },
       error: () => this.toastr.error('Error al cargar partido'),
     });
   }
 
   cargarInformes() {
     this.http.get<any>(`${environment.apiUrl}/informes`, { params: { partido_id: this.partido.id } }).subscribe({
-      next: res => this.informes = res.data,
+      next: res => { this.informes = res.data; this.cdr.detectChanges(); },
     });
   }
 
@@ -355,7 +365,12 @@ export class PartidoDetalleComponent implements OnInit, OnDestroy {
   registrarEvento() {
     if (!this.evento.tipo) { this.toastr.warning('Selecciona el tipo de evento'); return; }
     this.http.post<any>(`${environment.apiUrl}/partidos/${this.partido.id}/evento`, this.evento).subscribe({
-      next: () => { this.toastr.success('Evento registrado'); this.evento = { tipo: 'gol', club_id: null, minuto: null, detalle: '' }; this.cargar(); },
+      next: () => {
+        this.toastr.success('Evento registrado');
+        this.evento = { tipo: 'gol', club_id: null, minuto: null, detalle: '' };
+        this.cargar();
+        this.cdr.detectChanges();
+      },
       error: (e: any) => this.toastr.error(e.error?.message || 'Error'),
     });
   }
@@ -387,8 +402,8 @@ export class PartidoDetalleComponent implements OnInit, OnDestroy {
       next: (res) => {
         this.toastr.success('Informe creado');
         this.cargarInformes();
-        // Abrir grabador automaticamente
         this.informeActual = res.data;
+        this.cdr.detectChanges();
       },
       error: (e: any) => this.toastr.error(e.error?.message || 'Error'),
     });
@@ -415,10 +430,12 @@ export class PartidoDetalleComponent implements OnInit, OnDestroy {
         this.audioBlob = new Blob(this.audioChunks, { type: 'audio/webm' });
         this.audioPreviewUrl = URL.createObjectURL(this.audioBlob);
         stream.getTracks().forEach(t => t.stop());
+        this.cdr.detectChanges();
       };
 
       this.mediaRecorder.start();
       this.grabando = true;
+      this.cdr.detectChanges();
     } catch (err) {
       this.toastr.error('No se pudo acceder al microfono. Verifica los permisos.');
     }
@@ -427,11 +444,13 @@ export class PartidoDetalleComponent implements OnInit, OnDestroy {
   detenerGrabacion() {
     this.mediaRecorder?.stop();
     this.grabando = false;
+    this.cdr.detectChanges();
   }
 
   enviarAudio() {
     if (!this.audioBlob || !this.informeActual) return;
     this.enviandoAudio = true;
+    this.cdr.detectChanges();
 
     const formData = new FormData();
     formData.append('audio', this.audioBlob, `informe-${Date.now()}.webm`);
@@ -443,10 +462,12 @@ export class PartidoDetalleComponent implements OnInit, OnDestroy {
         if (res.warning) this.toastr.warning(res.warning);
         this.cancelarAudio();
         this.cargarInformes();
+        this.cdr.detectChanges();
       },
       error: (e: any) => {
         this.enviandoAudio = false;
         this.toastr.error(e.error?.message || 'Error al procesar audio');
+        this.cdr.detectChanges();
       },
     });
   }
@@ -460,7 +481,7 @@ export class PartidoDetalleComponent implements OnInit, OnDestroy {
 
   generarResumen(informe: any) {
     this.http.post<any>(`${environment.apiUrl}/informes/${informe.id}/resumir`, {}).subscribe({
-      next: () => { this.toastr.success('Resumen generado'); this.cargarInformes(); },
+      next: () => { this.toastr.success('Resumen generado'); this.cargarInformes(); this.cdr.detectChanges(); },
       error: (e: any) => this.toastr.error(e.error?.message || 'Error'),
     });
   }

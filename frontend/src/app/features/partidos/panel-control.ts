@@ -739,6 +739,7 @@ export class PanelControlComponent implements OnInit, OnDestroy {
 
   setTab(tab: 'local' | 'visitante') {
     this.tabActivo = tab;
+    this.cdr.detectChanges();
   }
 
   jugadoresVisible(): any[] {
@@ -750,6 +751,7 @@ export class PanelControlComponent implements OnInit, OnDestroy {
     // Visual feedback
     this.jugadoresLocal.forEach(x => x._selected = x.id === this.jugadorSeleccionado?.id);
     this.jugadoresVisitante.forEach(x => x._selected = x.id === this.jugadorSeleccionado?.id);
+    this.cdr.detectChanges();
   }
 
   registrarRapido(tipo: EventoTipo) {
@@ -757,17 +759,21 @@ export class PanelControlComponent implements OnInit, OnDestroy {
       this.toastr.warning('Selecciona un jugador primero');
       return;
     }
+    const jugador = this.jugadorSeleccionado;
     const clubId = this.tabActivo === 'local' ? this.partido.club_local_id : this.partido.club_visitante_id;
     this.http.post<any>(`${environment.apiUrl}/partidos/${this.partidoId}/evento`, {
       tipo,
-      jugador_id: this.jugadorSeleccionado.id,
+      jugador_id: jugador.id,
       club_id: clubId,
       minuto: this.currentMinute(),
     }).subscribe({
       next: () => {
         const label = tipo === 'gol' ? 'GOL' : tipo === 'amarilla' ? 'AMARILLA' : 'ROJA';
-        this.toastr.success(`${label}: ${this.jugadorSeleccionado.apellido}`);
+        this.toastr.success(`${label}: ${jugador.apellido}`);
         this.jugadorSeleccionado = null;
+        this.jugadoresLocal.forEach(x => x._selected = false);
+        this.jugadoresVisitante.forEach(x => x._selected = false);
+        this.cdr.detectChanges();
       },
       error: (e: any) => this.toastr.error(e.error?.message || 'Error'),
     });
@@ -776,7 +782,10 @@ export class PanelControlComponent implements OnInit, OnDestroy {
   iniciarPartido() {
     if (!confirm('Iniciar el partido?')) return;
     this.http.post<any>(`${environment.apiUrl}/partidos/${this.partidoId}/iniciar`, {}).subscribe({
-      next: () => this.toastr.success('Partido iniciado'),
+      next: () => {
+        this.toastr.success('Partido iniciado');
+        this.cargarPartido();
+      },
       error: (e: any) => this.toastr.error(e.error?.message || 'Error'),
     });
   }
@@ -784,14 +793,20 @@ export class PanelControlComponent implements OnInit, OnDestroy {
   finalizarPartido() {
     if (!confirm('Finalizar el partido? Esta accion no se puede deshacer.')) return;
     this.http.post<any>(`${environment.apiUrl}/partidos/${this.partidoId}/finalizar`, {}).subscribe({
-      next: () => this.toastr.success('Partido finalizado'),
+      next: () => {
+        this.toastr.success('Partido finalizado');
+        this.cargarPartido();
+      },
       error: (e: any) => this.toastr.error(e.error?.message || 'Error'),
     });
   }
 
   confirmarPartido() {
     this.http.post<any>(`${environment.apiUrl}/partidos/${this.partidoId}/confirmar`, {}).subscribe({
-      next: () => this.toastr.success('Partido confirmado'),
+      next: () => {
+        this.toastr.success('Partido confirmado');
+        this.cargarPartido();
+      },
       error: (e: any) => this.toastr.error(e.error?.message || 'Error'),
     });
   }
