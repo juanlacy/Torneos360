@@ -44,11 +44,30 @@
 | 2 | Entidades Core (Clubes, Jugadores, Staff) | Completada |
 | 3 | Competencia (Fixture, Partidos, Posiciones) | Completada |
 | 4 | Control de Partidos en Tiempo Real | Completada |
-| 5 | PWA, Estadisticas y Reportes | Pendiente |
+| 5 | PWA (Progressive Web App) | Completada |
+| 6 | Estadisticas y Reportes | Pendiente |
 
 ---
 
 ## Registro de Cambios
+
+### 2026-04-14 — PWA (Progressive Web App)
+
+- Angular Service Worker habilitado con `@angular/pwa`
+- **manifest.webmanifest**: nombre Torneo360, colores CAFI (#762c7e), iconos
+- **Meta tags iOS**: apple-mobile-web-app-capable, status-bar-style, touch-icon
+- **ngsw-config.json** con cache inteligente:
+  - App shell: prefetch (carga offline inmediata)
+  - API torneos/clubes: freshness con timeout 5s, cache 1h
+  - API fixture/posiciones: freshness 3s, cache 5m (datos que cambian en vivo)
+  - API jugadores: freshness 5s, cache 30m
+  - Uploads (imagenes): performance, cache 30 dias
+  - Google Fonts: performance, cache 1 anio
+- **Nginx**: service worker sin cache (no-store, must-revalidate)
+- La app se puede instalar en celular/tablet como app nativa
+- Funciona offline con datos cacheados
+
+---
 
 ### 2026-04-14 — Fase 4: Control de Partidos en Tiempo Real (Socket.io)
 

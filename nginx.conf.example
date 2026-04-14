@@ -88,6 +88,16 @@ server
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 
+    # ─── PWA Service Worker (nunca cachear) ────────────────────────
+    location = /ngsw-worker.js {
+        expires off;
+        add_header Cache-Control "no-cache, no-store, must-revalidate";
+    }
+    location = /ngsw.json {
+        expires off;
+        add_header Cache-Control "no-cache, no-store, must-revalidate";
+    }
+
     # ─── Angular SPA (todo lo demas) ─────────────────────────────
     location / {
         try_files $uri $uri/ /index.html;

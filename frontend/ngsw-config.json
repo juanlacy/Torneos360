@@ -1,0 +1,80 @@
+{
+  "$schema": "./node_modules/@angular/service-worker/config/schema.json",
+  "index": "/index.html",
+  "assetGroups": [
+    {
+      "name": "app",
+      "installMode": "prefetch",
+      "resources": {
+        "files": [
+          "/favicon.ico",
+          "/index.csr.html",
+          "/index.html",
+          "/manifest.webmanifest",
+          "/*.css",
+          "/*.js"
+        ]
+      }
+    },
+    {
+      "name": "assets",
+      "installMode": "lazy",
+      "updateMode": "prefetch",
+      "resources": {
+        "files": [
+          "/**/*.(svg|cur|jpg|jpeg|png|apng|webp|avif|gif|otf|ttf|woff|woff2)"
+        ]
+      }
+    }
+  ],
+  "dataGroups": [
+    {
+      "name": "api-torneos",
+      "urls": ["/api/torneos*", "/api/clubes*", "/api/categorias*"],
+      "cacheConfig": {
+        "maxSize": 50,
+        "maxAge": "1h",
+        "strategy": "freshness",
+        "timeout": "5s"
+      }
+    },
+    {
+      "name": "api-fixture",
+      "urls": ["/api/fixture*", "/api/posiciones*"],
+      "cacheConfig": {
+        "maxSize": 100,
+        "maxAge": "5m",
+        "strategy": "freshness",
+        "timeout": "3s"
+      }
+    },
+    {
+      "name": "api-jugadores",
+      "urls": ["/api/jugadores*", "/api/staff*"],
+      "cacheConfig": {
+        "maxSize": 200,
+        "maxAge": "30m",
+        "strategy": "freshness",
+        "timeout": "5s"
+      }
+    },
+    {
+      "name": "uploads",
+      "urls": ["/uploads/**"],
+      "cacheConfig": {
+        "maxSize": 100,
+        "maxAge": "30d",
+        "strategy": "performance"
+      }
+    },
+    {
+      "name": "google-fonts",
+      "urls": ["https://fonts.googleapis.com/**", "https://fonts.gstatic.com/**"],
+      "cacheConfig": {
+        "maxSize": 20,
+        "maxAge": "365d",
+        "strategy": "performance"
+      }
+    }
+  ]
+}
