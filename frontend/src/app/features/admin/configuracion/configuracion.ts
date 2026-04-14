@@ -335,7 +335,9 @@ export class ConfiguracionComponent implements OnInit {
 
   resolveUrl(url: string): string {
     if (!url) return '';
-    return url.startsWith('http') ? url : `${environment.apiUrl}${url}`;
+    if (url.startsWith('http')) return url;
+    if (url.startsWith('/uploads/')) return url;
+    return `${environment.apiUrl}${url}`;
   }
 
   // ─── Reglas ───────────────────────────────────────────────

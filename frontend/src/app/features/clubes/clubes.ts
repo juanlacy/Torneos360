@@ -213,7 +213,9 @@ export class ClubesComponent implements OnInit {
   cancelar() { this.editando = null; this.form = { nombre: '', nombre_corto: '', zona_id: null, color_primario: '#16a34a', color_secundario: '#ffffff' }; this.mostrarForm = false; }
 
   getEscudoUrl(url: string): string {
-    return url.startsWith('http') ? url : `${environment.apiUrl}${url}`;
+    if (url.startsWith('http')) return url;
+    if (url.startsWith('/uploads/')) return url;
+    return `${environment.apiUrl}${url}`;
   }
 
   onEscudoChange(event: Event, club: any) {

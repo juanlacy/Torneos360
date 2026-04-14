@@ -390,7 +390,9 @@ export class PartidoDetalleComponent implements OnInit, OnDestroy {
   }
 
   getAudioUrl(url: string): string {
-    return url.startsWith('http') ? url : `${environment.apiUrl}${url}`;
+    if (url.startsWith('http')) return url;
+    if (url.startsWith('/uploads/')) return url;
+    return `${environment.apiUrl}${url}`;
   }
 
   async grabarAudio(informe: any) {

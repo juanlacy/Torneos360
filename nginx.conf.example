@@ -44,19 +44,36 @@ server
     include /www/server/panel/vhost/rewrite/torneos360.huelemu.com.ar.conf;
     #REWRITE-START
 
-    # ─── Angular SPA ─────────────────────────────────────────────
-    location / {
-        try_files $uri $uri/ /index.html;
-    }
-
-    # ─── Backend API (Express en puerto 7300) ────────────────────
-    location ~ ^/(auth|admin|permisos|torneos|clubes|jugadores|staff|arbitros|veedores|fixture|partidos|posiciones|configuracion|informes|health|api-docs|uploads) {
+    # ─── Backend API (prefijo /api/) ─────────────────────────────
+    # Todas las rutas del backend van bajo /api/
+    # Nginx hace rewrite para quitar el prefijo antes de enviarlo a Express
+    location /api/ {
+        rewrite ^/api/(.*)$ /$1 break;
         proxy_pass http://127.0.0.1:7300;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # ─── Uploads (archivos estaticos del backend) ────────────────
+    location /uploads/ {
+        proxy_pass http://127.0.0.1:7300;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+    }
+
+    # ─── Health check (sin prefijo /api) ─────────────────────────
+    location = /health {
+        proxy_pass http://127.0.0.1:7300;
+    }
+
+    # ─── Swagger ─────────────────────────────────────────────────
+    location /api-docs {
+        proxy_pass http://127.0.0.1:7300;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
     }
 
     # ─── Socket.io — WebSocket upgrade ───────────────────────────
@@ -69,6 +86,11 @@ server
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # ─── Angular SPA (todo lo demas) ─────────────────────────────
+    location / {
+        try_files $uri $uri/ /index.html;
     }
 
     # Forbidden files or directories

@@ -130,6 +130,8 @@ export class BrandingService {
   resolveUrl(url: string | null | undefined): string {
     if (!url) return '';
     if (url.startsWith('http')) return url;
+    // En produccion, /uploads/ va directo (no por /api/)
+    if (url.startsWith('/uploads/')) return url;
     return `${environment.apiUrl}${url}`;
   }
 }
