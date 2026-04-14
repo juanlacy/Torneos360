@@ -24,8 +24,11 @@ import torneosRoutes   from './routes/torneos.js';
 import clubesRoutes    from './routes/clubes.js';
 import jugadoresRoutes from './routes/jugadores.js';
 import staffRoutes     from './routes/staff.js';
-import arbitrosRoutes  from './routes/arbitros.js';
-import veedoresRoutes  from './routes/veedores.js';
+import arbitrosRoutes   from './routes/arbitros.js';
+import veedoresRoutes   from './routes/veedores.js';
+import fixtureRoutes    from './routes/fixture.js';
+import partidosRoutes   from './routes/partidos.js';
+import posicionesRoutes from './routes/posiciones.js';
 
 // ─── Swagger ─────────────────────────────────────────────────────────────────
 import swaggerJsdoc from 'swagger-jsdoc';
@@ -123,8 +126,11 @@ app.use('/torneos',   apiLimiter, torneosRoutes);
 app.use('/clubes',    apiLimiter, clubesRoutes);
 app.use('/jugadores', apiLimiter, jugadoresRoutes);
 app.use('/staff',     apiLimiter, staffRoutes);
-app.use('/arbitros',  apiLimiter, arbitrosRoutes);
-app.use('/veedores',  apiLimiter, veedoresRoutes);
+app.use('/arbitros',   apiLimiter, arbitrosRoutes);
+app.use('/veedores',   apiLimiter, veedoresRoutes);
+app.use('/fixture',    apiLimiter, fixtureRoutes);
+app.use('/partidos',   apiLimiter, partidosRoutes);
+app.use('/posiciones', apiLimiter, posicionesRoutes);
 
 // ─── Health check ───────────────────────────────────────────────────────────
 app.get('/health', async (req, res) => {

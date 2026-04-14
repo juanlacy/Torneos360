@@ -42,6 +42,20 @@ export const routes: Routes = [
         loadComponent: () => import('./features/jugadores/jugadores').then(m => m.JugadoresComponent),
       },
 
+      // ─── Competencia ─────────────────────────────────────────────────────
+      {
+        path: 'fixture',
+        loadComponent: () => import('./features/fixture/fixture').then(m => m.FixtureComponent),
+      },
+      {
+        path: 'partidos/:id',
+        loadComponent: () => import('./features/partidos/partido-detalle').then(m => m.PartidoDetalleComponent),
+      },
+      {
+        path: 'posiciones',
+        loadComponent: () => import('./features/posiciones/posiciones').then(m => m.PosicionesComponent),
+      },
+
       // ─── Admin ───────────────────────────────────────────────────────────
       {
         path: 'admin',

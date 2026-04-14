@@ -42,13 +42,43 @@
 |------|-------------|--------|
 | 1 | Fundacion (Auth, Permisos, Layout) | Completada |
 | 2 | Entidades Core (Clubes, Jugadores, Staff) | Completada |
-| 3 | Competencia (Fixture, Partidos, Posiciones) | Pendiente |
+| 3 | Competencia (Fixture, Partidos, Posiciones) | Completada |
 | 4 | Control de Partidos en Tiempo Real | Pendiente |
 | 5 | PWA, Estadisticas y Reportes | Pendiente |
 
 ---
 
 ## Registro de Cambios
+
+### 2026-04-14 — Fase 3: Competencia (Fixture, Partidos, Posiciones)
+
+#### Backend
+- **5 nuevos modelos**: FixtureJornada, Partido, PartidoEvento, TablaPosiciones, TablaPosicionesClub
+- **5 migraciones** con foreign keys completas
+- **Servicio fixtureGeneratorService**: algoritmo de Berger (round-robin) para generar fixture automatico
+  - Genera jornadas de IDA y VUELTA por cada zona
+  - Para cada jornada, crea un partido por cada categoria (7 partidos por fecha)
+  - Soporta clubes sin zona y numero impar de clubes (bye/descansa)
+- **Servicio standingsCalculatorService**: recalculo de posiciones
+  - Calcula tabla por categoria: PJ, PG, PE, PP, GF, GC, DG, Puntos
+  - Calcula tabla general del club: suma de puntos de las 6 categorias principales (excluye preliminar)
+  - Recalculo automatico al finalizar cada partido
+  - Usa transaccion de BD para consistencia
+- **Controller fixtureController**: generar/eliminar fixture, listar jornadas, partidos por jornada, actualizar fecha/estado
+- **Controller partidosController**: flujo completo del partido
+  - `POST /partidos/:id/iniciar` — inicia el partido
+  - `POST /partidos/:id/evento` — registra gol, tarjeta, sustitucion (actualiza marcador automaticamente en goles)
+  - `POST /partidos/:id/finalizar` — finaliza y recalcula posiciones
+  - `POST /partidos/:id/confirmar` — arbitro confirma resultado
+  - `POST /partidos/:id/suspender` — suspender con motivo
+- **Controller posicionesController**: consulta por categoria, general del club, recalcular manual
+
+#### Frontend
+- **Pantalla Fixture**: generar/eliminar fixture con un click, lista de jornadas expandibles con filtros (zona, fase ida/vuelta), ver partidos por jornada con resultado y estado
+- **Pantalla Partido Detalle**: marcador grande con colores por estado, botones de flujo (iniciar/finalizar/confirmar), formulario para registrar eventos en tiempo real (gol, amarilla, roja, sustitucion, informe), timeline de eventos con iconos y colores
+- **Pantalla Posiciones**: dos tabs — General Club (ranking por puntos totales) y Por Categoria (tabla completa PJ/PG/PE/PP/GF/GC/DG/Pts), boton de recalcular manual, filtro por categoria
+
+---
 
 ### 2026-04-13 — Fase 2: Entidades Core del Torneo
 
