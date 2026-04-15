@@ -7,11 +7,12 @@ export const PartidoEvento = sequelize.define('PartidoEvento', {
   tipo: {
     type: DataTypes.STRING(30),
     allowNull: false,
-    validate: { isIn: [['gol', 'amarilla', 'roja', 'sustitucion', 'informe', 'inicio', 'fin', 'penal']] },
+    validate: { isIn: [['gol', 'amarilla', 'azul', 'roja', 'sustitucion', 'falta', 'informe', 'inicio', 'fin', 'penal', 'fin_periodo', 'inicio_periodo']] },
   },
   jugador_id: { type: DataTypes.INTEGER, allowNull: true },
   jugador_reemplaza_id: { type: DataTypes.INTEGER, allowNull: true, comment: 'Para sustituciones: jugador que sale' },
   club_id: { type: DataTypes.INTEGER, allowNull: true },
+  periodo: { type: DataTypes.INTEGER, allowNull: true, comment: 'Periodo del partido (1, 2, etc)' },
   minuto: { type: DataTypes.INTEGER, allowNull: true },
   detalle: { type: DataTypes.TEXT, allowNull: true },
   registrado_por: { type: DataTypes.INTEGER, allowNull: true, comment: 'usuario_id que registro el evento' },

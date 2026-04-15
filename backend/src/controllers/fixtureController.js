@@ -158,7 +158,7 @@ export const eliminarJornada = async (req, res) => {
 export const agregarEnfrentamiento = async (req, res) => {
   try {
     const jornadaId = parseInt(req.params.jornadaId);
-    const { club_local_id, club_visitante_id } = req.body;
+    const { club_local_id, club_visitante_id, arbitro_id } = req.body;
 
     if (!club_local_id || !club_visitante_id) {
       return res.status(400).json({ success: false, message: 'club_local_id y club_visitante_id son requeridos' });
@@ -204,6 +204,7 @@ export const agregarEnfrentamiento = async (req, res) => {
         categoria_id: cat.id,
         club_local_id,
         club_visitante_id,
+        arbitro_id: arbitro_id || null,
         cancha: req.body.cancha || null,
         hora_inicio: horaInicio,
       });

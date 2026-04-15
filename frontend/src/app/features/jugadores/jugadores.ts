@@ -12,11 +12,12 @@ import { environment } from '../../../environments/environment';
 import { ToastrService } from 'ngx-toastr';
 import { AuthService } from '../../core/services/auth.service';
 import { ViewPreferenceService, ViewMode } from '../../core/services/view-preference.service';
+import { DniScannerComponent, DniData } from '../../shared/dni-scanner/dni-scanner.component';
 
 @Component({
   selector: 'app-jugadores',
   standalone: true,
-  imports: [FormsModule, MatButtonModule, MatIconModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatMenuModule],
+  imports: [FormsModule, MatButtonModule, MatIconModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatMenuModule, DniScannerComponent],
   template: `
     <div class="space-y-5 animate-fade-in">
 
@@ -93,7 +94,14 @@ import { ViewPreferenceService, ViewMode } from '../../core/services/view-prefer
         <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
           <div class="h-1 rounded-full bg-gradient-to-r from-[var(--color-primario)] to-[var(--color-acento)]"></div>
           <div class="p-6">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ editando ? 'Editar' : 'Nuevo' }} Jugador</h3>
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-semibold text-gray-900">{{ editando ? 'Editar' : 'Nuevo' }} Jugador</h3>
+              @if (!editando) {
+                <button mat-stroked-button color="primary" (click)="abrirScannerDni()" type="button" class="!rounded-lg">
+                  <mat-icon>qr_code_scanner</mat-icon> Escanear DNI
+                </button>
+              }
+            </div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
               <mat-form-field appearance="outline">
                 <mat-label>Nombre</mat-label>
@@ -340,6 +348,11 @@ import { ViewPreferenceService, ViewMode } from '../../core/services/view-prefer
           }
         </div>
       }
+
+      <!-- Scanner DNI modal -->
+      @if (mostrarScanner) {
+        <app-dni-scanner (scanned)="onDniScanned($event)" (cancelled)="mostrarScanner = false"></app-dni-scanner>
+      }
     </div>
   `,
 })
@@ -350,6 +363,7 @@ export class JugadoresComponent implements OnInit, OnDestroy {
   viewMode: ViewMode = 'cards';
   filtros: any = { club_id: '', categoria_id: '', estado_fichaje: '', search: '' };
   mostrarForm = false;
+  mostrarScanner = false;
   editando: any = null;
   form: any = { nombre: '', apellido: '', dni: '', fecha_nacimiento: '', club_id: '', categoria_id: '', numero_camiseta: null };
   private viewSub?: Subscription;
@@ -427,6 +441,26 @@ export class JugadoresComponent implements OnInit, OnDestroy {
     this.editando = null;
     this.form = { nombre: '', apellido: '', dni: '', fecha_nacimiento: '', club_id: '', categoria_id: '', numero_camiseta: null };
     this.mostrarForm = false;
+  }
+
+  abrirScannerDni() {
+    this.mostrarScanner = true;
+    this.cdr.detectChanges();
+  }
+
+  onDniScanned(data: DniData) {
+    // Autocompletar campos del formulario con los datos del DNI
+    if (data.nombre) this.form.nombre = this.capitalizar(data.nombre);
+    if (data.apellido) this.form.apellido = this.capitalizar(data.apellido);
+    if (data.dni) this.form.dni = data.dni;
+    if (data.fecha_nacimiento) this.form.fecha_nacimiento = data.fecha_nacimiento;
+    this.mostrarScanner = false;
+    this.toastr.success('DNI escaneado correctamente');
+    this.cdr.detectChanges();
+  }
+
+  private capitalizar(texto: string): string {
+    return texto.toLowerCase().split(' ').map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
   }
 
   cambiarFichaje(j: any, estado: string) {

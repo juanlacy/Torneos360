@@ -17,6 +17,8 @@ export { Veedor } from './Veedor.js';
 export { FixtureJornada } from './FixtureJornada.js';
 export { Partido } from './Partido.js';
 export { PartidoEvento } from './PartidoEvento.js';
+export { PartidoAlineacion } from './PartidoAlineacion.js';
+export { PartidoConfirmacion } from './PartidoConfirmacion.js';
 export { TablaPosiciones } from './TablaPosiciones.js';
 export { TablaPosicionesClub } from './TablaPosicionesClub.js';
 export { Configuracion } from './Configuracion.js';
@@ -110,6 +112,20 @@ PartidoEvento.belongsTo(Partido, { foreignKey: 'partido_id', as: 'partido' });
 PartidoEvento.belongsTo(Jugador, { foreignKey: 'jugador_id', as: 'jugador' });
 PartidoEvento.belongsTo(Jugador, { foreignKey: 'jugador_reemplaza_id', as: 'jugadorReemplaza' });
 PartidoEvento.belongsTo(Club, { foreignKey: 'club_id', as: 'club' });
+
+// Partido <-> Alineaciones
+import { PartidoAlineacion } from './PartidoAlineacion.js';
+import { PartidoConfirmacion } from './PartidoConfirmacion.js';
+
+Partido.hasMany(PartidoAlineacion, { foreignKey: 'partido_id', as: 'alineaciones' });
+PartidoAlineacion.belongsTo(Partido, { foreignKey: 'partido_id', as: 'partido' });
+PartidoAlineacion.belongsTo(Jugador, { foreignKey: 'jugador_id', as: 'jugador' });
+PartidoAlineacion.belongsTo(Club, { foreignKey: 'club_id', as: 'club' });
+
+// Partido <-> Confirmaciones
+Partido.hasMany(PartidoConfirmacion, { foreignKey: 'partido_id', as: 'confirmaciones' });
+PartidoConfirmacion.belongsTo(Partido, { foreignKey: 'partido_id', as: 'partido' });
+PartidoConfirmacion.belongsTo(Usuario, { foreignKey: 'usuario_id', as: 'usuario' });
 
 // Posiciones
 TablaPosiciones.belongsTo(Torneo, { foreignKey: 'torneo_id', as: 'torneo' });

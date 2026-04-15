@@ -185,7 +185,47 @@ import { BrandingService } from '../../../core/services/branding.service';
                       <input matInput type="number" [(ngModel)]="configTorneo.puntos_derrota" min="0">
                     </mat-form-field>
                   </div>
-                  <button mat-flat-button color="primary" (click)="guardarConfigTorneo()" class="mt-2">
+
+                  <h3 class="text-lg font-semibold text-gray-900 mt-6 mb-3">Reglas del Partido</h3>
+                  <p class="text-sm text-gray-500 mb-4">Configura las reglas aplicables a todos los partidos del torneo. Cada partido puede sobreescribir estas reglas.</p>
+
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <mat-form-field appearance="outline">
+                      <mat-label>Cantidad de tiempos</mat-label>
+                      <input matInput type="number" [(ngModel)]="configTorneo.cantidad_tiempos" min="1" max="4">
+                      <mat-hint>Por defecto 2</mat-hint>
+                    </mat-form-field>
+                    <mat-form-field appearance="outline">
+                      <mat-label>Duracion de cada tiempo (minutos)</mat-label>
+                      <input matInput type="number" [(ngModel)]="configTorneo.minutos_por_tiempo" min="1">
+                    </mat-form-field>
+                  </div>
+
+                  <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-2">
+                    <label class="flex items-center gap-3 p-3 rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-50">
+                      <input type="checkbox" [(ngModel)]="configTorneo.tarjeta_azul_habilitada" class="w-5 h-5 rounded">
+                      <div>
+                        <p class="text-sm font-medium text-gray-900">Tarjeta azul</p>
+                        <p class="text-[10px] text-gray-500">Habilita la tarjeta azul en los eventos</p>
+                      </div>
+                    </label>
+                    <label class="flex items-center gap-3 p-3 rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-50">
+                      <input type="checkbox" [(ngModel)]="configTorneo.contar_faltas" class="w-5 h-5 rounded">
+                      <div>
+                        <p class="text-sm font-medium text-gray-900">Contar faltas</p>
+                        <p class="text-[10px] text-gray-500">Registra faltas por jugador y equipo</p>
+                      </div>
+                    </label>
+                    <label class="flex items-center gap-3 p-3 rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-50">
+                      <input type="checkbox" [(ngModel)]="configTorneo.reloj_parado" class="w-5 h-5 rounded">
+                      <div>
+                        <p class="text-sm font-medium text-gray-900">Reloj parado</p>
+                        <p class="text-[10px] text-gray-500">Permite pausar el cronometro en cada evento</p>
+                      </div>
+                    </label>
+                  </div>
+
+                  <button mat-flat-button color="primary" (click)="guardarConfigTorneo()" class="mt-4">
                     <mat-icon>save</mat-icon> Guardar reglas
                   </button>
                 }
@@ -270,7 +310,16 @@ export class ConfiguracionComponent implements OnInit {
 
   // Reglas
   torneoSeleccionado: any = null;
-  configTorneo: any = { puntos_victoria: 2, puntos_empate: 1, puntos_derrota: 0 };
+  configTorneo: any = {
+    puntos_victoria: 2,
+    puntos_empate: 1,
+    puntos_derrota: 0,
+    cantidad_tiempos: 2,
+    minutos_por_tiempo: 25,
+    tarjeta_azul_habilitada: false,
+    contar_faltas: false,
+    reloj_parado: false,
+  };
 
   // IA
   iaConfig: any = {
@@ -349,6 +398,11 @@ export class ConfiguracionComponent implements OnInit {
       puntos_victoria: config.puntos_victoria ?? 2,
       puntos_empate: config.puntos_empate ?? 1,
       puntos_derrota: config.puntos_derrota ?? 0,
+      cantidad_tiempos: config.cantidad_tiempos ?? 2,
+      minutos_por_tiempo: config.minutos_por_tiempo ?? 25,
+      tarjeta_azul_habilitada: config.tarjeta_azul_habilitada ?? false,
+      contar_faltas: config.contar_faltas ?? false,
+      reloj_parado: config.reloj_parado ?? false,
     };
   }
 

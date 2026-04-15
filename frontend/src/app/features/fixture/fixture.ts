@@ -148,7 +148,17 @@ import { BrandingService } from '../../core/services/branding.service';
                     <span class="font-semibold text-gray-900 text-sm">{{ cruce.visitante }}</span>
                   </div>
 
-                  <span class="text-[10px] text-gray-400 font-medium hidden md:inline">{{ cruce.partidos }} partidos</span>
+                  <div class="flex flex-col items-end gap-0.5 text-right">
+                    <span class="text-[10px] text-gray-400 font-medium hidden md:inline">{{ cruce.partidos }} partidos</span>
+                    @if (cruce.arbitroNombre) {
+                      <span class="text-[10px] text-gray-600 flex items-center gap-1">
+                        <mat-icon class="!text-xs !w-3 !h-3">sports</mat-icon>
+                        {{ cruce.arbitroNombre }}
+                      </span>
+                    } @else {
+                      <span class="text-[10px] text-amber-600 italic">sin arbitro</span>
+                    }
+                  </div>
                   @if (auth.isAdmin()) {
                     <button mat-icon-button class="!text-red-400 hover:!text-red-600" (click)="eliminarCruce(jornada, cruce)">
                       <mat-icon class="!text-lg">delete</mat-icon>
@@ -216,6 +226,15 @@ import { BrandingService } from '../../core/services/branding.service';
                       }
                     </mat-select>
                   </mat-form-field>
+                  <mat-form-field appearance="outline" subscriptSizing="dynamic" class="flex-1 min-w-[150px]">
+                    <mat-label>Arbitro</mat-label>
+                    <mat-select [(ngModel)]="cruceForm.arbitro_id">
+                      <mat-option [value]="null">Sin asignar</mat-option>
+                      @for (a of arbitros; track a.id) {
+                        <mat-option [value]="a.id">{{ a.apellido }}, {{ a.nombre }}</mat-option>
+                      }
+                    </mat-select>
+                  </mat-form-field>
                   <button mat-flat-button color="primary" (click)="agregarCruce(jornada)" class="mb-0.5">
                     <mat-icon>add</mat-icon> Agregar cruce
                   </button>
@@ -266,13 +285,14 @@ import { BrandingService } from '../../core/services/branding.service';
 export class FixtureComponent implements OnInit {
   zonas: any[] = [];
   clubes: any[] = [];
+  arbitros: any[] = [];
   jornadas: any[] = [];
   jornadasFiltradas: any[] = [];
   filtroZona = '';
   filtroFase = '';
   mostrarFormJornada = false;
   formJornada: any = { numero_jornada: 1, zona_id: null, fase: 'ida', fecha: '' };
-  cruceForm = { club_local_id: null, club_visitante_id: null };
+  cruceForm: any = { club_local_id: null, club_visitante_id: null, arbitro_id: null };
   private torneoId: number | null = null;
 
   constructor(
@@ -295,7 +315,12 @@ export class FixtureComponent implements OnInit {
         this.zonas = res.data.zonas || [];
         this.clubes = res.data.clubes || [];
         this.cargarJornadas();
+        this.cdr.detectChanges();
       },
+    });
+    // Cargar arbitros del torneo
+    this.http.get<any>(`${environment.apiUrl}/arbitros`, { params: { torneo_id: this.torneoId } }).subscribe({
+      next: res => { this.arbitros = res.data || []; this.cdr.detectChanges(); },
     });
   }
 
@@ -340,6 +365,8 @@ export class FixtureComponent implements OnInit {
               visitEscudo: p.clubVisitante?.escudo_url,
               visitColor: p.clubVisitante?.color_primario,
               visitColorSec: p.clubVisitante?.color_secundario,
+              arbitroId: p.arbitro_id,
+              arbitroNombre: p.arbitro ? `${p.arbitro.apellido || ''} ${p.arbitro.nombre || ''}`.trim() : null,
               partidos: 0,
             };
           }
@@ -421,7 +448,7 @@ export class FixtureComponent implements OnInit {
     this.http.post<any>(`${environment.apiUrl}/fixture/jornada/${jornada.id}/enfrentamiento`, this.cruceForm).subscribe({
       next: (res) => {
         this.toastr.success(`${localNombre} vs ${visitNombre} — ${res.data?.length || 7} partidos creados`);
-        this.cruceForm = { club_local_id: null, club_visitante_id: null };
+        this.cruceForm = { club_local_id: null, club_visitante_id: null, arbitro_id: null };
         // Recargar partidos de la jornada para mostrar el nuevo cruce
         jornada._partidos = null;
         jornada._cruces = null;
