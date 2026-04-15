@@ -21,7 +21,11 @@
  */
 
 import 'dotenv/config';
-import { sequelize, Torneo, Club, Categoria, Persona, PersonaRol, Rol } from '../models/index.js';
+import { sequelize, Torneo, Club, Institucion, Categoria, Persona, PersonaRol, Rol } from '../models/index.js';
+
+// Soporta --torneo-id=X para poblar un torneo especifico (ej: el DEMO clonado)
+const args = process.argv.slice(2);
+const torneoIdArg = args.find(a => a.startsWith('--torneo-id='))?.split('=')[1];
 
 // ─── Data de nombres ficticios argentinos ──────────────────────────────────
 const NOMBRES_M = [
@@ -122,18 +126,24 @@ const crearPersonaConRol = async ({
     await sequelize.authenticate();
     console.log('✓ Conectado a la base de datos\n');
 
-    // 1) Obtener el torneo
-    const torneo = await Torneo.findOne({
-      order: [['creado_en', 'DESC']],
-    });
+    // 1) Obtener el torneo (por --torneo-id o el mas reciente)
+    const torneo = torneoIdArg
+      ? await Torneo.findByPk(parseInt(torneoIdArg))
+      : await Torneo.findOne({ order: [['creado_en', 'DESC']] });
+
     if (!torneo) {
-      console.error('✗ No hay torneos en la base. Creá un torneo primero.');
+      console.error(torneoIdArg
+        ? `✗ Torneo id=${torneoIdArg} no encontrado.`
+        : '✗ No hay torneos en la base. Cre\u00e1 un torneo primero.');
       process.exit(1);
     }
     console.log(`▶ Torneo: ${torneo.nombre} (id=${torneo.id})`);
 
     // 2) Obtener clubes y categorias del torneo
-    const clubes = await Club.findAll({ where: { torneo_id: torneo.id, activo: true } });
+    const clubes = await Club.findAll({
+      where: { torneo_id: torneo.id, activo: true },
+      include: [{ model: Institucion, as: 'institucion' }],
+    });
     const categorias = await Categoria.findAll({ where: { torneo_id: torneo.id } });
 
     if (!clubes.length) {
@@ -179,7 +189,8 @@ const crearPersonaConRol = async ({
     // Por cada club: staff + jugadores
     // ═══════════════════════════════════════════════════════════════════
     for (const club of clubes) {
-      console.log(`\n── Club: ${club.nombre_corto || club.nombre} ${'─'.repeat(50 - (club.nombre_corto || club.nombre).length)}`);
+      const nombreClub = club.nombre_corto || club.nombre || `Club #${club.id}`;
+      console.log(`\n── Club: ${nombreClub} ${'─'.repeat(Math.max(0, 50 - nombreClub.length))}`);
 
       // 1 Delegado General
       {
