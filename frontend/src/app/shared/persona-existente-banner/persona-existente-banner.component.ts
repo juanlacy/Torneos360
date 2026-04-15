@@ -28,11 +28,11 @@ import { Persona } from '../../core/services/personas.service';
             <div class="flex flex-wrap gap-1.5 mt-1">
               @for (r of persona.roles_asignados; track r.id) {
                 <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-white border border-blue-200 text-blue-800"
-                  [style.border-color]="r.rol?.color || '#93c5fd'">
-                  @if (r.rol?.icono) {
-                    <mat-icon class="!text-xs !w-3 !h-3" [style.color]="r.rol?.color">{{ r.rol.icono }}</mat-icon>
+                  [style.border-color]="r.rol.color || '#93c5fd'">
+                  @if (r.rol.icono) {
+                    <mat-icon class="!text-xs !w-3 !h-3" [style.color]="r.rol.color">{{ r.rol.icono }}</mat-icon>
                   }
-                  <span>{{ r.rol?.nombre }}</span>
+                  <span>{{ r.rol.nombre }}</span>
                   @if (r.club) { <span class="text-blue-500">en {{ r.club.nombre_corto || r.club.nombre }}</span> }
                   @if (r.categoria) { <span class="text-blue-500">({{ r.categoria.nombre }})</span> }
                 </span>
