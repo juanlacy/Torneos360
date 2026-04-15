@@ -151,7 +151,7 @@ export const jugadoresPorClub = async (req, res) => {
 export const crear = async (req, res) => {
   try {
     const {
-      torneo_id, zona_id, nombre_override,
+      torneo_id, zona_id, nombre_override, sufijo,
       institucion_id, nombre, nombre_corto, color_primario, color_secundario, escudo_url, contacto,
     } = req.body;
 
@@ -182,14 +182,17 @@ export const crear = async (req, res) => {
       return res.status(400).json({ success: false, message: 'institucion_id o nombre es requerido' });
     }
 
-    // Verificar que no exista ya la participacion
+    // Verificar que no exista ya la participacion con el mismo sufijo
+    const sufijoFinal = (sufijo || '').trim();
     const existente = await Club.findOne({
-      where: { institucion_id: institucion.id, torneo_id },
+      where: { institucion_id: institucion.id, torneo_id, sufijo: sufijoFinal },
     });
     if (existente) {
       return res.status(400).json({
         success: false,
-        message: `La institucion "${institucion.nombre}" ya participa en este torneo`,
+        message: sufijoFinal
+          ? `La institucion "${institucion.nombre}" ya tiene un equipo "${sufijoFinal}" en este torneo`
+          : `La institucion "${institucion.nombre}" ya participa en este torneo. Si queres agregar un segundo equipo, indica un sufijo (A, B, Reserva, etc).`,
       });
     }
 
@@ -197,6 +200,7 @@ export const crear = async (req, res) => {
       institucion_id: institucion.id,
       torneo_id,
       zona_id: zona_id || null,
+      sufijo: sufijoFinal,
       nombre_override: nombre_override || null,
       activo: true,
     });
@@ -221,7 +225,7 @@ export const actualizar = async (req, res) => {
     const antes = club.toJSON();
 
     // Campos del club (participacion)
-    const camposClub = ['zona_id', 'nombre_override', 'activo'];
+    const camposClub = ['zona_id', 'nombre_override', 'sufijo', 'activo'];
     const updatesClub = { actualizado_en: new Date() };
     for (const c of camposClub) { if (req.body[c] !== undefined) updatesClub[c] = req.body[c]; }
     await club.update(updatesClub);

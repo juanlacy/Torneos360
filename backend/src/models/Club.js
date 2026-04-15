@@ -17,6 +17,12 @@ export const Club = sequelize.define('Club', {
   institucion_id: { type: DataTypes.INTEGER, allowNull: false },
   torneo_id: { type: DataTypes.INTEGER, allowNull: false },
   zona_id: { type: DataTypes.INTEGER, allowNull: true },
+  sufijo: {
+    type: DataTypes.STRING(20),
+    allowNull: false,
+    defaultValue: '',
+    comment: 'Identificador de equipo: A, B, Reserva, etc. Vacio si la institucion tiene un solo club en el torneo.',
+  },
   nombre_override: { type: DataTypes.STRING(100), allowNull: true },
   activo: { type: DataTypes.BOOLEAN, defaultValue: true },
   creado_en: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
@@ -27,12 +33,20 @@ export const Club = sequelize.define('Club', {
   nombre: {
     type: DataTypes.VIRTUAL,
     get() {
-      return this.getDataValue('nombre_override') || this.institucion?.nombre || null;
+      const base = this.getDataValue('nombre_override') || this.institucion?.nombre || null;
+      const suf = this.getDataValue('sufijo');
+      if (base && suf) return `${base} ${suf}`;
+      return base;
     },
   },
   nombre_corto: {
     type: DataTypes.VIRTUAL,
-    get() { return this.institucion?.nombre_corto || null; },
+    get() {
+      const base = this.institucion?.nombre_corto || null;
+      const suf = this.getDataValue('sufijo');
+      if (base && suf) return `${base} ${suf}`;
+      return base;
+    },
   },
   escudo_url: {
     type: DataTypes.VIRTUAL,
@@ -57,6 +71,6 @@ export const Club = sequelize.define('Club', {
     { name: 'idx_clubes_torneo', fields: ['torneo_id'] },
     { name: 'idx_clubes_zona', fields: ['zona_id'] },
     { name: 'idx_clubes_institucion', fields: ['institucion_id'] },
-    { name: 'idx_clubes_unique', fields: ['institucion_id', 'torneo_id'], unique: true },
+    { name: 'idx_clubes_unique', fields: ['institucion_id', 'torneo_id', 'sufijo'], unique: true },
   ],
 });

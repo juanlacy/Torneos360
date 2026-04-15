@@ -95,6 +95,11 @@ import { ViewPreferenceService, ViewMode } from '../../core/services/view-prefer
                 <input matInput [(ngModel)]="form.nombre_corto" maxlength="30">
               </mat-form-field>
               <mat-form-field appearance="outline">
+                <mat-label>Sufijo de equipo (A, B, Reserva...)</mat-label>
+                <input matInput [(ngModel)]="form.sufijo" maxlength="20" placeholder="Vacio si es unico">
+                <mat-hint>Solo si la institucion tiene mas de un equipo en este torneo</mat-hint>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
                 <mat-label>Zona</mat-label>
                 <mat-select [(ngModel)]="form.zona_id">
                   <mat-option [value]="null">Sin zona</mat-option>
@@ -346,7 +351,7 @@ export class ClubesComponent implements OnInit, OnDestroy {
   viewMode: ViewMode = 'cards';
   mostrarForm = false;
   editando: any = null;
-  form: any = { nombre: '', nombre_corto: '', zona_id: null, telefono: '', email: '', direccion: '', color_primario: '#762c7e', color_secundario: '#ffffff' };
+  form: any = { nombre: '', nombre_corto: '', sufijo: '', zona_id: null, telefono: '', email: '', direccion: '', color_primario: '#762c7e', color_secundario: '#ffffff' };
   private viewSub?: Subscription;
 
   constructor(
@@ -453,6 +458,7 @@ export class ClubesComponent implements OnInit, OnDestroy {
     this.form = {
       nombre: club.nombre,
       nombre_corto: club.nombre_corto,
+      sufijo: club.sufijo || '',
       zona_id: club.zona_id,
       telefono: contacto.telefono || '',
       email: contacto.email || '',
@@ -465,7 +471,7 @@ export class ClubesComponent implements OnInit, OnDestroy {
 
   cancelar() {
     this.editando = null;
-    this.form = { nombre: '', nombre_corto: '', zona_id: null, telefono: '', email: '', direccion: '', color_primario: '#762c7e', color_secundario: '#ffffff' };
+    this.form = { nombre: '', nombre_corto: '', sufijo: '', zona_id: null, telefono: '', email: '', direccion: '', color_primario: '#762c7e', color_secundario: '#ffffff' };
     this.mostrarForm = false;
   }
 
