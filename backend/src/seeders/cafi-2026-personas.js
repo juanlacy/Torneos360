@@ -55,8 +55,28 @@ const APELLIDOS = [
 ];
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
-let dniCounter = 50000000;
-const nextDni = () => String(dniCounter++);
+/**
+ * Genera un DNI ficticio DETERMINISTICO a partir del contexto, asi el seeder
+ * es realmente idempotente: si ya existe una persona con ese DNI, la reutiliza.
+ *
+ * Estructura del DNI (9 digitos, arranca en 5 para no chocar con DNIs reales):
+ *   5 T CC KK NN
+ *   T  = tipo rol (1=jugador, 2=DG, 3=DA, 4=DT, 5=arbitro, 6=veedor)
+ *   CC = club_id o torneo_id (2 digitos)
+ *   KK = categoria_id o slot (2 digitos)
+ *   NN = slot/posicion (2 digitos)
+ *
+ * Ejemplos:
+ *   Jugador slot 3 del club 5 categoria 7    → 5 1 05 07 03 → 510050703
+ *   Delegado General del club 5              → 5 2 05 00 01 → 520050001
+ *   DT slot 1 del club 5 categoria 7         → 5 4 05 07 01 → 540050701
+ *   Arbitro slot 12 del torneo 2             → 5 5 02 00 12 → 550020012
+ */
+const dniDeterminista = (tipo, contexto, subcontexto, slot) => {
+  const tipoNum = { jugador: 1, dg: 2, da: 3, dt: 4, arbitro: 5, veedor: 6 }[tipo];
+  return String(500000000 + tipoNum * 10000000 + (contexto % 100) * 100000 + (subcontexto % 100) * 100 + slot);
+};
+
 const randomEl = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
 const generarFechaNacimiento = (anio) => {
@@ -169,15 +189,7 @@ const crearPersonaConRol = async ({
       }
     }
 
-    // Ajustar DNI counter al maximo actual para evitar colisiones
-    const ultimaPersona = await Persona.findOne({ order: [['id', 'DESC']], attributes: ['dni'] });
-    if (ultimaPersona) {
-      const ultimoDni = parseInt(ultimaPersona.dni, 10);
-      if (!isNaN(ultimoDni) && ultimoDni >= dniCounter) {
-        dniCounter = ultimoDni + 1;
-      }
-    }
-    console.log(`▶ DNI inicial para nuevas personas: ${dniCounter}\n`);
+    console.log(`▶ Usando DNIs deterministicos (idempotente)\n`);
 
     let stats = {
       jugadores: 0, delegadosGenerales: 0, delegadosAux: 0,
@@ -198,7 +210,7 @@ const crearPersonaConRol = async ({
           nombre: randomEl(NOMBRES_M),
           apellido: randomEl(APELLIDOS),
           fechaNac: generarFechaAdulto(35, 60),
-          dni: nextDni(),
+          dni: dniDeterminista('dg', club.id, 0, 1),
           rolId: rolPorCodigo.delegado_general.id,
           clubId: club.id,
         });
@@ -214,7 +226,7 @@ const crearPersonaConRol = async ({
           nombre: randomEl(NOMBRES_M),
           apellido: randomEl(APELLIDOS),
           fechaNac: generarFechaAdulto(25, 55),
-          dni: nextDni(),
+          dni: dniDeterminista('da', club.id, 0, i + 1),
           rolId: rolPorCodigo.delegado_auxiliar.id,
           clubId: club.id,
         });
@@ -228,7 +240,7 @@ const crearPersonaConRol = async ({
           nombre: randomEl(NOMBRES_M),
           apellido: randomEl(APELLIDOS),
           fechaNac: generarFechaAdulto(30, 60),
-          dni: nextDni(),
+          dni: dniDeterminista('dt', club.id, cat.id, 1),
           rolId: rolPorCodigo.entrenador.id,
           clubId: club.id,
         });
@@ -248,7 +260,7 @@ const crearPersonaConRol = async ({
           const res = await crearPersonaConRol({
             nombre, apellido,
             fechaNac: generarFechaNacimiento(cat.anio_nacimiento),
-            dni: nextDni(),
+            dni: dniDeterminista('jugador', club.id, cat.id, i + 1),
             rolId: rolPorCodigo.jugador.id,
             clubId: club.id,
             categoriaId: cat.id,
@@ -265,7 +277,7 @@ const crearPersonaConRol = async ({
     // ═══════════════════════════════════════════════════════════════════
     // A nivel torneo: 40 arbitros + 30 veedores
     // ═══════════════════════════════════════════════════════════════════
-    console.log(`\n── Torneo: ${torneo.nombre} ${'─'.repeat(50 - torneo.nombre.length)}`);
+    console.log(`\n── Torneo: ${torneo.nombre} ${'─'.repeat(Math.max(0, 50 - torneo.nombre.length))}`);
 
     for (let i = 0; i < 40; i++) {
       const esF = Math.random() < 0.2; // 20% arbitros mujeres
@@ -273,7 +285,7 @@ const crearPersonaConRol = async ({
         nombre: randomEl(esF ? NOMBRES_F : NOMBRES_M),
         apellido: randomEl(APELLIDOS),
         fechaNac: generarFechaAdulto(25, 60),
-        dni: nextDni(),
+        dni: dniDeterminista('arbitro', torneo.id, 0, i + 1),
         rolId: rolPorCodigo.arbitro.id,
         torneoId: torneo.id,
       });
@@ -286,7 +298,7 @@ const crearPersonaConRol = async ({
         nombre: randomEl(esF ? NOMBRES_F : NOMBRES_M),
         apellido: randomEl(APELLIDOS),
         fechaNac: generarFechaAdulto(30, 70),
-        dni: nextDni(),
+        dni: dniDeterminista('veedor', torneo.id, 0, i + 1),
         rolId: rolPorCodigo.veedor.id,
         torneoId: torneo.id,
       });
