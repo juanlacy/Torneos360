@@ -193,6 +193,7 @@ export class LayoutComponent {
         { label: 'Usuarios', icon: 'manage_accounts', route: '/admin/usuarios', adminOnly: true },
         { label: 'Permisos', icon: 'security', route: '/admin/permisos', adminOnly: true },
         { label: 'Roles de Staff', icon: 'badge', route: '/admin/roles-staff', adminOnly: true },
+        { label: 'Instituciones', icon: 'account_balance', route: '/admin/instituciones', adminOnly: true },
         { label: 'Configuracion', icon: 'settings', route: '/admin/configuracion', adminOnly: true },
       ],
     },

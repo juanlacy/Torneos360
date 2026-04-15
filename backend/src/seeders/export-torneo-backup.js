@@ -19,7 +19,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import {
-  sequelize, Torneo, Zona, Categoria, Club, FixtureJornada, Partido,
+  sequelize, Torneo, Zona, Categoria, Club, Institucion, FixtureJornada, Partido,
 } from '../models/index.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -49,7 +49,19 @@ const torneoIdArg = args.find(a => a.startsWith('--torneo-id='))?.split('=')[1];
     // Traer todo lo relacionado
     const zonas       = await Zona.findAll({ where: { torneo_id: torneo.id }, order: [['id', 'ASC']] });
     const categorias  = await Categoria.findAll({ where: { torneo_id: torneo.id }, order: [['id', 'ASC']] });
-    const clubes      = await Club.findAll({ where: { torneo_id: torneo.id }, order: [['id', 'ASC']] });
+    const clubes      = await Club.findAll({
+      where: { torneo_id: torneo.id },
+      include: [{ model: Institucion, as: 'institucion' }],
+      order: [['id', 'ASC']],
+    });
+
+    // Instituciones que participan en este torneo (se exportan aparte para permitir
+    // crearlas o reutilizarlas en otros torneos al importar)
+    const institucionIds = [...new Set(clubes.map(c => c.institucion_id))];
+    const instituciones = await Institucion.findAll({
+      where: { id: institucionIds },
+      order: [['id', 'ASC']],
+    });
     const jornadas    = await FixtureJornada.findAll({ where: { torneo_id: torneo.id }, order: [['id', 'ASC']] });
 
     const jornadaIds = jornadas.map(j => j.id);
@@ -62,7 +74,8 @@ const torneoIdArg = args.find(a => a.startsWith('--torneo-id='))?.split('=')[1];
 
     console.log(`▶ Zonas: ${zonas.length}`);
     console.log(`▶ Categorias: ${categorias.length}`);
-    console.log(`▶ Clubes: ${clubes.length}`);
+    console.log(`▶ Instituciones: ${instituciones.length}`);
+    console.log(`▶ Clubes (participaciones): ${clubes.length}`);
     console.log(`▶ Jornadas: ${jornadas.length}`);
     console.log(`▶ Partidos: ${partidos.length}`);
 
@@ -97,15 +110,25 @@ const torneoIdArg = args.find(a => a.startsWith('--torneo-id='))?.split('=')[1];
         max_jugadores: c.max_jugadores,
         orden: c.orden,
       })),
+      instituciones: instituciones.map(i => ({
+        _id_original: i.id,
+        nombre: i.nombre,
+        nombre_corto: i.nombre_corto,
+        escudo_url: i.escudo_url,
+        color_primario: i.color_primario,
+        color_secundario: i.color_secundario,
+        cuit: i.cuit,
+        direccion: i.direccion,
+        contacto: i.contacto,
+        fundacion: i.fundacion,
+        observaciones: i.observaciones,
+        activo: i.activo,
+      })),
       clubes: clubes.map(c => ({
         _id_original: c.id,
+        _institucion_id_original: c.institucion_id,
         _zona_id_original: c.zona_id,
-        nombre: c.nombre,
-        nombre_corto: c.nombre_corto,
-        color_primario: c.color_primario,
-        color_secundario: c.color_secundario,
-        escudo_url: c.escudo_url,
-        contacto: c.contacto,
+        nombre_override: c.nombre_override,
         activo: c.activo,
       })),
       jornadas: jornadas.map(j => ({

@@ -1,5 +1,5 @@
 import { Op } from 'sequelize';
-import { Persona, PersonaRol, Rol, Club, Torneo, Categoria } from '../models/index.js';
+import { Persona, PersonaRol, Rol, Club, Institucion, Torneo, Categoria } from '../models/index.js';
 import { registrarAudit } from '../services/auditService.js';
 
 /** Normaliza un DNI: sin puntos, espacios ni guiones */
@@ -88,7 +88,7 @@ export const listar = async (req, res) => {
           where: { activo: true },
           include: [
             { model: Rol, as: 'rol', attributes: ['id', 'codigo', 'nombre', 'icono', 'color', 'categoria_fn', 'ambito'] },
-            { model: Club, as: 'club', attributes: ['id', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'] },
+            { model: Club, as: 'club', attributes: ['id', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'], include: [{ model: Institucion, as: 'institucion' }] },
             { model: Torneo, as: 'torneo', attributes: ['id', 'nombre'] },
             { model: Categoria, as: 'categoria', attributes: ['id', 'nombre', 'anio_nacimiento'] },
           ],
@@ -151,7 +151,7 @@ export const obtener = async (req, res) => {
           as: 'roles_asignados',
           include: [
             { model: Rol, as: 'rol' },
-            { model: Club, as: 'club', attributes: ['id', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'] },
+            { model: Club, as: 'club', attributes: ['id', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'], include: [{ model: Institucion, as: 'institucion' }] },
             { model: Torneo, as: 'torneo', attributes: ['id', 'nombre'] },
             { model: Categoria, as: 'categoria', attributes: ['id', 'nombre', 'anio_nacimiento'] },
           ],

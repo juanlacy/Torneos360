@@ -1,4 +1,4 @@
-import { TablaPosiciones, TablaPosicionesClub, Club, Categoria, Zona } from '../models/index.js';
+import { TablaPosiciones, TablaPosicionesClub, Club, Institucion, Categoria, Zona } from '../models/index.js';
 import { recalcularPosiciones } from '../services/standingsCalculatorService.js';
 
 // GET /posiciones/:torneoId/categorias
@@ -12,7 +12,7 @@ export const porCategoria = async (req, res) => {
     const posiciones = await TablaPosiciones.findAll({
       where,
       include: [
-        { model: Club, as: 'club', attributes: ['id', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'] },
+        { model: Club, as: 'club', attributes: ['id', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'], include: [{ model: Institucion, as: 'institucion' }] },
         { model: Categoria, as: 'categoria', attributes: ['id', 'nombre', 'anio_nacimiento', 'es_preliminar'] },
         { model: Zona, as: 'zona', attributes: ['id', 'nombre', 'color'] },
       ],
@@ -35,7 +35,7 @@ export const general = async (req, res) => {
     const posiciones = await TablaPosicionesClub.findAll({
       where,
       include: [
-        { model: Club, as: 'club', attributes: ['id', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'] },
+        { model: Club, as: 'club', attributes: ['id', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'], include: [{ model: Institucion, as: 'institucion' }] },
         { model: Zona, as: 'zona', attributes: ['id', 'nombre', 'color'] },
       ],
       order: [['puntos_totales', 'DESC']],

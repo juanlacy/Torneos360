@@ -1,4 +1,4 @@
-import { FixtureJornada, Partido, Club, Categoria, Zona, Persona } from '../models/index.js';
+import { FixtureJornada, Partido, Club, Categoria, Zona, Persona, Institucion } from '../models/index.js';
 import { generarFixture } from '../services/fixtureGeneratorService.js';
 import { registrarAudit } from '../services/auditService.js';
 import { Op } from 'sequelize';
@@ -81,8 +81,8 @@ export const partidosPorJornada = async (req, res) => {
     const partidos = await Partido.findAll({
       where,
       include: [
-        { model: Club, as: 'clubLocal', attributes: ['id', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'] },
-        { model: Club, as: 'clubVisitante', attributes: ['id', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'] },
+        { model: Club, as: 'clubLocal', attributes: ['id', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'], include: [{ model: Institucion, as: 'institucion' }] },
+        { model: Club, as: 'clubVisitante', attributes: ['id', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'], include: [{ model: Institucion, as: 'institucion' }] },
         { model: Categoria, as: 'categoria', attributes: ['id', 'nombre', 'anio_nacimiento', 'es_preliminar'] },
         { model: Persona, as: 'arbitro', attributes: ['id', 'nombre', 'apellido'] },
       ],
@@ -215,8 +215,8 @@ export const agregarEnfrentamiento = async (req, res) => {
     const partidosCompletos = await Partido.findAll({
       where: { id: partidos.map(p => p.id) },
       include: [
-        { model: Club, as: 'clubLocal', attributes: ['id', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'] },
-        { model: Club, as: 'clubVisitante', attributes: ['id', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'] },
+        { model: Club, as: 'clubLocal', attributes: ['id', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'], include: [{ model: Institucion, as: 'institucion' }] },
+        { model: Club, as: 'clubVisitante', attributes: ['id', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'], include: [{ model: Institucion, as: 'institucion' }] },
         { model: Categoria, as: 'categoria', attributes: ['id', 'nombre', 'anio_nacimiento'] },
       ],
       order: [['hora_inicio', 'ASC']],

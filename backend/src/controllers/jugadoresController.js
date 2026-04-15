@@ -2,7 +2,7 @@ import { Op } from 'sequelize';
 import multer from 'multer';
 import { fileURLToPath } from 'url';
 import { dirname, join, extname } from 'path';
-import { Persona, PersonaRol, Rol, Club, Categoria } from '../models/index.js';
+import { Persona, PersonaRol, Rol, Club, Institucion, Categoria } from '../models/index.js';
 import { clubWhere, tieneAccesoAlClub } from '../middleware/authMiddleware.js';
 import { registrarAudit } from '../services/auditService.js';
 import { obtenerOCrearPersona, normalizarDni } from './personasController.js';
@@ -42,7 +42,7 @@ const includeJugador = (extraWhere = {}) => ({
   where: { activo: true, ...extraWhere },
   include: [
     { model: Rol, as: 'rol', where: { codigo: 'jugador' }, attributes: ['id', 'codigo', 'nombre', 'color'] },
-    { model: Club, as: 'club', attributes: ['id', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'] },
+    { model: Club, as: 'club', attributes: ['id', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'], include: [{ model: Institucion, as: 'institucion' }] },
     { model: Categoria, as: 'categoria', attributes: ['id', 'nombre', 'anio_nacimiento'] },
   ],
 });
@@ -94,7 +94,7 @@ export const listar = async (req, res) => {
       ];
     }
 
-    const includeClub = { model: Club, as: 'club', attributes: ['id', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'] };
+    const includeClub = { model: Club, as: 'club', attributes: ['id', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'], include: [{ model: Institucion, as: 'institucion' }] };
     if (torneo_id) includeClub.where = { torneo_id };
 
     const personas = await Persona.findAll({

@@ -20,7 +20,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import {
-  sequelize, Torneo, Zona, Categoria, Club, FixtureJornada, Partido,
+  sequelize, Torneo, Zona, Categoria, Club, Institucion, FixtureJornada, Partido,
 } from '../models/index.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -79,10 +79,11 @@ const renameArg = args.find(a => a.startsWith('--rename='))?.split('=')[1];
     console.log(`✓ Torneo creado (id=${torneo.id})`);
 
     // Mapa de remapeo: id_viejo → id_nuevo
-    const mapZonas      = new Map();
-    const mapCategorias = new Map();
-    const mapClubes     = new Map();
-    const mapJornadas   = new Map();
+    const mapInstituciones = new Map();
+    const mapZonas         = new Map();
+    const mapCategorias    = new Map();
+    const mapClubes        = new Map();
+    const mapJornadas      = new Map();
 
     // 2) Zonas
     for (const z of backup.zonas) {
@@ -110,22 +111,70 @@ const renameArg = args.find(a => a.startsWith('--rename='))?.split('=')[1];
     }
     console.log(`✓ Categorias: ${backup.categorias.length}`);
 
-    // 4) Clubes
+    // 3.5) Instituciones (reutilizar por nombre si ya existen)
+    //      Compatibilidad: si el backup no trae `instituciones` (version vieja),
+    //      reconstruir desde los clubes que aun tengan nombre inline.
+    const instBackup = backup.instituciones || [];
+    for (const i of instBackup) {
+      let inst = await Institucion.findOne({ where: { nombre: i.nombre }, transaction: t });
+      if (!inst) {
+        inst = await Institucion.create({
+          nombre: i.nombre,
+          nombre_corto: i.nombre_corto,
+          escudo_url: i.escudo_url,
+          color_primario: i.color_primario,
+          color_secundario: i.color_secundario,
+          cuit: i.cuit,
+          direccion: i.direccion,
+          contacto: i.contacto || {},
+          fundacion: i.fundacion,
+          observaciones: i.observaciones,
+          activo: i.activo ?? true,
+        }, { transaction: t });
+      }
+      mapInstituciones.set(i._id_original, inst.id);
+    }
+    console.log(`✓ Instituciones: ${instBackup.length} (reutilizadas + nuevas)`);
+
+    // 4) Clubes (como participaciones de institucion en el torneo)
     for (const c of backup.clubes) {
+      // Resolver institucion_id (nuevo formato) o por nombre (formato viejo)
+      let institucionId = c._institucion_id_original
+        ? mapInstituciones.get(c._institucion_id_original)
+        : null;
+
+      // Compat v1: si el club trae nombre inline (backup viejo), buscar/crear institucion
+      if (!institucionId && c.nombre) {
+        let inst = await Institucion.findOne({ where: { nombre: c.nombre }, transaction: t });
+        if (!inst) {
+          inst = await Institucion.create({
+            nombre: c.nombre,
+            nombre_corto: c.nombre_corto,
+            escudo_url: c.escudo_url,
+            color_primario: c.color_primario,
+            color_secundario: c.color_secundario,
+            contacto: c.contacto || {},
+            activo: true,
+          }, { transaction: t });
+        }
+        institucionId = inst.id;
+      }
+
+      if (!institucionId) {
+        console.warn(`  ⚠ Club omitido (sin institucion resoluble): ${JSON.stringify(c)}`);
+        continue;
+      }
+
       const creado = await Club.create({
+        institucion_id: institucionId,
         torneo_id: torneo.id,
         zona_id: c._zona_id_original ? mapZonas.get(c._zona_id_original) : null,
-        nombre: c.nombre,
-        nombre_corto: c.nombre_corto,
-        color_primario: c.color_primario,
-        color_secundario: c.color_secundario,
-        escudo_url: c.escudo_url,
-        contacto: c.contacto,
-        activo: c.activo,
+        nombre_override: c.nombre_override || null,
+        activo: c.activo ?? true,
       }, { transaction: t });
       mapClubes.set(c._id_original, creado.id);
     }
-    console.log(`✓ Clubes: ${backup.clubes.length}`);
+    console.log(`✓ Clubes (participaciones): ${backup.clubes.length}`);
 
     // 5) Jornadas
     for (const j of backup.jornadas) {

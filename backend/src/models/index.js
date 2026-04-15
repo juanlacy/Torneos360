@@ -9,6 +9,7 @@ export { AuditLog } from './AuditLog.js';
 export { Torneo } from './Torneo.js';
 export { Zona } from './Zona.js';
 export { Club } from './Club.js';
+export { Institucion } from './Institucion.js';
 export { Categoria } from './Categoria.js';
 export { Persona } from './Persona.js';
 export { Rol } from './Rol.js';
@@ -31,6 +32,7 @@ import { AuditLog } from './AuditLog.js';
 import { Torneo } from './Torneo.js';
 import { Zona } from './Zona.js';
 import { Club } from './Club.js';
+import { Institucion } from './Institucion.js';
 import { Categoria } from './Categoria.js';
 import { Persona } from './Persona.js';
 import { Rol } from './Rol.js';
@@ -62,6 +64,10 @@ Club.belongsTo(Torneo, { foreignKey: 'torneo_id', as: 'torneo' });
 
 Zona.hasMany(Club, { foreignKey: 'zona_id', as: 'clubes' });
 Club.belongsTo(Zona, { foreignKey: 'zona_id', as: 'zona' });
+
+// Institucion <-> Club (una institucion puede participar en muchos torneos)
+Institucion.hasMany(Club, { foreignKey: 'institucion_id', as: 'participaciones' });
+Club.belongsTo(Institucion, { foreignKey: 'institucion_id', as: 'institucion' });
 
 Usuario.belongsTo(Club, { foreignKey: 'club_id', as: 'club' });
 Club.hasMany(Usuario, { foreignKey: 'club_id', as: 'usuarios' });

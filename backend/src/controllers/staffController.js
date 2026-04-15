@@ -1,5 +1,5 @@
 import { Op } from 'sequelize';
-import { Persona, PersonaRol, Rol, Club } from '../models/index.js';
+import { Persona, PersonaRol, Rol, Club, Institucion } from '../models/index.js';
 import { tieneAccesoAlClub } from '../middleware/authMiddleware.js';
 import { registrarAudit } from '../services/auditService.js';
 import { obtenerOCrearPersona, normalizarDni } from './personasController.js';
@@ -16,7 +16,7 @@ const includeStaffRol = (extraWhere = {}) => ({
   where: { activo: true, ...extraWhere },
   include: [
     { model: Rol, as: 'rol', where: { categoria_fn: 'staff_club' }, attributes: ['id', 'codigo', 'nombre', 'icono', 'color', 'puede_firmar_alineacion'] },
-    { model: Club, as: 'club', attributes: ['id', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'] },
+    { model: Club, as: 'club', attributes: ['id', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'], include: [{ model: Institucion, as: 'institucion' }] },
   ],
 });
 
@@ -70,7 +70,7 @@ export const listar = async (req, res) => {
         where: rolWhere,
         include: [
           { model: Rol, as: 'rol', where: { categoria_fn: 'staff_club' }, attributes: ['id', 'codigo', 'nombre', 'icono', 'color', 'puede_firmar_alineacion'] },
-          { model: Club, as: 'club', attributes: ['id', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'] },
+          { model: Club, as: 'club', attributes: ['id', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'], include: [{ model: Institucion, as: 'institucion' }] },
         ],
       }],
       order: [['apellido', 'ASC'], ['nombre', 'ASC']],
