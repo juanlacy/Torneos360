@@ -13,11 +13,13 @@ import { ToastrService } from 'ngx-toastr';
 import { AuthService } from '../../core/services/auth.service';
 import { ViewPreferenceService, ViewMode } from '../../core/services/view-preference.service';
 import { DniScannerComponent, DniData } from '../../shared/dni-scanner/dni-scanner.component';
+import { PersonasService, Persona } from '../../core/services/personas.service';
+import { PersonaExistenteBannerComponent } from '../../shared/persona-existente-banner/persona-existente-banner.component';
 
 @Component({
   selector: 'app-jugadores',
   standalone: true,
-  imports: [FormsModule, MatButtonModule, MatIconModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatMenuModule, DniScannerComponent],
+  imports: [FormsModule, MatButtonModule, MatIconModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatMenuModule, DniScannerComponent, PersonaExistenteBannerComponent],
   template: `
     <div class="space-y-5 animate-fade-in">
 
@@ -102,6 +104,10 @@ import { DniScannerComponent, DniData } from '../../shared/dni-scanner/dni-scann
                 </button>
               }
             </div>
+            <!-- Banner si la persona ya existe -->
+            @if (personaExistente) {
+              <app-persona-existente-banner [persona]="personaExistente"></app-persona-existente-banner>
+            }
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
               <mat-form-field appearance="outline">
                 <mat-label>Nombre</mat-label>
@@ -113,7 +119,7 @@ import { DniScannerComponent, DniData } from '../../shared/dni-scanner/dni-scann
               </mat-form-field>
               <mat-form-field appearance="outline">
                 <mat-label>DNI</mat-label>
-                <input matInput [(ngModel)]="form.dni" required>
+                <input matInput [(ngModel)]="form.dni" (blur)="verificarDniExistente()" required>
               </mat-form-field>
               <mat-form-field appearance="outline">
                 <mat-label>Fecha de nacimiento</mat-label>
@@ -366,6 +372,7 @@ export class JugadoresComponent implements OnInit, OnDestroy {
   mostrarScanner = false;
   editando: any = null;
   form: any = { nombre: '', apellido: '', dni: '', fecha_nacimiento: '', club_id: '', categoria_id: '', numero_camiseta: null };
+  personaExistente: Persona | null = null;
   private viewSub?: Subscription;
 
   constructor(
@@ -374,6 +381,7 @@ export class JugadoresComponent implements OnInit, OnDestroy {
     private toastr: ToastrService,
     private cdr: ChangeDetectorRef,
     private viewPref: ViewPreferenceService,
+    private personasService: PersonasService,
   ) {}
 
   ngOnInit() {
@@ -424,10 +432,41 @@ export class JugadoresComponent implements OnInit, OnDestroy {
     }
     const obs = this.editando
       ? this.http.put(`${environment.apiUrl}/jugadores/${this.editando.id}`, this.form)
-      : this.http.post(`${environment.apiUrl}/jugadores`, this.form);
+      : this.http.post<any>(`${environment.apiUrl}/jugadores`, this.form);
     obs.subscribe({
-      next: () => { this.toastr.success(this.editando ? 'Jugador actualizado' : 'Jugador creado'); this.cancelarForm(); this.cargar(); this.cdr.detectChanges(); },
+      next: (res: any) => {
+        const msg = this.editando
+          ? 'Jugador actualizado'
+          : (res?.persona_creada === false
+              ? 'Rol de jugador agregado a persona existente'
+              : 'Jugador creado');
+        this.toastr.success(msg);
+        this.cancelarForm();
+        this.cargar();
+        this.cdr.detectChanges();
+      },
       error: (e: any) => this.toastr.error(e.error?.message || 'Error'),
+    });
+  }
+
+  /** Busca en el backend si el DNI ya pertenece a una persona existente */
+  verificarDniExistente() {
+    if (this.editando) return;
+    const dni = (this.form.dni || '').replace(/[\s.\-]/g, '').trim();
+    if (!dni || dni.length < 7) { this.personaExistente = null; return; }
+
+    this.personasService.buscarPorDni(dni).subscribe({
+      next: (res) => {
+        this.personaExistente = res.data;
+        // Autocompletar nombre/apellido/fecha_nac si la persona existe y el form esta vacio
+        if (res.data && !this.form.nombre) this.form.nombre = res.data.nombre;
+        if (res.data && !this.form.apellido) this.form.apellido = res.data.apellido;
+        if (res.data && !this.form.fecha_nacimiento && res.data.fecha_nacimiento) {
+          this.form.fecha_nacimiento = res.data.fecha_nacimiento;
+        }
+        this.cdr.detectChanges();
+      },
+      error: () => { this.personaExistente = null; },
     });
   }
 
@@ -440,6 +479,7 @@ export class JugadoresComponent implements OnInit, OnDestroy {
   cancelarForm() {
     this.editando = null;
     this.form = { nombre: '', apellido: '', dni: '', fecha_nacimiento: '', club_id: '', categoria_id: '', numero_camiseta: null };
+    this.personaExistente = null;
     this.mostrarForm = false;
   }
 
@@ -457,6 +497,8 @@ export class JugadoresComponent implements OnInit, OnDestroy {
     this.mostrarScanner = false;
     this.toastr.success('DNI escaneado correctamente');
     this.cdr.detectChanges();
+    // Consultar si la persona ya existe en el sistema
+    this.verificarDniExistente();
   }
 
   private capitalizar(texto: string): string {

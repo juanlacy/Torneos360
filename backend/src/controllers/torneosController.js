@@ -1,4 +1,4 @@
-import { Torneo, Zona, Categoria, Club, Jugador, Partido, FixtureJornada } from '../models/index.js';
+import { Torneo, Zona, Categoria, Club, PersonaRol, Rol, Partido, FixtureJornada } from '../models/index.js';
 import { registrarAudit } from '../services/auditService.js';
 import multer from 'multer';
 import { fileURLToPath } from 'url';
@@ -155,7 +155,12 @@ export const getStats = async (req, res) => {
 
     const [clubes, jugadores, jornadas, partidos, enCurso, finalizados, pendientes] = await Promise.all([
       Club.count({ where: { torneo_id: torneoId, activo: true } }),
-      clubIds.length ? Jugador.count({ where: { club_id: clubIds, activo: true } }) : 0,
+      clubIds.length
+        ? PersonaRol.count({
+            where: { club_id: clubIds, activo: true },
+            include: [{ model: Rol, as: 'rol', where: { codigo: 'jugador' }, required: true, attributes: [] }],
+          })
+        : 0,
       FixtureJornada.count({ where: { torneo_id: torneoId } }),
       jornadaIds.length ? Partido.count({ where: { jornada_id: jornadaIds } }) : 0,
       jornadaIds.length ? Partido.count({ where: { jornada_id: jornadaIds, estado: 'en_curso' } }) : 0,

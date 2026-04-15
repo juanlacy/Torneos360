@@ -1,7 +1,16 @@
-import { Partido, PartidoEvento, PartidoAlineacion, PartidoConfirmacion, Club, Categoria, Arbitro, Veedor, Jugador, FixtureJornada, Staff, RolStaff } from '../models/index.js';
+import { Op } from 'sequelize';
+import {
+  Partido, PartidoEvento, PartidoAlineacion, PartidoConfirmacion,
+  Club, Categoria, Persona, PersonaRol, Rol, FixtureJornada, Torneo,
+} from '../models/index.js';
 import { recalcularDespuesDePartido } from '../services/standingsCalculatorService.js';
 import { registrarAudit } from '../services/auditService.js';
-import { emitMatchStart, emitMatchEventNew, emitMatchScore, emitMatchEnd, emitMatchConfirm, emitStandingsUpdate } from '../sockets/matchSocket.js';
+import { emitMatchStart, emitMatchEventNew, emitMatchEnd, emitMatchConfirm, emitStandingsUpdate } from '../sockets/matchSocket.js';
+import { normalizarDni } from './personasController.js';
+
+// ─── Helper: include de "persona como arbitro/veedor" ───────────────────────
+const incArbitro = { model: Persona, as: 'arbitro', attributes: ['id', 'nombre', 'apellido', 'dni'] };
+const incVeedor  = { model: Persona, as: 'veedor',  attributes: ['id', 'nombre', 'apellido', 'dni'] };
 
 // GET /partidos/:id
 export const obtener = async (req, res) => {
@@ -11,13 +20,13 @@ export const obtener = async (req, res) => {
         { model: Club, as: 'clubLocal', attributes: ['id', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'] },
         { model: Club, as: 'clubVisitante', attributes: ['id', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'] },
         { model: Categoria, as: 'categoria', attributes: ['id', 'nombre', 'anio_nacimiento'] },
-        { model: Arbitro, as: 'arbitro', attributes: ['id', 'nombre', 'apellido'] },
-        { model: Veedor, as: 'veedor', attributes: ['id', 'nombre', 'apellido'] },
+        incArbitro,
+        incVeedor,
         { model: FixtureJornada, as: 'jornada', attributes: ['id', 'numero_jornada', 'fase', 'fecha'] },
         {
           model: PartidoEvento, as: 'eventos',
           include: [
-            { model: Jugador, as: 'jugador', attributes: ['id', 'nombre', 'apellido', 'numero_camiseta'] },
+            { model: Persona, as: 'jugador', attributes: ['id', 'nombre', 'apellido'] },
             { model: Club, as: 'club', attributes: ['id', 'nombre_corto'] },
           ],
           order: [['minuto', 'ASC'], ['creado_en', 'ASC']],
@@ -32,32 +41,49 @@ export const obtener = async (req, res) => {
 };
 
 // GET /partidos/:id/jugadores-disponibles
-// Devuelve los jugadores aprobados de ambos clubes en la categoria del partido
+// Devuelve personas con rol=jugador, estado=aprobado, de la categoria de ambos clubes
 export const jugadoresDisponibles = async (req, res) => {
   try {
     const partido = await Partido.findByPk(req.params.id);
     if (!partido) return res.status(404).json({ success: false, message: 'Partido no encontrado' });
 
-    const local = await Jugador.findAll({
-      where: {
-        club_id: partido.club_local_id,
-        categoria_id: partido.categoria_id,
-        activo: true,
-        estado_fichaje: 'aprobado',
-      },
-      attributes: ['id', 'nombre', 'apellido', 'dni', 'numero_camiseta', 'foto_url', 'club_id'],
-      order: [['numero_camiseta', 'ASC'], ['apellido', 'ASC']],
-    });
-    const visitante = await Jugador.findAll({
-      where: {
-        club_id: partido.club_visitante_id,
-        categoria_id: partido.categoria_id,
-        activo: true,
-        estado_fichaje: 'aprobado',
-      },
-      attributes: ['id', 'nombre', 'apellido', 'dni', 'numero_camiseta', 'foto_url', 'club_id'],
-      order: [['numero_camiseta', 'ASC'], ['apellido', 'ASC']],
-    });
+    const rolJugador = await Rol.findOne({ where: { codigo: 'jugador' } });
+    if (!rolJugador) return res.status(500).json({ success: false, message: 'Rol jugador no configurado' });
+
+    const obtenerJugadoresClub = async (clubId) => {
+      const personas = await Persona.findAll({
+        where: { activo: true },
+        include: [{
+          model: PersonaRol,
+          as: 'roles_asignados',
+          required: true,
+          where: {
+            rol_id: rolJugador.id,
+            club_id: clubId,
+            categoria_id: partido.categoria_id,
+            estado_fichaje: 'aprobado',
+            activo: true,
+          },
+        }],
+        order: [['apellido', 'ASC']],
+      });
+      return personas.map(p => {
+        const ra = p.roles_asignados[0];
+        return {
+          id: p.id,                            // persona_id
+          persona_rol_id: ra.id,
+          nombre: p.nombre,
+          apellido: p.apellido,
+          dni: p.dni,
+          foto_url: p.foto_url,
+          club_id: ra.club_id,
+          numero_camiseta: ra.numero_camiseta,
+        };
+      });
+    };
+
+    const local = await obtenerJugadoresClub(partido.club_local_id);
+    const visitante = await obtenerJugadoresClub(partido.club_visitante_id);
 
     res.json({ success: true, data: { local, visitante } });
   } catch (error) {
@@ -65,7 +91,7 @@ export const jugadoresDisponibles = async (req, res) => {
   }
 };
 
-// PUT /partidos/:id  (actualizar datos basicos: arbitro, cancha, etc.)
+// PUT /partidos/:id
 export const actualizar = async (req, res) => {
   try {
     const partido = await Partido.findByPk(req.params.id);
@@ -84,7 +110,7 @@ export const actualizar = async (req, res) => {
   }
 };
 
-// POST /partidos/:id/iniciar
+// POST /partidos/:id/iniciar  (legacy; preferir /periodo/iniciar)
 export const iniciar = async (req, res) => {
   try {
     const partido = await Partido.findByPk(req.params.id);
@@ -95,7 +121,6 @@ export const iniciar = async (req, res) => {
 
     await partido.update({ estado: 'en_curso', hora_inicio: new Date(), actualizado_en: new Date() });
 
-    // Registrar evento de inicio
     await PartidoEvento.create({
       partido_id: partido.id, tipo: 'inicio', minuto: 0,
       detalle: 'Inicio del partido', registrado_por: req.user.id,
@@ -118,15 +143,24 @@ export const registrarEvento = async (req, res) => {
       return res.status(400).json({ success: false, message: 'El partido no esta en curso' });
     }
 
-    const { tipo, jugador_id, jugador_reemplaza_id, club_id, minuto, detalle } = req.body;
+    // Aceptar tanto persona_id (nuevo) como jugador_id (legacy por compat)
+    const {
+      tipo, persona_id, persona_reemplaza_id,
+      jugador_id, jugador_reemplaza_id,
+      club_id, minuto, periodo, detalle,
+    } = req.body;
     if (!tipo) return res.status(400).json({ success: false, message: 'tipo es requerido' });
 
     const evento = await PartidoEvento.create({
-      partido_id: partido.id, tipo, jugador_id, jugador_reemplaza_id,
-      club_id, minuto, detalle, registrado_por: req.user.id,
+      partido_id: partido.id,
+      tipo,
+      persona_id: persona_id || jugador_id || null,
+      persona_reemplaza_id: persona_reemplaza_id || jugador_reemplaza_id || null,
+      club_id, minuto, periodo, detalle,
+      registrado_por: req.user.id,
     });
 
-    // Si es gol, actualizar marcador
+    // Actualizar marcador si es gol
     if (tipo === 'gol' && club_id) {
       if (club_id === partido.club_local_id) {
         await partido.update({ goles_local: partido.goles_local + 1, actualizado_en: new Date() });
@@ -135,15 +169,13 @@ export const registrarEvento = async (req, res) => {
       }
     }
 
-    // Recargar evento con includes
     const eventoCompleto = await PartidoEvento.findByPk(evento.id, {
       include: [
-        { model: Jugador, as: 'jugador', attributes: ['id', 'nombre', 'apellido', 'numero_camiseta'] },
+        { model: Persona, as: 'jugador', attributes: ['id', 'nombre', 'apellido'] },
         { model: Club, as: 'club', attributes: ['id', 'nombre_corto'] },
       ],
     });
 
-    // Emitir via Socket.io
     await partido.reload();
     emitMatchEventNew(partido, eventoCompleto.toJSON());
 
@@ -163,7 +195,6 @@ export const finalizar = async (req, res) => {
     }
 
     const { goles_local, goles_visitante } = req.body;
-
     await partido.update({
       estado: 'finalizado',
       hora_fin: new Date(),
@@ -172,23 +203,18 @@ export const finalizar = async (req, res) => {
       actualizado_en: new Date(),
     });
 
-    // Registrar evento de fin
     await PartidoEvento.create({
-      partido_id: partido.id, tipo: 'fin', detalle: `Final: ${partido.goles_local} - ${partido.goles_visitante}`,
+      partido_id: partido.id, tipo: 'fin',
+      detalle: `Final: ${partido.goles_local} - ${partido.goles_visitante}`,
       registrado_por: req.user.id,
     });
 
-    // Recalcular posiciones
-    try {
-      await recalcularDespuesDePartido(partido.id);
-    } catch (e) {
-      console.error('Error al recalcular posiciones:', e.message);
-    }
+    try { await recalcularDespuesDePartido(partido.id); }
+    catch (e) { console.error('Error al recalcular posiciones:', e.message); }
 
-    registrarAudit({ req, accion: 'FINALIZAR_PARTIDO', entidad: 'partidos', entidad_id: partido.id, despues: { goles_local: partido.goles_local, goles_visitante: partido.goles_visitante } });
+    registrarAudit({ req, accion: 'FINALIZAR_PARTIDO', entidad: 'partidos', entidad_id: partido.id });
     emitMatchEnd(partido);
 
-    // Emitir actualizacion de posiciones
     const jornada = await FixtureJornada.findByPk(partido.jornada_id, { attributes: ['torneo_id'] });
     if (jornada) emitStandingsUpdate(jornada.torneo_id);
 
@@ -198,7 +224,7 @@ export const finalizar = async (req, res) => {
   }
 };
 
-// POST /partidos/:id/confirmar  (arbitro confirma resultado)
+// POST /partidos/:id/confirmar  (legacy — reemplazado por cerrar)
 export const confirmar = async (req, res) => {
   try {
     const partido = await Partido.findByPk(req.params.id);
@@ -208,7 +234,6 @@ export const confirmar = async (req, res) => {
     }
 
     await partido.update({ confirmado_arbitro: true, actualizado_en: new Date() });
-
     registrarAudit({ req, accion: 'CONFIRMAR_PARTIDO', entidad: 'partidos', entidad_id: partido.id });
     emitMatchConfirm(partido);
     res.json({ success: true, data: partido, message: 'Partido confirmado por el arbitro' });
@@ -224,7 +249,6 @@ export const suspender = async (req, res) => {
     if (!partido) return res.status(404).json({ success: false, message: 'Partido no encontrado' });
 
     await partido.update({ estado: 'suspendido', observaciones: req.body.motivo || null, actualizado_en: new Date() });
-
     registrarAudit({ req, accion: 'SUSPENDER_PARTIDO', entidad: 'partidos', entidad_id: partido.id, despues: { motivo: req.body.motivo } });
     res.json({ success: true, data: partido, message: 'Partido suspendido' });
   } catch (error) {
@@ -245,7 +269,7 @@ export const getAlineacion = async (req, res) => {
     const alineaciones = await PartidoAlineacion.findAll({
       where: { partido_id: partido.id },
       include: [
-        { model: Jugador, as: 'jugador', attributes: ['id', 'nombre', 'apellido', 'dni', 'foto_url', 'numero_camiseta'] },
+        { model: Persona, as: 'jugador', attributes: ['id', 'nombre', 'apellido', 'dni', 'foto_url'] },
       ],
       order: [['numero_camiseta', 'ASC']],
     });
@@ -257,12 +281,7 @@ export const getAlineacion = async (req, res) => {
 
     res.json({
       success: true,
-      data: {
-        local,
-        visitante,
-        confirmado_local: confLocal,
-        confirmado_visitante: confVisitante,
-      },
+      data: { local, visitante, confirmado_local: confLocal, confirmado_visitante: confVisitante },
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -270,37 +289,46 @@ export const getAlineacion = async (req, res) => {
 };
 
 // POST /partidos/:id/alineacion
-// Body: { jugador_id, numero_camiseta, titular, club_id }
-// Agrega o actualiza un jugador en la alineacion del partido
+// Body: { persona_id | jugador_id (legacy), numero_camiseta, titular, club_id }
 export const upsertAlineacion = async (req, res) => {
   try {
     const partido = await Partido.findByPk(req.params.id);
     if (!partido) return res.status(404).json({ success: false, message: 'Partido no encontrado' });
 
-    const { jugador_id, numero_camiseta, titular, club_id } = req.body;
-    if (!jugador_id || !club_id) {
-      return res.status(400).json({ success: false, message: 'jugador_id y club_id son requeridos' });
-    }
+    const personaId = req.body.persona_id || req.body.jugador_id;
+    const { numero_camiseta, titular, club_id } = req.body;
 
-    // Validar que el club sea local o visitante
+    if (!personaId || !club_id) {
+      return res.status(400).json({ success: false, message: 'persona_id y club_id son requeridos' });
+    }
     if (club_id !== partido.club_local_id && club_id !== partido.club_visitante_id) {
       return res.status(400).json({ success: false, message: 'El club no participa en este partido' });
     }
 
-    // Validar que el jugador pertenezca al club
-    const jugador = await Jugador.findByPk(jugador_id);
-    if (!jugador || jugador.club_id !== club_id) {
-      return res.status(400).json({ success: false, message: 'El jugador no pertenece a este club' });
-    }
-
-    // Validar que el jugador sea de la categoria del partido
-    if (jugador.categoria_id !== partido.categoria_id) {
-      return res.status(400).json({ success: false, message: 'El jugador no es de la categoria del partido' });
+    // Validar que la persona tenga rol 'jugador' en este club + categoria
+    const rolJugador = await Rol.findOne({ where: { codigo: 'jugador' } });
+    const fichaje = await PersonaRol.findOne({
+      where: {
+        persona_id: personaId,
+        rol_id: rolJugador.id,
+        club_id,
+        categoria_id: partido.categoria_id,
+        activo: true,
+      },
+    });
+    if (!fichaje) {
+      return res.status(400).json({ success: false, message: 'La persona no esta fichada como jugador en este club y categoria' });
     }
 
     const [aline] = await PartidoAlineacion.findOrCreate({
-      where: { partido_id: partido.id, jugador_id },
-      defaults: { partido_id: partido.id, jugador_id, club_id, numero_camiseta, titular: titular ?? true },
+      where: { partido_id: partido.id, persona_id: personaId },
+      defaults: {
+        partido_id: partido.id,
+        persona_id: personaId,
+        club_id,
+        numero_camiseta: numero_camiseta ?? fichaje.numero_camiseta,
+        titular: titular ?? true,
+      },
     });
     await aline.update({
       numero_camiseta: numero_camiseta ?? aline.numero_camiseta,
@@ -313,11 +341,11 @@ export const upsertAlineacion = async (req, res) => {
   }
 };
 
-// DELETE /partidos/:id/alineacion/:jugadorId
+// DELETE /partidos/:id/alineacion/:personaId
 export const eliminarAlineacion = async (req, res) => {
   try {
     const deleted = await PartidoAlineacion.destroy({
-      where: { partido_id: req.params.id, jugador_id: req.params.jugadorId },
+      where: { partido_id: req.params.id, persona_id: req.params.jugadorId || req.params.personaId },
     });
     if (!deleted) return res.status(404).json({ success: false, message: 'Alineacion no encontrada' });
     res.json({ success: true, message: 'Jugador removido de la alineacion' });
@@ -329,9 +357,6 @@ export const eliminarAlineacion = async (req, res) => {
 // ═══════════════════════════════════════════════════════════════════════════
 // Confirmaciones DNI + firma
 // ═══════════════════════════════════════════════════════════════════════════
-
-/** Normaliza un DNI quitando puntos y espacios */
-const normalizarDni = (d) => String(d || '').replace(/[\s.]/g, '').trim();
 
 // POST /partidos/:id/confirmar-alineacion
 // Body: { tipo: 'local'|'visitante', dni, firma }
@@ -351,53 +376,50 @@ export const confirmarAlineacion = async (req, res) => {
     const clubId = tipo === 'local' ? partido.club_local_id : partido.club_visitante_id;
     const dniNorm = normalizarDni(dni);
 
-    // Validar que el DNI corresponda a alguien del club cuyo ROL pueda firmar alineacion
-    const staff = await Staff.findOne({
-      where: { club_id: clubId, dni: dniNorm, activo: true },
-      include: [{ model: RolStaff, as: 'rol', attributes: ['id', 'codigo', 'nombre', 'puede_firmar_alineacion'] }],
+    // Validar: buscar persona por DNI y verificar que tenga un rol con puede_firmar_alineacion=true en este club
+    const persona = await Persona.findOne({
+      where: { dni: dniNorm, activo: true },
+      include: [{
+        model: PersonaRol, as: 'roles_asignados',
+        where: { club_id: clubId, activo: true },
+        required: true,
+        include: [{
+          model: Rol, as: 'rol',
+          where: { puede_firmar_alineacion: true },
+          required: true,
+        }],
+      }],
     });
 
-    const puedeFirmar = staff && (
-      staff.rol?.puede_firmar_alineacion === true ||
-      // Fallback legacy por si rol_id no esta seteado
-      ['delegado_general', 'delegado_auxiliar'].includes(staff.tipo)
-    );
-
-    if (!staff || !puedeFirmar) {
+    if (!persona) {
       return res.status(403).json({
         success: false,
         message: 'El DNI no corresponde a una persona habilitada para firmar alineaciones de este club',
       });
     }
 
-    // Guardar la confirmacion
     const conf = await PartidoConfirmacion.create({
       partido_id: partido.id,
       tipo: tipo === 'local' ? 'alineacion_local' : 'alineacion_visitante',
       dni_ingresado: dniNorm,
       firma_data_url: firma,
       usuario_id: req.user?.id,
-      nombre_firmante: `${staff.apellido}, ${staff.nombre}`,
+      nombre_firmante: `${persona.apellido}, ${persona.nombre}`,
     });
 
-    // Marcar las alineaciones del club como confirmadas
     await PartidoAlineacion.update(
       { confirmado: true },
       { where: { partido_id: partido.id, club_id: clubId } },
     );
 
     registrarAudit({
-      req,
-      accion: 'CONFIRMAR_ALINEACION',
-      entidad: 'partidos',
-      entidad_id: partido.id,
-      despues: { tipo, delegado: staff.dni },
+      req, accion: 'CONFIRMAR_ALINEACION', entidad: 'partidos', entidad_id: partido.id,
+      despues: { tipo, firmante: persona.dni },
     });
 
     res.status(201).json({
-      success: true,
-      data: conf,
-      message: `Alineacion ${tipo} confirmada por ${staff.apellido}`,
+      success: true, data: conf,
+      message: `Alineacion ${tipo} confirmada por ${persona.apellido}`,
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -406,7 +428,6 @@ export const confirmarAlineacion = async (req, res) => {
 
 // POST /partidos/:id/cerrar
 // Body: { dni, firma }
-// Reemplaza al endpoint confirmar() con validacion completa
 export const cerrarPartido = async (req, res) => {
   try {
     const partido = await Partido.findByPk(req.params.id);
@@ -425,12 +446,11 @@ export const cerrarPartido = async (req, res) => {
 
     const dniNorm = normalizarDni(dni);
 
-    // Validar que el DNI corresponda al arbitro asignado al partido
     if (!partido.arbitro_id) {
       return res.status(400).json({ success: false, message: 'El partido no tiene arbitro asignado' });
     }
 
-    const arbitro = await Arbitro.findByPk(partido.arbitro_id);
+    const arbitro = await Persona.findByPk(partido.arbitro_id);
     if (!arbitro || normalizarDni(arbitro.dni) !== dniNorm) {
       return res.status(403).json({
         success: false,
@@ -447,10 +467,7 @@ export const cerrarPartido = async (req, res) => {
       nombre_firmante: `${arbitro.apellido}, ${arbitro.nombre}`,
     });
 
-    await partido.update({
-      confirmado_arbitro: true,
-      actualizado_en: new Date(),
-    });
+    await partido.update({ confirmado_arbitro: true, actualizado_en: new Date() });
 
     emitMatchConfirm(partido);
     registrarAudit({ req, accion: 'CERRAR_PARTIDO', entidad: 'partidos', entidad_id: partido.id });
@@ -465,16 +482,12 @@ export const cerrarPartido = async (req, res) => {
 // Control de periodos
 // ═══════════════════════════════════════════════════════════════════════════
 
-// POST /partidos/:id/periodo/iniciar
-// Inicia un periodo (1, 2, etc)
 export const iniciarPeriodo = async (req, res) => {
   try {
     const partido = await Partido.findByPk(req.params.id);
     if (!partido) return res.status(404).json({ success: false, message: 'Partido no encontrado' });
 
     const periodo = parseInt(req.body.periodo) || (partido.periodo_actual || 0) + 1;
-
-    // Si es el primer periodo, cambiar estado a en_curso
     const updates = { periodo_actual: periodo, actualizado_en: new Date() };
     if (periodo === 1 && partido.estado === 'programado') {
       updates.estado = 'en_curso';
@@ -483,63 +496,40 @@ export const iniciarPeriodo = async (req, res) => {
 
     await partido.update(updates);
 
-    // Registrar evento
     await PartidoEvento.create({
-      partido_id: partido.id,
-      tipo: 'inicio_periodo',
-      periodo,
-      minuto: 0,
-      detalle: `Inicio periodo ${periodo}`,
+      partido_id: partido.id, tipo: 'inicio_periodo',
+      periodo, minuto: 0, detalle: `Inicio periodo ${periodo}`,
       registrado_por: req.user?.id,
     });
 
     if (periodo === 1) emitMatchStart(partido);
-
     res.json({ success: true, data: partido, message: `Periodo ${periodo} iniciado` });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// POST /partidos/:id/periodo/finalizar
-// Finaliza el periodo actual
 export const finalizarPeriodo = async (req, res) => {
   try {
     const partido = await Partido.findByPk(req.params.id);
     if (!partido) return res.status(404).json({ success: false, message: 'Partido no encontrado' });
 
     const periodo = partido.periodo_actual;
-
-    // Registrar evento
     await PartidoEvento.create({
-      partido_id: partido.id,
-      tipo: 'fin_periodo',
-      periodo,
-      detalle: `Fin periodo ${periodo}`,
+      partido_id: partido.id, tipo: 'fin_periodo',
+      periodo, detalle: `Fin periodo ${periodo}`,
       registrado_por: req.user?.id,
     });
 
-    // Si es el ultimo periodo, finalizar el partido
-    // La cantidad total sale del torneo.config via el include
-    const jornada = await FixtureJornada.findByPk(partido.jornada_id, {
-      attributes: ['torneo_id'],
-    });
-    const torneo = jornada ? await (await import('../models/index.js')).Torneo.findByPk(jornada.torneo_id, { attributes: ['config'] }) : null;
+    const jornada = await FixtureJornada.findByPk(partido.jornada_id, { attributes: ['torneo_id'] });
+    const torneo = jornada ? await Torneo.findByPk(jornada.torneo_id, { attributes: ['config'] }) : null;
     const totalTiempos = (torneo?.config?.cantidad_tiempos) || (partido.config_override?.cantidad_tiempos) || 2;
 
     if (periodo >= totalTiempos) {
-      await partido.update({
-        estado: 'finalizado',
-        hora_fin: new Date(),
-        actualizado_en: new Date(),
-      });
+      await partido.update({ estado: 'finalizado', hora_fin: new Date(), actualizado_en: new Date() });
 
-      // Recalcular posiciones
-      try {
-        await recalcularDespuesDePartido(partido.id);
-      } catch (e) {
-        console.error('Error recalculando:', e.message);
-      }
+      try { await recalcularDespuesDePartido(partido.id); }
+      catch (e) { console.error('Error recalculando:', e.message); }
 
       emitMatchEnd(partido);
       if (jornada) emitStandingsUpdate(jornada.torneo_id);

@@ -1,4 +1,4 @@
-import { FixtureJornada, Partido, Club, Categoria, Zona, Arbitro, Veedor } from '../models/index.js';
+import { FixtureJornada, Partido, Club, Categoria, Zona, Persona } from '../models/index.js';
 import { generarFixture } from '../services/fixtureGeneratorService.js';
 import { registrarAudit } from '../services/auditService.js';
 import { Op } from 'sequelize';
@@ -84,7 +84,7 @@ export const partidosPorJornada = async (req, res) => {
         { model: Club, as: 'clubLocal', attributes: ['id', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'] },
         { model: Club, as: 'clubVisitante', attributes: ['id', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'] },
         { model: Categoria, as: 'categoria', attributes: ['id', 'nombre', 'anio_nacimiento', 'es_preliminar'] },
-        { model: Arbitro, as: 'arbitro', attributes: ['id', 'nombre', 'apellido'] },
+        { model: Persona, as: 'arbitro', attributes: ['id', 'nombre', 'apellido'] },
       ],
       order: [['categoria_id', 'ASC']],
     });

@@ -10,11 +10,9 @@ export { Torneo } from './Torneo.js';
 export { Zona } from './Zona.js';
 export { Club } from './Club.js';
 export { Categoria } from './Categoria.js';
-export { Jugador } from './Jugador.js';
-export { Staff } from './Staff.js';
-export { RolStaff } from './RolStaff.js';
-export { Arbitro } from './Arbitro.js';
-export { Veedor } from './Veedor.js';
+export { Persona } from './Persona.js';
+export { Rol } from './Rol.js';
+export { PersonaRol } from './PersonaRol.js';
 export { FixtureJornada } from './FixtureJornada.js';
 export { Partido } from './Partido.js';
 export { PartidoEvento } from './PartidoEvento.js';
@@ -34,16 +32,17 @@ import { Torneo } from './Torneo.js';
 import { Zona } from './Zona.js';
 import { Club } from './Club.js';
 import { Categoria } from './Categoria.js';
-import { Jugador } from './Jugador.js';
-import { Staff } from './Staff.js';
-import { RolStaff } from './RolStaff.js';
-import { Arbitro } from './Arbitro.js';
-import { Veedor } from './Veedor.js';
+import { Persona } from './Persona.js';
+import { Rol } from './Rol.js';
+import { PersonaRol } from './PersonaRol.js';
 import { FixtureJornada } from './FixtureJornada.js';
 import { Partido } from './Partido.js';
 import { PartidoEvento } from './PartidoEvento.js';
+import { PartidoAlineacion } from './PartidoAlineacion.js';
+import { PartidoConfirmacion } from './PartidoConfirmacion.js';
 import { TablaPosiciones } from './TablaPosiciones.js';
 import { TablaPosicionesClub } from './TablaPosicionesClub.js';
+import { InformeArbitro } from './InformeArbitro.js';
 
 // ─── Auth ───────────────────────────────────────────────────────────────────
 Usuario.hasMany(PermisoUsuario, { foreignKey: 'usuario_id', as: 'permisos' });
@@ -64,28 +63,24 @@ Club.belongsTo(Torneo, { foreignKey: 'torneo_id', as: 'torneo' });
 Zona.hasMany(Club, { foreignKey: 'zona_id', as: 'clubes' });
 Club.belongsTo(Zona, { foreignKey: 'zona_id', as: 'zona' });
 
-// ─── Personas ───────────────────────────────────────────────────────────────
-Club.hasMany(Jugador, { foreignKey: 'club_id', as: 'jugadores' });
-Jugador.belongsTo(Club, { foreignKey: 'club_id', as: 'club' });
-
-Categoria.hasMany(Jugador, { foreignKey: 'categoria_id', as: 'jugadores' });
-Jugador.belongsTo(Categoria, { foreignKey: 'categoria_id', as: 'categoria' });
-
-Club.hasMany(Staff, { foreignKey: 'club_id', as: 'staff' });
-Staff.belongsTo(Club, { foreignKey: 'club_id', as: 'club' });
-
-// Staff <-> RolStaff
-RolStaff.hasMany(Staff, { foreignKey: 'rol_id', as: 'miembros' });
-Staff.belongsTo(RolStaff, { foreignKey: 'rol_id', as: 'rol' });
-
-Torneo.hasMany(Arbitro, { foreignKey: 'torneo_id', as: 'arbitros' });
-Arbitro.belongsTo(Torneo, { foreignKey: 'torneo_id', as: 'torneo' });
-
-Torneo.hasMany(Veedor, { foreignKey: 'torneo_id', as: 'veedores' });
-Veedor.belongsTo(Torneo, { foreignKey: 'torneo_id', as: 'torneo' });
-
 Usuario.belongsTo(Club, { foreignKey: 'club_id', as: 'club' });
 Club.hasMany(Usuario, { foreignKey: 'club_id', as: 'usuarios' });
+
+// ─── Personas y Roles (arquitectura unificada) ──────────────────────────────
+Persona.hasMany(PersonaRol, { foreignKey: 'persona_id', as: 'roles_asignados' });
+PersonaRol.belongsTo(Persona, { foreignKey: 'persona_id', as: 'persona' });
+
+Rol.hasMany(PersonaRol, { foreignKey: 'rol_id', as: 'asignaciones' });
+PersonaRol.belongsTo(Rol, { foreignKey: 'rol_id', as: 'rol' });
+
+Club.hasMany(PersonaRol, { foreignKey: 'club_id', as: 'miembros' });
+PersonaRol.belongsTo(Club, { foreignKey: 'club_id', as: 'club' });
+
+Torneo.hasMany(PersonaRol, { foreignKey: 'torneo_id', as: 'oficiales' });
+PersonaRol.belongsTo(Torneo, { foreignKey: 'torneo_id', as: 'torneo' });
+
+Categoria.hasMany(PersonaRol, { foreignKey: 'categoria_id', as: 'jugadores' });
+PersonaRol.belongsTo(Categoria, { foreignKey: 'categoria_id', as: 'categoria' });
 
 // ─── Competencia ────────────────────────────────────────────────────────────
 Torneo.hasMany(FixtureJornada, { foreignKey: 'torneo_id', as: 'jornadas' });
@@ -105,27 +100,22 @@ Club.hasMany(Partido, { foreignKey: 'club_visitante_id', as: 'partidos_visitante
 Partido.belongsTo(Club, { foreignKey: 'club_local_id', as: 'clubLocal' });
 Partido.belongsTo(Club, { foreignKey: 'club_visitante_id', as: 'clubVisitante' });
 
-Arbitro.hasMany(Partido, { foreignKey: 'arbitro_id', as: 'partidos' });
-Partido.belongsTo(Arbitro, { foreignKey: 'arbitro_id', as: 'arbitro' });
-
-Veedor.hasMany(Partido, { foreignKey: 'veedor_id', as: 'partidos' });
-Partido.belongsTo(Veedor, { foreignKey: 'veedor_id', as: 'veedor' });
+// Partido arbitro/veedor → Persona
+Partido.belongsTo(Persona, { foreignKey: 'arbitro_id', as: 'arbitro' });
+Partido.belongsTo(Persona, { foreignKey: 'veedor_id', as: 'veedor' });
 
 // Partido <-> Eventos
 Partido.hasMany(PartidoEvento, { foreignKey: 'partido_id', as: 'eventos' });
 PartidoEvento.belongsTo(Partido, { foreignKey: 'partido_id', as: 'partido' });
 
-PartidoEvento.belongsTo(Jugador, { foreignKey: 'jugador_id', as: 'jugador' });
-PartidoEvento.belongsTo(Jugador, { foreignKey: 'jugador_reemplaza_id', as: 'jugadorReemplaza' });
+PartidoEvento.belongsTo(Persona, { foreignKey: 'persona_id', as: 'jugador' });
+PartidoEvento.belongsTo(Persona, { foreignKey: 'persona_reemplaza_id', as: 'jugadorReemplaza' });
 PartidoEvento.belongsTo(Club, { foreignKey: 'club_id', as: 'club' });
 
 // Partido <-> Alineaciones
-import { PartidoAlineacion } from './PartidoAlineacion.js';
-import { PartidoConfirmacion } from './PartidoConfirmacion.js';
-
 Partido.hasMany(PartidoAlineacion, { foreignKey: 'partido_id', as: 'alineaciones' });
 PartidoAlineacion.belongsTo(Partido, { foreignKey: 'partido_id', as: 'partido' });
-PartidoAlineacion.belongsTo(Jugador, { foreignKey: 'jugador_id', as: 'jugador' });
+PartidoAlineacion.belongsTo(Persona, { foreignKey: 'persona_id', as: 'jugador' });
 PartidoAlineacion.belongsTo(Club, { foreignKey: 'club_id', as: 'club' });
 
 // Partido <-> Confirmaciones
@@ -144,9 +134,7 @@ TablaPosicionesClub.belongsTo(Zona, { foreignKey: 'zona_id', as: 'zona' });
 TablaPosicionesClub.belongsTo(Club, { foreignKey: 'club_id', as: 'club' });
 
 // ─── Informes ───────────────────────────────────────────────────────────────
-import { InformeArbitro } from './InformeArbitro.js';
-
 Partido.hasMany(InformeArbitro, { foreignKey: 'partido_id', as: 'informes' });
 InformeArbitro.belongsTo(Partido, { foreignKey: 'partido_id', as: 'partido' });
-InformeArbitro.belongsTo(Arbitro, { foreignKey: 'arbitro_id', as: 'arbitro' });
+InformeArbitro.belongsTo(Persona, { foreignKey: 'arbitro_id', as: 'arbitro' });
 InformeArbitro.belongsTo(Usuario, { foreignKey: 'usuario_id', as: 'usuario' });

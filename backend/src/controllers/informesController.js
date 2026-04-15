@@ -1,4 +1,4 @@
-import { InformeArbitro, Partido, Arbitro, Usuario } from '../models/index.js';
+import { InformeArbitro, Partido, Persona, Usuario } from '../models/index.js';
 import { procesarAudioInforme, resumirTexto } from '../services/iaService.js';
 import { registrarAudit } from '../services/auditService.js';
 import multer from 'multer';
@@ -35,7 +35,7 @@ export const listar = async (req, res) => {
     const informes = await InformeArbitro.findAll({
       where,
       include: [
-        { model: Arbitro, as: 'arbitro', attributes: ['id', 'nombre', 'apellido'] },
+        { model: Persona, as: 'arbitro', attributes: ['id', 'nombre', 'apellido'] },
         { model: Usuario, as: 'usuario', attributes: ['id', 'nombre', 'apellido'] },
       ],
       order: [['creado_en', 'DESC']],
@@ -52,7 +52,7 @@ export const obtener = async (req, res) => {
     const informe = await InformeArbitro.findByPk(req.params.id, {
       include: [
         { model: Partido, as: 'partido', attributes: ['id', 'goles_local', 'goles_visitante', 'estado'] },
-        { model: Arbitro, as: 'arbitro', attributes: ['id', 'nombre', 'apellido'] },
+        { model: Persona, as: 'arbitro', attributes: ['id', 'nombre', 'apellido'] },
         { model: Usuario, as: 'usuario', attributes: ['id', 'nombre', 'apellido'] },
       ],
     });

@@ -13,11 +13,13 @@ import { ToastrService } from 'ngx-toastr';
 import { AuthService } from '../../core/services/auth.service';
 import { ViewPreferenceService, ViewMode } from '../../core/services/view-preference.service';
 import { DniScannerComponent, DniData } from '../../shared/dni-scanner/dni-scanner.component';
+import { PersonasService, Persona } from '../../core/services/personas.service';
+import { PersonaExistenteBannerComponent } from '../../shared/persona-existente-banner/persona-existente-banner.component';
 
 @Component({
   selector: 'app-arbitros',
   standalone: true,
-  imports: [FormsModule, MatButtonModule, MatIconModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatMenuModule, DniScannerComponent],
+  imports: [FormsModule, MatButtonModule, MatIconModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatMenuModule, DniScannerComponent, PersonaExistenteBannerComponent],
   template: `
     <div class="space-y-5 animate-fade-in">
 
@@ -83,6 +85,9 @@ import { DniScannerComponent, DniData } from '../../shared/dni-scanner/dni-scann
                 </button>
               }
             </div>
+            @if (personaExistente) {
+              <app-persona-existente-banner [persona]="personaExistente"></app-persona-existente-banner>
+            }
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
               <mat-form-field appearance="outline">
                 <mat-label>Nombre</mat-label>
@@ -94,7 +99,7 @@ import { DniScannerComponent, DniData } from '../../shared/dni-scanner/dni-scann
               </mat-form-field>
               <mat-form-field appearance="outline">
                 <mat-label>DNI</mat-label>
-                <input matInput [(ngModel)]="form.dni" required>
+                <input matInput [(ngModel)]="form.dni" (blur)="verificarDniExistente()" required>
               </mat-form-field>
               <mat-form-field appearance="outline">
                 <mat-label>Fecha de nacimiento</mat-label>
@@ -296,6 +301,7 @@ export class ArbitrosComponent implements OnInit, OnDestroy {
   mostrarScanner = false;
   editando: any = null;
   form: any = { nombre: '', apellido: '', dni: '', fecha_nacimiento: '', telefono: '', email: '' };
+  personaExistente: Persona | null = null;
   private viewSub?: Subscription;
 
   constructor(
@@ -304,6 +310,7 @@ export class ArbitrosComponent implements OnInit, OnDestroy {
     private toastr: ToastrService,
     private cdr: ChangeDetectorRef,
     private viewPref: ViewPreferenceService,
+    private personasService: PersonasService,
   ) {}
 
   ngOnInit() {
@@ -364,8 +371,36 @@ export class ArbitrosComponent implements OnInit, OnDestroy {
       ? this.http.put(`${environment.apiUrl}/arbitros/${this.editando.id}`, data)
       : this.http.post(`${environment.apiUrl}/arbitros`, data);
     obs.subscribe({
-      next: () => { this.toastr.success(this.editando ? 'Arbitro actualizado' : 'Arbitro creado'); this.cancelarForm(); this.cargar(); this.cdr.detectChanges(); },
+      next: (res: any) => {
+        const msg = this.editando
+          ? 'Arbitro actualizado'
+          : (res?.persona_creada === false
+              ? 'Rol de arbitro agregado a persona existente'
+              : 'Arbitro creado');
+        this.toastr.success(msg);
+        this.cancelarForm();
+        this.cargar();
+        this.cdr.detectChanges();
+      },
       error: (e: any) => this.toastr.error(e.error?.message || 'Error'),
+    });
+  }
+
+  verificarDniExistente() {
+    if (this.editando) return;
+    const dni = (this.form.dni || '').replace(/[\s.\-]/g, '').trim();
+    if (!dni || dni.length < 7) { this.personaExistente = null; return; }
+    this.personasService.buscarPorDni(dni).subscribe({
+      next: (res) => {
+        this.personaExistente = res.data;
+        if (res.data && !this.form.nombre) this.form.nombre = res.data.nombre;
+        if (res.data && !this.form.apellido) this.form.apellido = res.data.apellido;
+        if (res.data && !this.form.fecha_nacimiento && res.data.fecha_nacimiento) {
+          this.form.fecha_nacimiento = res.data.fecha_nacimiento;
+        }
+        this.cdr.detectChanges();
+      },
+      error: () => { this.personaExistente = null; },
     });
   }
 
@@ -393,6 +428,7 @@ export class ArbitrosComponent implements OnInit, OnDestroy {
   cancelarForm() {
     this.editando = null;
     this.form = { nombre: '', apellido: '', dni: '', fecha_nacimiento: '', telefono: '', email: '' };
+    this.personaExistente = null;
     this.mostrarForm = false;
   }
 
@@ -409,6 +445,7 @@ export class ArbitrosComponent implements OnInit, OnDestroy {
     this.mostrarScanner = false;
     this.toastr.success('DNI escaneado correctamente');
     this.cdr.detectChanges();
+    this.verificarDniExistente();
   }
 
   private capitalizar(texto: string): string {

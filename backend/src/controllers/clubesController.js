@@ -1,4 +1,4 @@
-import { Club, Zona, Jugador, Staff, Categoria } from '../models/index.js';
+import { Club, Zona, Persona, PersonaRol, Rol, Categoria } from '../models/index.js';
 import { clubWhere, tieneAccesoAlClub } from '../middleware/authMiddleware.js';
 import { registrarAudit } from '../services/auditService.js';
 import { Op } from 'sequelize';
@@ -54,7 +54,15 @@ export const obtener = async (req, res) => {
     const club = await Club.findByPk(req.params.id, {
       include: [
         { model: Zona, as: 'zona', attributes: ['id', 'nombre', 'color'] },
-        { model: Staff, as: 'staff', where: { activo: true }, required: false },
+        {
+          model: PersonaRol, as: 'miembros',
+          where: { activo: true },
+          required: false,
+          include: [
+            { model: Persona, as: 'persona', attributes: ['id', 'nombre', 'apellido', 'dni', 'foto_url'] },
+            { model: Rol, as: 'rol', where: { categoria_fn: 'staff_club' }, required: true, attributes: ['id', 'codigo', 'nombre', 'icono', 'color'] },
+          ],
+        },
       ],
     });
     if (!club) return res.status(404).json({ success: false, message: 'Club no encontrado' });
@@ -71,14 +79,39 @@ export const obtener = async (req, res) => {
 export const jugadoresPorClub = async (req, res) => {
   try {
     const { categoria_id, estado_fichaje } = req.query;
-    const where = { club_id: req.params.id, activo: true };
-    if (categoria_id) where.categoria_id = categoria_id;
-    if (estado_fichaje) where.estado_fichaje = estado_fichaje;
 
-    const jugadores = await Jugador.findAll({
-      where,
-      include: [{ model: Categoria, as: 'categoria', attributes: ['id', 'nombre', 'anio_nacimiento'] }],
+    const rolWhere = { club_id: req.params.id, activo: true };
+    if (categoria_id) rolWhere.categoria_id = categoria_id;
+    if (estado_fichaje) rolWhere.estado_fichaje = estado_fichaje;
+
+    const personas = await Persona.findAll({
+      where: { activo: true },
+      include: [{
+        model: PersonaRol, as: 'roles_asignados',
+        where: rolWhere,
+        required: true,
+        include: [
+          { model: Rol, as: 'rol', where: { codigo: 'jugador' }, required: true },
+          { model: Categoria, as: 'categoria', attributes: ['id', 'nombre', 'anio_nacimiento'] },
+        ],
+      }],
       order: [['apellido', 'ASC'], ['nombre', 'ASC']],
+    });
+
+    const jugadores = personas.map(p => {
+      const ra = p.roles_asignados[0];
+      return {
+        id: ra.id,
+        persona_id: p.id,
+        nombre: p.nombre,
+        apellido: p.apellido,
+        dni: p.dni,
+        fecha_nacimiento: p.fecha_nacimiento,
+        foto_url: p.foto_url,
+        numero_camiseta: ra.numero_camiseta,
+        estado_fichaje: ra.estado_fichaje,
+        categoria: ra.categoria,
+      };
     });
     res.json({ success: true, data: jugadores });
   } catch (error) {
