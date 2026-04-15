@@ -12,6 +12,7 @@ export { Club } from './Club.js';
 export { Categoria } from './Categoria.js';
 export { Jugador } from './Jugador.js';
 export { Staff } from './Staff.js';
+export { RolStaff } from './RolStaff.js';
 export { Arbitro } from './Arbitro.js';
 export { Veedor } from './Veedor.js';
 export { FixtureJornada } from './FixtureJornada.js';
@@ -35,6 +36,7 @@ import { Club } from './Club.js';
 import { Categoria } from './Categoria.js';
 import { Jugador } from './Jugador.js';
 import { Staff } from './Staff.js';
+import { RolStaff } from './RolStaff.js';
 import { Arbitro } from './Arbitro.js';
 import { Veedor } from './Veedor.js';
 import { FixtureJornada } from './FixtureJornada.js';
@@ -71,6 +73,10 @@ Jugador.belongsTo(Categoria, { foreignKey: 'categoria_id', as: 'categoria' });
 
 Club.hasMany(Staff, { foreignKey: 'club_id', as: 'staff' });
 Staff.belongsTo(Club, { foreignKey: 'club_id', as: 'club' });
+
+// Staff <-> RolStaff
+RolStaff.hasMany(Staff, { foreignKey: 'rol_id', as: 'miembros' });
+Staff.belongsTo(RolStaff, { foreignKey: 'rol_id', as: 'rol' });
 
 Torneo.hasMany(Arbitro, { foreignKey: 'torneo_id', as: 'arbitros' });
 Arbitro.belongsTo(Torneo, { foreignKey: 'torneo_id', as: 'torneo' });

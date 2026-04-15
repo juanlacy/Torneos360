@@ -41,6 +41,18 @@ export const routes: Routes = [
         path: 'jugadores',
         loadComponent: () => import('./features/jugadores/jugadores').then(m => m.JugadoresComponent),
       },
+      {
+        path: 'staff',
+        loadComponent: () => import('./features/staff/staff').then(m => m.StaffComponent),
+      },
+      {
+        path: 'arbitros',
+        loadComponent: () => import('./features/arbitros/arbitros').then(m => m.ArbitrosComponent),
+      },
+      {
+        path: 'veedores',
+        loadComponent: () => import('./features/veedores/veedores').then(m => m.VeedoresComponent),
+      },
 
       // ─── Competencia ─────────────────────────────────────────────────────
       {

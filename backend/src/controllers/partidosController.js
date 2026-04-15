@@ -1,4 +1,4 @@
-import { Partido, PartidoEvento, PartidoAlineacion, PartidoConfirmacion, Club, Categoria, Arbitro, Veedor, Jugador, FixtureJornada, Staff } from '../models/index.js';
+import { Partido, PartidoEvento, PartidoAlineacion, PartidoConfirmacion, Club, Categoria, Arbitro, Veedor, Jugador, FixtureJornada, Staff, RolStaff } from '../models/index.js';
 import { recalcularDespuesDePartido } from '../services/standingsCalculatorService.js';
 import { registrarAudit } from '../services/auditService.js';
 import { emitMatchStart, emitMatchEventNew, emitMatchScore, emitMatchEnd, emitMatchConfirm, emitStandingsUpdate } from '../sockets/matchSocket.js';
@@ -351,20 +351,22 @@ export const confirmarAlineacion = async (req, res) => {
     const clubId = tipo === 'local' ? partido.club_local_id : partido.club_visitante_id;
     const dniNorm = normalizarDni(dni);
 
-    // Validar que el DNI corresponda a un delegado del club
+    // Validar que el DNI corresponda a alguien del club cuyo ROL pueda firmar alineacion
     const staff = await Staff.findOne({
-      where: {
-        club_id: clubId,
-        dni: dniNorm,
-        activo: true,
-        tipo: ['delegado_general', 'delegado_auxiliar'],
-      },
+      where: { club_id: clubId, dni: dniNorm, activo: true },
+      include: [{ model: RolStaff, as: 'rol', attributes: ['id', 'codigo', 'nombre', 'puede_firmar_alineacion'] }],
     });
 
-    if (!staff) {
+    const puedeFirmar = staff && (
+      staff.rol?.puede_firmar_alineacion === true ||
+      // Fallback legacy por si rol_id no esta seteado
+      ['delegado_general', 'delegado_auxiliar'].includes(staff.tipo)
+    );
+
+    if (!staff || !puedeFirmar) {
       return res.status(403).json({
         success: false,
-        message: 'El DNI no corresponde a un delegado registrado del club',
+        message: 'El DNI no corresponde a una persona habilitada para firmar alineaciones de este club',
       });
     }
 

@@ -174,6 +174,9 @@ export class LayoutComponent {
         { label: 'Torneos', icon: 'emoji_events', route: '/torneos', permiso: { modulo: 'torneos', accion: 'ver' } },
         { label: 'Clubes', icon: 'groups', route: '/clubes', permiso: { modulo: 'clubes', accion: 'ver' } },
         { label: 'Jugadores', icon: 'sports_soccer', route: '/jugadores', permiso: { modulo: 'jugadores', accion: 'ver' } },
+        { label: 'Staff', icon: 'support_agent', route: '/staff', permiso: { modulo: 'staff', accion: 'ver' } },
+        { label: 'Arbitros', icon: 'sports', route: '/arbitros', permiso: { modulo: 'arbitros', accion: 'ver' } },
+        { label: 'Veedores', icon: 'visibility', route: '/veedores', permiso: { modulo: 'veedores', accion: 'ver' } },
       ],
     },
     {
@@ -189,6 +192,7 @@ export class LayoutComponent {
       items: [
         { label: 'Usuarios', icon: 'manage_accounts', route: '/admin/usuarios', adminOnly: true },
         { label: 'Permisos', icon: 'security', route: '/admin/permisos', adminOnly: true },
+        { label: 'Roles de Staff', icon: 'badge', route: '/admin/roles-staff', adminOnly: true },
         { label: 'Configuracion', icon: 'settings', route: '/admin/configuracion', adminOnly: true },
       ],
     },

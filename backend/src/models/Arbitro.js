@@ -9,6 +9,7 @@ export const Arbitro = sequelize.define('Arbitro', {
   dni: { type: DataTypes.STRING(20), allowNull: false },
   telefono: { type: DataTypes.STRING(30), allowNull: true },
   email: { type: DataTypes.STRING(150), allowNull: true },
+  fecha_nacimiento: { type: DataTypes.DATEONLY, allowNull: true },
   foto_url: { type: DataTypes.STRING(500), allowNull: true },
   activo: { type: DataTypes.BOOLEAN, defaultValue: true },
   creado_en: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
