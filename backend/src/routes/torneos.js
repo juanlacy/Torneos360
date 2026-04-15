@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { authenticateToken, requireAdminTorneo, requirePermiso } from '../middleware/authMiddleware.js';
 import {
   listar, obtener, crear, actualizar, generarCategorias, crearZona, eliminarZona,
-  getBranding, updateBranding, uploadLogo, subirLogo, getStats,
+  getBranding, updateBranding, uploadLogo, subirLogo, getStats, duplicar,
 } from '../controllers/torneosController.js';
 
 const router = Router();
@@ -13,6 +13,7 @@ router.get('/',    requirePermiso('torneos', 'ver'), listar);
 router.get('/:id', requirePermiso('torneos', 'ver'), obtener);
 router.post('/',   requireAdminTorneo, crear);
 router.put('/:id', requireAdminTorneo, actualizar);
+router.post('/:id/duplicar', requireAdminTorneo, duplicar);
 
 // Categorias y zonas
 router.post('/:id/generar-categorias', requireAdminTorneo, generarCategorias);

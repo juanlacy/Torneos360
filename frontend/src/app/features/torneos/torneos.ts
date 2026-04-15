@@ -105,8 +105,15 @@ import { AuthService } from '../../core/services/auth.service';
                   }
                   <button
                     class="w-9 h-9 rounded-lg flex items-center justify-center text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
-                    (click)="editar(torneo)">
+                    (click)="editar(torneo)"
+                    title="Editar">
                     <mat-icon class="!text-xl">edit</mat-icon>
+                  </button>
+                  <button
+                    class="w-9 h-9 rounded-lg flex items-center justify-center text-gray-400 hover:text-green-600 hover:bg-green-50 transition-colors"
+                    (click)="abrirDuplicar(torneo)"
+                    title="Duplicar torneo">
+                    <mat-icon class="!text-xl">content_copy</mat-icon>
                   </button>
                 }
                 <a class="w-9 h-9 rounded-lg flex items-center justify-center text-gray-400 hover:text-[var(--color-primario)] hover:bg-purple-50 transition-colors"
@@ -136,6 +143,50 @@ import { AuthService } from '../../core/services/auth.service';
           <p class="text-[10px] text-gray-400 mt-1">Crea el primer torneo para comenzar</p>
         </div>
       }
+
+      <!-- Modal Duplicar torneo -->
+      @if (duplicando) {
+        <div class="fixed inset-0 z-[9999] bg-black/50 flex items-center justify-center p-4" (click)="cerrarDuplicar()">
+          <div class="bg-white rounded-2xl max-w-md w-full overflow-hidden shadow-2xl" (click)="$event.stopPropagation()">
+            <div class="h-1 rounded-full bg-gradient-to-r from-[var(--color-primario)] to-[var(--color-acento)]"></div>
+            <div class="px-5 py-4 border-b border-gray-200 flex items-center gap-3">
+              <mat-icon class="text-green-600">content_copy</mat-icon>
+              <div>
+                <h3 class="font-bold text-gray-900">Duplicar Torneo</h3>
+                <p class="text-xs text-gray-500">Desde "{{ duplicando.nombre }}" {{ duplicando.anio }}</p>
+              </div>
+            </div>
+            <div class="p-5 space-y-3">
+              <p class="text-sm text-gray-600">
+                Se van a clonar: <strong>zonas, categorias, clubes y fixture</strong>.
+                Las instituciones se reutilizan. Los partidos quedan en estado "programado" sin arbitros ni resultados.
+                <br><span class="text-xs text-gray-500">No se clonan: personas, alineaciones, eventos ni fichajes.</span>
+              </p>
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Nombre del nuevo torneo</mat-label>
+                <input matInput [(ngModel)]="dupForm.nombre" placeholder="CAFI 2026 DEMO">
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Anio</mat-label>
+                <input matInput type="number" [(ngModel)]="dupForm.anio">
+              </mat-form-field>
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" [(ngModel)]="dupForm.con_arbitros_veedores" class="w-4 h-4">
+                <span class="text-sm text-gray-700">Clonar tambien arbitros y veedores del torneo origen</span>
+              </label>
+            </div>
+            <div class="px-5 py-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-2">
+              <button mat-stroked-button (click)="cerrarDuplicar()" [disabled]="duplicandoEnCurso">Cancelar</button>
+              <button mat-flat-button color="primary" (click)="confirmarDuplicar()" [disabled]="duplicandoEnCurso">
+                @if (duplicandoEnCurso) {
+                  <mat-icon class="animate-spin">autorenew</mat-icon>
+                }
+                Duplicar
+              </button>
+            </div>
+          </div>
+        </div>
+      }
     </div>
   `,
 })
@@ -144,6 +195,11 @@ export class TorneosComponent implements OnInit {
   mostrarFormulario = false;
   editando: any = null;
   form: any = { nombre: '', anio: new Date().getFullYear(), estado: 'planificacion' };
+
+  // Duplicar torneo
+  duplicando: any = null;
+  duplicandoEnCurso = false;
+  dupForm: any = { nombre: '', anio: new Date().getFullYear(), con_arbitros_veedores: false };
 
   constructor(private http: HttpClient, public auth: AuthService, private toastr: ToastrService, private cdr: ChangeDetectorRef) {}
 
@@ -174,6 +230,45 @@ export class TorneosComponent implements OnInit {
   }
 
   cancelar() { this.editando = null; this.form = { nombre: '', anio: new Date().getFullYear(), estado: 'planificacion' }; this.mostrarFormulario = false; }
+
+  abrirDuplicar(torneo: any) {
+    this.duplicando = torneo;
+    this.dupForm = {
+      nombre: `${torneo.nombre} DEMO`,
+      anio: torneo.anio,
+      con_arbitros_veedores: false,
+    };
+    this.cdr.detectChanges();
+  }
+
+  cerrarDuplicar() {
+    if (this.duplicandoEnCurso) return;
+    this.duplicando = null;
+    this.cdr.detectChanges();
+  }
+
+  confirmarDuplicar() {
+    if (!this.dupForm.nombre || !this.dupForm.anio) {
+      this.toastr.warning('Completa nombre y anio');
+      return;
+    }
+    this.duplicandoEnCurso = true;
+    this.cdr.detectChanges();
+    this.http.post<any>(`${environment.apiUrl}/torneos/${this.duplicando.id}/duplicar`, this.dupForm).subscribe({
+      next: (res) => {
+        this.toastr.success(res.message || 'Torneo duplicado');
+        this.duplicandoEnCurso = false;
+        this.duplicando = null;
+        this.cargar();
+        this.cdr.detectChanges();
+      },
+      error: (e) => {
+        this.toastr.error(e.error?.message || 'Error al duplicar');
+        this.duplicandoEnCurso = false;
+        this.cdr.detectChanges();
+      },
+    });
+  }
 
   generarCategorias(torneo: any) {
     this.http.post(`${environment.apiUrl}/torneos/${torneo.id}/generar-categorias`, {}).subscribe({

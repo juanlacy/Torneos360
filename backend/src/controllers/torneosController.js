@@ -1,5 +1,6 @@
 import { Torneo, Zona, Categoria, Club, PersonaRol, Rol, Partido, FixtureJornada } from '../models/index.js';
 import { registrarAudit } from '../services/auditService.js';
+import { clonarTorneo } from '../services/torneoCloneService.js';
 import multer from 'multer';
 import { fileURLToPath } from 'url';
 import { dirname, join, extname } from 'path';
@@ -143,6 +144,40 @@ export const eliminarZona = async (req, res) => {
     res.json({ success: true, message: 'Zona eliminada' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// POST /torneos/:id/duplicar
+// Body: { nombre, anio, con_arbitros_veedores? }
+export const duplicar = async (req, res) => {
+  try {
+    const { nombre, anio, con_arbitros_veedores } = req.body;
+    if (!nombre || !anio) {
+      return res.status(400).json({ success: false, message: 'nombre y anio son requeridos' });
+    }
+
+    const { torneo, stats } = await clonarTorneo(parseInt(req.params.id), {
+      nombre: nombre.trim(),
+      anio: parseInt(anio),
+      conArbitrosVeedores: con_arbitros_veedores === true,
+      resetFixtureDates: true,
+    });
+
+    registrarAudit({
+      req, accion: 'DUPLICAR_TORNEO',
+      entidad: 'torneos',
+      entidad_id: torneo.id,
+      despues: { origen_id: req.params.id, stats },
+    });
+
+    res.status(201).json({
+      success: true,
+      data: torneo,
+      stats,
+      message: `Torneo "${torneo.nombre}" creado con ${stats.partidos} partidos clonados`,
+    });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
   }
 };
 
