@@ -128,6 +128,7 @@ const torneoIdArg = args.find(a => a.startsWith('--torneo-id='))?.split('=')[1];
         _id_original: c.id,
         _institucion_id_original: c.institucion_id,
         _zona_id_original: c.zona_id,
+        sufijo: c.sufijo || '',
         nombre_override: c.nombre_override,
         activo: c.activo,
       })),

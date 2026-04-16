@@ -137,6 +137,21 @@ const renameArg = args.find(a => a.startsWith('--rename='))?.split('=')[1];
     }
     console.log(`✓ Instituciones: ${instBackup.length} (reutilizadas + nuevas)`);
 
+    // 4) Pre-scan: detectar instituciones con multiples clubes para auto-asignar sufijos
+    //    Esto soluciona backups que no guardaron el campo sufijo (ej: 12 de Octubre A/B)
+    const instCountInBackup = new Map();
+    for (const c of backup.clubes) {
+      const key = c._institucion_id_original || c.nombre;
+      instCountInBackup.set(key, (instCountInBackup.get(key) || 0) + 1);
+    }
+    const instConMultiples = new Set(
+      [...instCountInBackup.entries()].filter(([_, count]) => count > 1).map(([id]) => id),
+    );
+    if (instConMultiples.size) {
+      console.log(`   ⚠ ${instConMultiples.size} institucion(es) con multiples clubes — se auto-asignaran sufijos`);
+    }
+    const sufijoTracker = new Map(); // institucionId real → indice del proximo sufijo
+
     // 4) Clubes (como participaciones de institucion en el torneo)
     for (const c of backup.clubes) {
       // Resolver institucion_id (nuevo formato) o por nombre (formato viejo)
@@ -166,20 +181,29 @@ const renameArg = args.find(a => a.startsWith('--rename='))?.split('=')[1];
         continue;
       }
 
+      // Determinar sufijo: si viene del backup, usarlo. Si no, auto-asignar si hay multiples.
+      let sufijoFinal = c.sufijo || '';
+      const backupKey = c._institucion_id_original || c.nombre;
+      if (!sufijoFinal && instConMultiples.has(backupKey)) {
+        const idx = sufijoTracker.get(institucionId) || 0;
+        sufijoFinal = String.fromCharCode(65 + idx); // A, B, C, D...
+        sufijoTracker.set(institucionId, idx + 1);
+        console.log(`      Auto-sufijo "${sufijoFinal}" para institucion id=${institucionId}`);
+      }
+
       const zonaIdMapped = c._zona_id_original ? (mapZonas.get(c._zona_id_original) || null) : null;
       try {
-        // validate: false bypasa validacion de Sequelize (los virtuals pueden interferir)
         const creado = await Club.create({
           institucion_id: institucionId,
           torneo_id: torneo.id,
           zona_id: zonaIdMapped,
-          sufijo: c.sufijo || '',
+          sufijo: sufijoFinal,
           nombre_override: c.nombre_override || null,
           activo: c.activo ?? true,
         }, { transaction: t, validate: false });
         mapClubes.set(c._id_original, creado.id);
       } catch (clubErr) {
-        console.error(`  ✗ Error creando club (inst=${institucionId}, torneo=${torneo.id}, zona=${zonaIdMapped}, sufijo="${c.sufijo || ''}")`);
+        console.error(`  ✗ Error creando club (inst=${institucionId}, torneo=${torneo.id}, zona=${zonaIdMapped}, sufijo="${sufijoFinal}")`);
         console.error(`    Message: ${clubErr.message}`);
         if (clubErr.errors) clubErr.errors.forEach(e => console.error(`    → ${e.path}: ${e.message} (type=${e.type})`));
         if (clubErr.parent) console.error(`    SQL detail: ${clubErr.parent.detail || clubErr.parent.message}`);
