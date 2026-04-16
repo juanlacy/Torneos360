@@ -20,9 +20,9 @@ type EventoTipo = 'gol' | 'amarilla' | 'azul' | 'roja' | 'falta';
   imports: [RouterLink, FormsModule, UpperCasePipe, MatIconModule, DniFirmaModalComponent],
   template: `
     @if (partido) {
-      <div class="panel-root" [class.fullscreen]="isFullscreen">
+      <div class="min-h-screen bg-slate-50" [class.fixed]="isFullscreen" [class.inset-0]="isFullscreen" [class.z-[9999]]="isFullscreen" [class.overflow-y-auto]="isFullscreen" [class.bg-white]="isFullscreen">
 
-        <!-- Top bar -->
+        <!-- ═══ A) Top bar ═══ -->
         <div class="flex items-center justify-between px-4 py-2 bg-gray-900 text-white text-sm">
           <a [routerLink]="['/partidos', partido.id]" class="flex items-center gap-1 hover:text-gray-300">
             <mat-icon class="!text-base !w-5 !h-5">arrow_back</mat-icon>
@@ -37,30 +37,32 @@ type EventoTipo = 'gol' | 'amarilla' | 'azul' | 'roja' | 'falta';
           </button>
         </div>
 
-        <!-- ═══ Marcador ═══ -->
-        <div class="scoreboard" [style.background]="'linear-gradient(135deg, ' + localColor + ' 0%, ' + localColorSec + ' 40%, ' + visitColorSec + ' 60%, ' + visitColor + ' 100%)'">
+        <!-- ═══ B) Marcador / Scoreboard ═══ -->
+        <div class="grid grid-cols-[1fr_auto_1fr] items-center gap-4 px-4 py-5 text-white relative overflow-hidden"
+          [style.background]="'linear-gradient(135deg, ' + localColor + ' 0%, ' + localColorSec + ' 40%, ' + visitColorSec + ' 60%, ' + visitColor + ' 100%)'">
           <!-- Local -->
-          <div class="team team-local">
-            <div class="team-shield">
+          <div class="flex items-center justify-end gap-3 text-right min-w-0">
+            <div class="flex-shrink-0 w-16 h-16">
               @if (partido.clubLocal?.escudo_url) {
-                <img [src]="resolveUrl(partido.clubLocal.escudo_url)" alt="">
+                <img [src]="resolveUrl(partido.clubLocal.escudo_url)" class="w-full h-full rounded-xl object-cover border-[3px] border-white shadow-lg" alt="">
               } @else {
-                <div class="shield-placeholder" [style.background-color]="localColor">
+                <div class="w-full h-full rounded-xl flex items-center justify-center text-2xl font-extrabold text-white border-[3px] border-white shadow-lg"
+                  [style.background-color]="localColor">
                   {{ initials(partido.clubLocal?.nombre_corto || partido.clubLocal?.nombre) }}
                 </div>
               }
             </div>
-            <div class="team-name">{{ partido.clubLocal?.nombre_corto || partido.clubLocal?.nombre }}</div>
-            <div class="team-score">{{ partido.goles_local }}</div>
+            <div class="font-bold uppercase text-sm leading-tight text-shadow min-w-0 truncate">{{ partido.clubLocal?.nombre_corto || partido.clubLocal?.nombre }}</div>
+            <div class="text-6xl font-black leading-none min-w-[3.5rem] text-center" style="text-shadow: 0 4px 8px rgba(0,0,0,0.4)">{{ partido.goles_local }}</div>
           </div>
 
-          <!-- Centro -->
-          <div class="center-info">
-            <div class="clock-time">{{ formatClock() }}</div>
-            <div class="clock-label">
+          <!-- Centro: reloj + periodo -->
+          <div class="text-center px-2">
+            <div class="text-2xl font-extrabold font-mono bg-black/30 px-4 py-2 rounded-lg border-2 border-white/30">{{ formatClock() }}</div>
+            <div class="text-[0.65rem] font-bold mt-1 uppercase flex items-center justify-center gap-1.5 opacity-90">
               @if (partido.estado === 'programado') { <span>PREPARACION</span> }
               @else if (partido.estado === 'en_curso') {
-                <span class="live-dot"></span>
+                <span class="inline-block w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse"></span>
                 @if (partido.periodo_actual) { T{{ partido.periodo_actual }} }
                 EN VIVO
               }
@@ -79,14 +81,15 @@ type EventoTipo = 'gol' | 'amarilla' | 'azul' | 'roja' | 'falta';
           </div>
 
           <!-- Visitante -->
-          <div class="team team-visit">
-            <div class="team-score">{{ partido.goles_visitante }}</div>
-            <div class="team-name">{{ partido.clubVisitante?.nombre_corto || partido.clubVisitante?.nombre }}</div>
-            <div class="team-shield">
+          <div class="flex items-center justify-start gap-3 text-left min-w-0">
+            <div class="text-6xl font-black leading-none min-w-[3.5rem] text-center" style="text-shadow: 0 4px 8px rgba(0,0,0,0.4)">{{ partido.goles_visitante }}</div>
+            <div class="font-bold uppercase text-sm leading-tight text-shadow min-w-0 truncate">{{ partido.clubVisitante?.nombre_corto || partido.clubVisitante?.nombre }}</div>
+            <div class="flex-shrink-0 w-16 h-16">
               @if (partido.clubVisitante?.escudo_url) {
-                <img [src]="resolveUrl(partido.clubVisitante.escudo_url)" alt="">
+                <img [src]="resolveUrl(partido.clubVisitante.escudo_url)" class="w-full h-full rounded-xl object-cover border-[3px] border-white shadow-lg" alt="">
               } @else {
-                <div class="shield-placeholder" [style.background-color]="visitColor">
+                <div class="w-full h-full rounded-xl flex items-center justify-center text-2xl font-extrabold text-white border-[3px] border-white shadow-lg"
+                  [style.background-color]="visitColor">
                   {{ initials(partido.clubVisitante?.nombre_corto || partido.clubVisitante?.nombre) }}
                 </div>
               }
@@ -94,128 +97,125 @@ type EventoTipo = 'gol' | 'amarilla' | 'azul' | 'roja' | 'falta';
           </div>
         </div>
 
-        <!-- ═══ FASE PREPARACION: alineaciones ═══ -->
+        <!-- ═══ C) FASE PREPARACION ═══ -->
         @if (fase === 'preparacion') {
-          <div class="preparation-area">
-            <div class="prep-header">
+          <div class="p-3">
+            <div class="text-center mb-3">
               <h2 class="text-lg font-bold text-gray-900">Preparacion del partido</h2>
-              <p class="text-sm text-gray-500">Selecciona los jugadores y asigna numero de camiseta para cada equipo</p>
+              <p class="text-sm text-gray-500">Selecciona jugadores y asigna camiseta</p>
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <!-- Alineacion local -->
-              <div class="club-alineacion" [class.confirmada]="alineacion.confirmado_local">
-                <div class="club-header" [style.background]="'linear-gradient(135deg, ' + localColor + ', ' + localColorSec + ')'">
-                  <div class="flex items-center gap-3 text-white">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <!-- Alineacion LOCAL -->
+              <div class="bg-white rounded-xl border-2 overflow-hidden" [class.border-green-500]="alineacion.confirmado_local" [class.border-gray-200]="!alineacion.confirmado_local">
+                <div class="flex items-center justify-between px-3 py-2.5 text-white"
+                  [style.background]="'linear-gradient(135deg, ' + localColor + ', ' + localColorSec + ')'">
+                  <div class="flex items-center gap-2">
                     @if (partido.clubLocal?.escudo_url) {
-                      <img [src]="resolveUrl(partido.clubLocal.escudo_url)" class="w-10 h-10 rounded object-cover border-2 border-white">
+                      <img [src]="resolveUrl(partido.clubLocal.escudo_url)" class="w-8 h-8 rounded object-cover border-2 border-white" alt="">
                     }
                     <div>
-                      <p class="font-bold">{{ partido.clubLocal?.nombre }}</p>
-                      <p class="text-xs opacity-90">LOCAL · {{ contarAlineados('local') }} jugadores seleccionados</p>
+                      <p class="font-bold text-sm">{{ partido.clubLocal?.nombre_corto || partido.clubLocal?.nombre }}</p>
+                      <p class="text-[0.65rem] opacity-90">LOCAL · {{ contarAlineados('local') }} jugadores</p>
                     </div>
                   </div>
                   @if (alineacion.confirmado_local) {
-                    <mat-icon class="!text-2xl text-green-300">verified</mat-icon>
+                    <mat-icon class="!text-xl text-green-300">verified</mat-icon>
                   }
                 </div>
 
-                <div class="player-selection">
+                <div class="max-h-[400px] overflow-y-auto p-1.5 space-y-1">
                   @for (j of jugadoresLocal; track j.id) {
-                    <div class="player-row" [class.active]="esAlineado(j.id)">
-                      <label class="player-checkbox">
-                        <input type="checkbox"
-                          [checked]="esAlineado(j.id)"
-                          [disabled]="alineacion.confirmado_local"
-                          (change)="toggleAlineado(j, partido.club_local_id, $event)">
-                      </label>
-                      <div class="player-avatar"
-                        [style.background]="'linear-gradient(135deg, ' + localColor + ', ' + localColorSec + ')'">
-                        {{ (j.nombre?.charAt(0) || '') + (j.apellido?.charAt(0) || '') }}
-                      </div>
-                      <div class="player-info">
-                        <div class="player-apellido">{{ j.apellido }}</div>
-                        <div class="player-nombre">{{ j.nombre }}</div>
-                      </div>
+                    <div class="flex items-center gap-2 px-2 py-1.5 rounded-lg transition-colors"
+                      [class.bg-green-50]="esAlineado(j.id)" [class.hover:bg-gray-50]="!esAlineado(j.id)">
+                      <input type="checkbox"
+                        class="w-4 h-4 cursor-pointer accent-green-600 flex-shrink-0"
+                        [checked]="esAlineado(j.id)"
+                        [disabled]="alineacion.confirmado_local"
+                        (change)="toggleAlineado(j, partido.club_local_id, $event)">
                       @if (esAlineado(j.id)) {
                         <input type="number"
-                          class="camiseta-input"
+                          class="w-[50px] px-1 py-0.5 border-2 border-gray-300 rounded text-center font-bold text-sm focus:outline-none focus:border-blue-500"
                           placeholder="#"
                           [value]="getCamiseta(j.id)"
                           [disabled]="alineacion.confirmado_local"
                           min="1" max="99"
                           (change)="setCamiseta(j, partido.club_local_id, $event)">
                       }
+                      <div class="flex-1 min-w-0">
+                        <span class="text-sm font-bold text-gray-900 uppercase truncate">{{ j.apellido }}</span>
+                        <span class="text-xs text-gray-500 ml-1 truncate">{{ j.nombre }}</span>
+                      </div>
                     </div>
                   }
                 </div>
 
                 @if (!alineacion.confirmado_local) {
-                  <button class="btn-confirmar" (click)="abrirConfirmacion('local')" [disabled]="contarAlineados('local') < 5">
-                    <mat-icon>how_to_reg</mat-icon> Confirmar alineacion (Delegado)
+                  <button class="w-full py-3 bg-gradient-to-r from-green-500 to-green-600 text-white font-bold text-sm flex items-center justify-center gap-2 disabled:bg-gray-400 disabled:from-gray-400 disabled:to-gray-400 disabled:cursor-not-allowed"
+                    (click)="abrirConfirmacion('local')" [disabled]="contarAlineados('local') < 5">
+                    <mat-icon>how_to_reg</mat-icon> Confirmar Alineacion Local
                   </button>
                 }
               </div>
 
-              <!-- Alineacion visitante -->
-              <div class="club-alineacion" [class.confirmada]="alineacion.confirmado_visitante">
-                <div class="club-header" [style.background]="'linear-gradient(135deg, ' + visitColor + ', ' + visitColorSec + ')'">
-                  <div class="flex items-center gap-3 text-white">
+              <!-- Alineacion VISITANTE -->
+              <div class="bg-white rounded-xl border-2 overflow-hidden" [class.border-green-500]="alineacion.confirmado_visitante" [class.border-gray-200]="!alineacion.confirmado_visitante">
+                <div class="flex items-center justify-between px-3 py-2.5 text-white"
+                  [style.background]="'linear-gradient(135deg, ' + visitColor + ', ' + visitColorSec + ')'">
+                  <div class="flex items-center gap-2">
                     @if (partido.clubVisitante?.escudo_url) {
-                      <img [src]="resolveUrl(partido.clubVisitante.escudo_url)" class="w-10 h-10 rounded object-cover border-2 border-white">
+                      <img [src]="resolveUrl(partido.clubVisitante.escudo_url)" class="w-8 h-8 rounded object-cover border-2 border-white" alt="">
                     }
                     <div>
-                      <p class="font-bold">{{ partido.clubVisitante?.nombre }}</p>
-                      <p class="text-xs opacity-90">VISITANTE · {{ contarAlineados('visitante') }} jugadores seleccionados</p>
+                      <p class="font-bold text-sm">{{ partido.clubVisitante?.nombre_corto || partido.clubVisitante?.nombre }}</p>
+                      <p class="text-[0.65rem] opacity-90">VISITANTE · {{ contarAlineados('visitante') }} jugadores</p>
                     </div>
                   </div>
                   @if (alineacion.confirmado_visitante) {
-                    <mat-icon class="!text-2xl text-green-300">verified</mat-icon>
+                    <mat-icon class="!text-xl text-green-300">verified</mat-icon>
                   }
                 </div>
 
-                <div class="player-selection">
+                <div class="max-h-[400px] overflow-y-auto p-1.5 space-y-1">
                   @for (j of jugadoresVisitante; track j.id) {
-                    <div class="player-row" [class.active]="esAlineado(j.id)">
-                      <label class="player-checkbox">
-                        <input type="checkbox"
-                          [checked]="esAlineado(j.id)"
-                          [disabled]="alineacion.confirmado_visitante"
-                          (change)="toggleAlineado(j, partido.club_visitante_id, $event)">
-                      </label>
-                      <div class="player-avatar"
-                        [style.background]="'linear-gradient(135deg, ' + visitColor + ', ' + visitColorSec + ')'">
-                        {{ (j.nombre?.charAt(0) || '') + (j.apellido?.charAt(0) || '') }}
-                      </div>
-                      <div class="player-info">
-                        <div class="player-apellido">{{ j.apellido }}</div>
-                        <div class="player-nombre">{{ j.nombre }}</div>
-                      </div>
+                    <div class="flex items-center gap-2 px-2 py-1.5 rounded-lg transition-colors"
+                      [class.bg-green-50]="esAlineado(j.id)" [class.hover:bg-gray-50]="!esAlineado(j.id)">
+                      <input type="checkbox"
+                        class="w-4 h-4 cursor-pointer accent-green-600 flex-shrink-0"
+                        [checked]="esAlineado(j.id)"
+                        [disabled]="alineacion.confirmado_visitante"
+                        (change)="toggleAlineado(j, partido.club_visitante_id, $event)">
                       @if (esAlineado(j.id)) {
                         <input type="number"
-                          class="camiseta-input"
+                          class="w-[50px] px-1 py-0.5 border-2 border-gray-300 rounded text-center font-bold text-sm focus:outline-none focus:border-blue-500"
                           placeholder="#"
                           [value]="getCamiseta(j.id)"
                           [disabled]="alineacion.confirmado_visitante"
                           min="1" max="99"
                           (change)="setCamiseta(j, partido.club_visitante_id, $event)">
                       }
+                      <div class="flex-1 min-w-0">
+                        <span class="text-sm font-bold text-gray-900 uppercase truncate">{{ j.apellido }}</span>
+                        <span class="text-xs text-gray-500 ml-1 truncate">{{ j.nombre }}</span>
+                      </div>
                     </div>
                   }
                 </div>
 
                 @if (!alineacion.confirmado_visitante) {
-                  <button class="btn-confirmar" (click)="abrirConfirmacion('visitante')" [disabled]="contarAlineados('visitante') < 5">
-                    <mat-icon>how_to_reg</mat-icon> Confirmar alineacion (Delegado)
+                  <button class="w-full py-3 bg-gradient-to-r from-green-500 to-green-600 text-white font-bold text-sm flex items-center justify-center gap-2 disabled:bg-gray-400 disabled:from-gray-400 disabled:to-gray-400 disabled:cursor-not-allowed"
+                    (click)="abrirConfirmacion('visitante')" [disabled]="contarAlineados('visitante') < 5">
+                    <mat-icon>how_to_reg</mat-icon> Confirmar Alineacion Visitante
                   </button>
                 }
               </div>
             </div>
 
-            <!-- Boton de inicio cuando ambas estan confirmadas -->
+            <!-- Boton INICIAR cuando ambas confirmadas -->
             @if (alineacion.confirmado_local && alineacion.confirmado_visitante) {
               <div class="text-center pt-4">
-                <button class="btn-huge btn-start" (click)="iniciarPeriodo(1)">
+                <button class="inline-flex flex-col items-center gap-2 px-12 py-5 rounded-2xl bg-gradient-to-br from-green-500 to-green-700 text-white font-bold text-lg shadow-xl hover:shadow-2xl active:scale-[0.97] transition-all min-w-[280px]"
+                  (click)="iniciarPeriodo(1)">
                   <mat-icon class="!text-4xl !w-10 !h-10">play_arrow</mat-icon>
                   <span>INICIAR PRIMER TIEMPO</span>
                 </button>
@@ -224,151 +224,227 @@ type EventoTipo = 'gol' | 'amarilla' | 'azul' | 'roja' | 'falta';
           </div>
         }
 
-        <!-- ═══ FASE EN CURSO: tiempos con eventos ═══ -->
+        <!-- ═══ D) FASE EN CURSO ═══ -->
         @if (fase === 'en_curso_tiempo') {
-          <div class="content-area">
-            <!-- Tabs por club -->
-            <div class="team-tabs">
-              <button class="team-tab" [class.active]="tabActivo === 'local'" (click)="setTab('local')"
-                [style.border-color]="tabActivo === 'local' ? localColor : 'transparent'">
-                @if (partido.clubLocal?.escudo_url) {
-                  <img [src]="resolveUrl(partido.clubLocal.escudo_url)" class="w-7 h-7 rounded object-cover" alt="">
-                }
-                <span>{{ partido.clubLocal?.nombre_corto || partido.clubLocal?.nombre }}</span>
-                <span class="count">{{ alineacionVisible('local').length }}</span>
-              </button>
-              <button class="team-tab" [class.active]="tabActivo === 'visitante'" (click)="setTab('visitante')"
-                [style.border-color]="tabActivo === 'visitante' ? visitColor : 'transparent'">
-                @if (partido.clubVisitante?.escudo_url) {
-                  <img [src]="resolveUrl(partido.clubVisitante.escudo_url)" class="w-7 h-7 rounded object-cover" alt="">
-                }
-                <span>{{ partido.clubVisitante?.nombre_corto || partido.clubVisitante?.nombre }}</span>
-                <span class="count">{{ alineacionVisible('visitante').length }}</span>
-              </button>
-            </div>
+          <div class="p-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
 
-            <!-- Grid de jugadores -->
-            <div class="players-grid">
-              @for (a of alineacionVisibleTab(); track a.id) {
-                <button class="player-card" [class.selected]="jugadorSeleccionado?.id === a.jugador_id" (click)="seleccionarJugador(a)">
-                  <div class="player-number">{{ a.numero_camiseta || '?' }}</div>
-                  <div class="player-info">
-                    <div class="player-name">{{ a.jugador?.apellido }}</div>
-                    <div class="player-firstname">{{ a.jugador?.nombre }}</div>
-                  </div>
-                  @if (a._goles) { <div class="player-badge goles"><mat-icon class="!text-sm !w-4 !h-4">sports_soccer</mat-icon>{{ a._goles }}</div> }
-                  @if (a._amarillas) { <div class="player-badge amarilla"><mat-icon class="!text-sm !w-4 !h-4">square</mat-icon>{{ a._amarillas }}</div> }
-                  @if (a._azules) { <div class="player-badge azul"><mat-icon class="!text-sm !w-4 !h-4">square</mat-icon>{{ a._azules }}</div> }
-                  @if (a._roja) { <div class="player-badge roja"><mat-icon class="!text-sm !w-4 !h-4">square</mat-icon></div> }
-                </button>
-              }
-              @if (!alineacionVisibleTab().length) {
-                <div class="empty-players">
-                  <mat-icon class="!text-5xl text-gray-300">groups</mat-icon>
-                  <p>Sin jugadores en la alineacion</p>
+              <!-- Columna LOCAL -->
+              <div>
+                <div class="flex items-center gap-2 mb-2 px-1">
+                  @if (partido.clubLocal?.escudo_url) {
+                    <img [src]="resolveUrl(partido.clubLocal.escudo_url)" class="w-6 h-6 rounded object-cover" alt="">
+                  }
+                  <span class="text-sm font-bold text-gray-700 uppercase">{{ partido.clubLocal?.nombre_corto || partido.clubLocal?.nombre }}</span>
+                  <span class="text-xs text-gray-400">({{ alineacionVisible('local').length }})</span>
                 </div>
-              }
+                <div class="space-y-1.5">
+                  @for (a of alineacionVisible('local'); track a.id) {
+                    <div class="rounded-lg border p-2 bg-white" [class.border-gray-200]="!a._roja" [class.border-red-300]="a._roja" [class.bg-red-50]="a._roja">
+                      <div class="flex items-center gap-2">
+                        <!-- Badge dorsal -->
+                        <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white flex-shrink-0"
+                          [style.background-color]="localColor">
+                          {{ a.numero_camiseta || '?' }}
+                        </div>
+                        <!-- Nombre -->
+                        <div class="flex-1 min-w-0">
+                          <div class="text-sm font-bold uppercase truncate" [class.line-through]="a._roja" [class.text-red-400]="a._roja">{{ a.jugador?.apellido }}</div>
+                          <div class="text-[0.65rem] text-gray-500 truncate">{{ a.jugador?.nombre }}</div>
+                        </div>
+                        <!-- Acumuladores -->
+                        @if (a._goles) {
+                          <span class="inline-flex items-center gap-0.5 text-xs font-bold bg-green-100 text-green-800 px-1.5 py-0.5 rounded-full">⚽ {{ a._goles }}</span>
+                        }
+                        @if (a._amarillas) {
+                          <span class="text-xs">🟡</span>
+                        }
+                        @if (a._roja) {
+                          <span class="text-xs">🔴</span>
+                        }
+                      </div>
+                      <!-- Botones de accion -->
+                      @if (!a._roja) {
+                        <div class="flex items-center gap-1.5 mt-1.5">
+                          <button class="w-7 h-7 rounded-full bg-green-500 text-white text-xs font-bold flex items-center justify-center active:scale-90 transition-transform"
+                            title="Gol"
+                            (click)="setTab('local'); seleccionarJugador(a); registrarRapido('gol')">⚽</button>
+                          <button class="w-7 h-7 rounded-full bg-yellow-400 text-gray-900 text-xs font-bold flex items-center justify-center active:scale-90 transition-transform"
+                            title="Amarilla"
+                            (click)="setTab('local'); seleccionarJugador(a); registrarRapido('amarilla')">🟡</button>
+                          @if (configTorneo.tarjeta_azul_habilitada) {
+                            <button class="w-7 h-7 rounded-full bg-blue-500 text-white text-xs font-bold flex items-center justify-center active:scale-90 transition-transform"
+                              title="Azul"
+                              (click)="setTab('local'); seleccionarJugador(a); registrarRapido('azul')">🔵</button>
+                          }
+                          <button class="w-7 h-7 rounded-full bg-red-600 text-white text-xs font-bold flex items-center justify-center active:scale-90 transition-transform"
+                            title="Roja"
+                            (click)="setTab('local'); seleccionarJugador(a); registrarRapido('roja')">🔴</button>
+                          @if (configTorneo.contar_faltas) {
+                            <button class="w-7 h-7 rounded-full bg-orange-400 text-white text-xs font-bold flex items-center justify-center active:scale-90 transition-transform"
+                              title="Falta"
+                              (click)="setTab('local'); seleccionarJugador(a); registrarRapido('falta')">⚠️</button>
+                          }
+                        </div>
+                      }
+                    </div>
+                  }
+                  @if (!alineacionVisible('local').length) {
+                    <div class="text-center py-6 text-gray-400 text-sm">Sin jugadores alineados</div>
+                  }
+                </div>
+              </div>
+
+              <!-- Columna VISITANTE -->
+              <div>
+                <div class="flex items-center gap-2 mb-2 px-1">
+                  @if (partido.clubVisitante?.escudo_url) {
+                    <img [src]="resolveUrl(partido.clubVisitante.escudo_url)" class="w-6 h-6 rounded object-cover" alt="">
+                  }
+                  <span class="text-sm font-bold text-gray-700 uppercase">{{ partido.clubVisitante?.nombre_corto || partido.clubVisitante?.nombre }}</span>
+                  <span class="text-xs text-gray-400">({{ alineacionVisible('visitante').length }})</span>
+                </div>
+                <div class="space-y-1.5">
+                  @for (a of alineacionVisible('visitante'); track a.id) {
+                    <div class="rounded-lg border p-2 bg-white" [class.border-gray-200]="!a._roja" [class.border-red-300]="a._roja" [class.bg-red-50]="a._roja">
+                      <div class="flex items-center gap-2">
+                        <!-- Badge dorsal -->
+                        <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white flex-shrink-0"
+                          [style.background-color]="visitColor">
+                          {{ a.numero_camiseta || '?' }}
+                        </div>
+                        <!-- Nombre -->
+                        <div class="flex-1 min-w-0">
+                          <div class="text-sm font-bold uppercase truncate" [class.line-through]="a._roja" [class.text-red-400]="a._roja">{{ a.jugador?.apellido }}</div>
+                          <div class="text-[0.65rem] text-gray-500 truncate">{{ a.jugador?.nombre }}</div>
+                        </div>
+                        <!-- Acumuladores -->
+                        @if (a._goles) {
+                          <span class="inline-flex items-center gap-0.5 text-xs font-bold bg-green-100 text-green-800 px-1.5 py-0.5 rounded-full">⚽ {{ a._goles }}</span>
+                        }
+                        @if (a._amarillas) {
+                          <span class="text-xs">🟡</span>
+                        }
+                        @if (a._roja) {
+                          <span class="text-xs">🔴</span>
+                        }
+                      </div>
+                      <!-- Botones de accion -->
+                      @if (!a._roja) {
+                        <div class="flex items-center gap-1.5 mt-1.5">
+                          <button class="w-7 h-7 rounded-full bg-green-500 text-white text-xs font-bold flex items-center justify-center active:scale-90 transition-transform"
+                            title="Gol"
+                            (click)="setTab('visitante'); seleccionarJugador(a); registrarRapido('gol')">⚽</button>
+                          <button class="w-7 h-7 rounded-full bg-yellow-400 text-gray-900 text-xs font-bold flex items-center justify-center active:scale-90 transition-transform"
+                            title="Amarilla"
+                            (click)="setTab('visitante'); seleccionarJugador(a); registrarRapido('amarilla')">🟡</button>
+                          @if (configTorneo.tarjeta_azul_habilitada) {
+                            <button class="w-7 h-7 rounded-full bg-blue-500 text-white text-xs font-bold flex items-center justify-center active:scale-90 transition-transform"
+                              title="Azul"
+                              (click)="setTab('visitante'); seleccionarJugador(a); registrarRapido('azul')">🔵</button>
+                          }
+                          <button class="w-7 h-7 rounded-full bg-red-600 text-white text-xs font-bold flex items-center justify-center active:scale-90 transition-transform"
+                            title="Roja"
+                            (click)="setTab('visitante'); seleccionarJugador(a); registrarRapido('roja')">🔴</button>
+                          @if (configTorneo.contar_faltas) {
+                            <button class="w-7 h-7 rounded-full bg-orange-400 text-white text-xs font-bold flex items-center justify-center active:scale-90 transition-transform"
+                              title="Falta"
+                              (click)="setTab('visitante'); seleccionarJugador(a); registrarRapido('falta')">⚠️</button>
+                          }
+                        </div>
+                      }
+                    </div>
+                  }
+                  @if (!alineacionVisible('visitante').length) {
+                    <div class="text-center py-6 text-gray-400 text-sm">Sin jugadores alineados</div>
+                  }
+                </div>
+              </div>
             </div>
 
-            <!-- Botones de accion -->
-            <div class="quick-actions" [class.cols-5]="configTorneo.tarjeta_azul_habilitada && configTorneo.contar_faltas"
-              [class.cols-4]="configTorneo.tarjeta_azul_habilitada !== configTorneo.contar_faltas">
-              <button class="action-btn gol" (click)="registrarRapido('gol')">
-                <mat-icon class="!text-3xl !w-8 !h-8">sports_soccer</mat-icon><span>GOL</span>
-              </button>
-              <button class="action-btn amarilla" (click)="registrarRapido('amarilla')">
-                <mat-icon class="!text-3xl !w-8 !h-8">square</mat-icon><span>AMARILLA</span>
-              </button>
-              @if (configTorneo.tarjeta_azul_habilitada) {
-                <button class="action-btn azul" (click)="registrarRapido('azul')">
-                  <mat-icon class="!text-3xl !w-8 !h-8">square</mat-icon><span>AZUL</span>
-                </button>
-              }
-              <button class="action-btn roja" (click)="registrarRapido('roja')">
-                <mat-icon class="!text-3xl !w-8 !h-8">square</mat-icon><span>ROJA</span>
-              </button>
-              @if (configTorneo.contar_faltas) {
-                <button class="action-btn falta" (click)="registrarRapido('falta')">
-                  <mat-icon class="!text-3xl !w-8 !h-8">warning</mat-icon><span>FALTA</span>
-                </button>
-              }
-              <button class="action-btn finalizar" (click)="finalizarPeriodoActual()">
-                <mat-icon class="!text-3xl !w-8 !h-8">stop_circle</mat-icon>
-                <span>FIN T{{ partido.periodo_actual }}</span>
-              </button>
-            </div>
+            <!-- Boton FIN periodo -->
+            <button class="w-full mt-4 py-4 rounded-xl bg-gradient-to-r from-gray-700 to-gray-900 text-white text-xl font-bold flex items-center justify-center gap-3 active:scale-[0.97] transition-transform shadow-lg"
+              (click)="finalizarPeriodoActual()">
+              <mat-icon class="!text-3xl !w-8 !h-8">stop_circle</mat-icon>
+              FIN T{{ partido.periodo_actual }}
+            </button>
           </div>
         }
 
-        <!-- ═══ FASE DESCANSO entre tiempos ═══ -->
+        <!-- ═══ E) FASE DESCANSO ═══ -->
         @if (fase === 'descanso') {
-          <div class="p-6 text-center bg-gray-50 space-y-4">
-            <div class="inline-flex items-center gap-3 px-6 py-4 rounded-2xl bg-blue-50 border-2 border-blue-300 text-blue-700">
-              <mat-icon class="!text-3xl !w-8 !h-8">local_cafe</mat-icon>
+          <div class="p-8 text-center space-y-6">
+            <div class="inline-flex items-center gap-3 px-8 py-5 rounded-2xl bg-blue-50 border-2 border-blue-300 text-blue-700">
+              <mat-icon class="!text-4xl !w-10 !h-10">local_cafe</mat-icon>
               <div class="text-left">
-                <p class="text-xl font-bold">DESCANSO</p>
-                <p class="text-xs">Esperando inicio del siguiente tiempo</p>
+                <p class="text-2xl font-bold">DESCANSO</p>
+                <p class="text-sm">Fin del Tiempo {{ partido.periodo_actual }}</p>
               </div>
             </div>
             <div>
-              <button class="btn-huge btn-start" (click)="iniciarPeriodo(partido.periodo_actual + 1)">
+              <button class="inline-flex flex-col items-center gap-2 px-12 py-5 rounded-2xl bg-gradient-to-br from-green-500 to-green-700 text-white font-bold text-lg shadow-xl hover:shadow-2xl active:scale-[0.97] transition-all min-w-[280px]"
+                (click)="iniciarPeriodo(partido.periodo_actual + 1)">
                 <mat-icon class="!text-4xl !w-10 !h-10">play_arrow</mat-icon>
-                <span>INICIAR T{{ partido.periodo_actual + 1 }}</span>
+                <span>INICIAR TIEMPO {{ partido.periodo_actual + 1 }}</span>
               </button>
             </div>
           </div>
         }
 
-        <!-- ═══ FASE FINALIZADO: cerrar con arbitro ═══ -->
+        <!-- ═══ F) FASE FINALIZADO ═══ -->
         @if (fase === 'finalizado') {
-          <div class="p-6 text-center bg-gray-50 space-y-4">
+          <div class="p-8 text-center space-y-6">
             @if (!partido.confirmado_arbitro) {
-              <div class="inline-flex items-center gap-3 px-6 py-4 rounded-2xl bg-amber-50 border-2 border-amber-300 text-amber-700">
-                <mat-icon class="!text-3xl !w-8 !h-8">hourglass_empty</mat-icon>
+              <div class="inline-flex items-center gap-3 px-8 py-5 rounded-2xl bg-amber-50 border-2 border-amber-300 text-amber-700">
+                <mat-icon class="!text-4xl !w-10 !h-10">hourglass_empty</mat-icon>
                 <div class="text-left">
-                  <p class="text-xl font-bold">PARTIDO TERMINADO</p>
-                  <p class="text-xs">Esperando confirmacion del arbitro</p>
+                  <p class="text-2xl font-bold">PARTIDO TERMINADO</p>
+                  <p class="text-sm">{{ partido.goles_local }} - {{ partido.goles_visitante }} · Resultado final</p>
                 </div>
               </div>
               @if (auth.getUser()?.rol === 'arbitro' || auth.isAdmin()) {
                 <div>
-                  <button class="btn-huge btn-confirm" (click)="abrirCierre()">
+                  <button class="inline-flex flex-col items-center gap-2 px-12 py-5 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 text-white font-bold text-lg shadow-xl hover:shadow-2xl active:scale-[0.97] transition-all min-w-[280px]"
+                    (click)="abrirCierre()">
                     <mat-icon class="!text-4xl !w-10 !h-10">verified</mat-icon>
                     <span>CERRAR PARTIDO (ARBITRO)</span>
                   </button>
                 </div>
               }
             } @else {
-              <div class="inline-flex items-center gap-3 px-6 py-4 rounded-2xl bg-green-50 border-2 border-green-500 text-green-700">
-                <mat-icon class="!text-3xl !w-8 !h-8">verified</mat-icon>
-                <span class="text-xl font-bold">CONFIRMADO POR EL ARBITRO</span>
+              <div class="inline-flex items-center gap-3 px-8 py-5 rounded-2xl bg-green-50 border-2 border-green-500 text-green-700">
+                <mat-icon class="!text-4xl !w-10 !h-10">verified</mat-icon>
+                <div class="text-left">
+                  <p class="text-2xl font-bold">CONFIRMADO POR EL ARBITRO</p>
+                  <p class="text-sm">{{ partido.goles_local }} - {{ partido.goles_visitante }} · Partido cerrado</p>
+                </div>
               </div>
             }
           </div>
         }
 
-        <!-- ═══ Timeline de eventos ═══ -->
+        <!-- ═══ G) Timeline de eventos ═══ -->
         @if (partido.eventos?.length) {
-          <div class="events-timeline">
-            <h3 class="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-              <mat-icon class="!text-base">list</mat-icon>
-              Eventos del partido
+          <div class="px-3 py-2 bg-gray-50 border-t border-gray-200">
+            <h3 class="text-xs font-semibold text-gray-500 mb-1.5 flex items-center gap-1.5 uppercase tracking-wide">
+              <mat-icon class="!text-sm !w-4 !h-4">list</mat-icon>
+              Eventos ({{ partido.eventos.length }})
             </h3>
-            <div class="events-list">
+            <div class="flex flex-col gap-1 max-h-[250px] overflow-y-auto">
               @for (ev of partido.eventos; track ev.id) {
-                <div class="event-item">
+                <div class="flex items-center gap-2 px-2 py-1.5 bg-white rounded border border-gray-100 text-sm">
                   @if (ev.periodo) {
-                    <span class="event-periodo">T{{ ev.periodo }}</span>
+                    <span class="text-[0.6rem] font-bold bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">T{{ ev.periodo }}</span>
                   }
-                  <span class="event-min">{{ ev.minuto ? ev.minuto + "'" : '—' }}</span>
-                  <mat-icon class="!text-lg" [class]="iconClassEvento(ev.tipo)">{{ iconEvento(ev.tipo) }}</mat-icon>
-                  <span class="event-text">
+                  <span class="font-mono font-bold text-gray-400 w-8 text-right text-xs">{{ ev.minuto ? ev.minuto + "'" : '--' }}</span>
+                  <mat-icon class="!text-base !w-4 !h-4" [class]="iconClassEvento(ev.tipo)">{{ iconEvento(ev.tipo) }}</mat-icon>
+                  <span class="flex-1 text-gray-700 text-xs truncate">
                     @if (ev.jugador) {
                       {{ ev.jugador.apellido }}@if (ev.jugador.numero_camiseta) { (#{{ ev.jugador.numero_camiseta }}) }
                     }
                     @if (ev.detalle) { — {{ ev.detalle }} }
                   </span>
-                  <span class="event-club">{{ ev.club?.nombre_corto }}</span>
+                  <span class="text-[0.6rem] text-gray-400 font-semibold uppercase">{{ ev.club?.nombre_corto }}</span>
                 </div>
               }
             </div>
@@ -377,7 +453,7 @@ type EventoTipo = 'gol' | 'amarilla' | 'azul' | 'roja' | 'falta';
 
       </div>
 
-      <!-- Modal confirmacion DNI + firma -->
+      <!-- ═══ H) Modal DNI+Firma ═══ -->
       @if (modalConfirmacion) {
         <app-dni-firma-modal
           [titulo]="modalConfirmacion.titulo"
@@ -392,99 +468,6 @@ type EventoTipo = 'gol' | 'amarilla' | 'azul' | 'roja' | 'falta';
   `,
   styles: [`
     :host { display: block; }
-    .panel-root { min-height: 100vh; background: #f8fafc; }
-    .fullscreen { position: fixed; inset: 0; z-index: 9999; overflow-y: auto; background: white; }
-
-    /* Scoreboard */
-    .scoreboard {
-      display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 1rem;
-      padding: 1.5rem; color: white; position: relative; overflow: hidden;
-    }
-    .team { display: flex; align-items: center; gap: 1rem; min-width: 0; }
-    .team-local { justify-content: flex-end; text-align: right; }
-    .team-visit { justify-content: flex-start; text-align: left; }
-    .team-shield { width: 72px; height: 72px; flex-shrink: 0; }
-    .team-shield img { width: 100%; height: 100%; border-radius: 12px; object-fit: cover; border: 3px solid white; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
-    .shield-placeholder { width: 100%; height: 100%; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.75rem; font-weight: 800; color: white; border: 3px solid white; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
-    .team-name { font-size: 1.1rem; font-weight: 700; text-transform: uppercase; text-shadow: 0 2px 4px rgba(0,0,0,0.3); }
-    .team-score { font-size: 4.5rem; font-weight: 900; line-height: 1; text-shadow: 0 4px 8px rgba(0,0,0,0.4); min-width: 3.5rem; text-align: center; }
-
-    .center-info { text-align: center; padding: 0 0.75rem; }
-    .clock-time { font-size: 1.5rem; font-weight: 800; font-family: ui-monospace, monospace; background: rgba(0,0,0,0.3); padding: 0.5rem 1rem; border-radius: 0.5rem; border: 2px solid rgba(255,255,255,0.3); }
-    .clock-label { font-size: 0.7rem; font-weight: 700; margin-top: 0.35rem; opacity: 0.9; text-transform: uppercase; display: flex; align-items: center; justify-content: center; gap: 0.35rem; }
-    .live-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #ef4444; animation: pulse 1.2s infinite; }
-    @keyframes pulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.6; transform: scale(0.9); } }
-
-    /* Preparacion */
-    .preparation-area { padding: 1rem; }
-    .prep-header { text-align: center; margin-bottom: 1rem; }
-    .club-alineacion { background: white; border-radius: 0.75rem; overflow: hidden; border: 2px solid #e5e7eb; transition: border-color 0.2s; }
-    .club-alineacion.confirmada { border-color: #10b981; }
-    .club-header { display: flex; align-items: center; justify-content: space-between; padding: 1rem; color: white; }
-    .player-selection { max-height: 400px; overflow-y: auto; padding: 0.5rem; }
-    .player-row { display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem 0.75rem; border-radius: 0.5rem; transition: background 0.15s; }
-    .player-row:hover { background: #f9fafb; }
-    .player-row.active { background: #f0fdf4; }
-    .player-checkbox input { width: 18px; height: 18px; cursor: pointer; }
-    .player-avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 0.7rem; flex-shrink: 0; }
-    .player-info { flex: 1; min-width: 0; }
-    .player-apellido { font-size: 0.85rem; font-weight: 700; color: #111827; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .player-nombre { font-size: 0.7rem; color: #6b7280; }
-    .camiseta-input { width: 50px; padding: 0.35rem; border: 2px solid #d1d5db; border-radius: 0.35rem; font-weight: 700; font-size: 0.9rem; text-align: center; }
-    .camiseta-input:focus { outline: none; border-color: var(--color-primario); }
-    .btn-confirmar { width: 100%; padding: 1rem; border: none; background: linear-gradient(135deg, #10b981, #059669); color: white; font-weight: 700; font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
-    .btn-confirmar:disabled { background: #9ca3af; cursor: not-allowed; }
-
-    /* Botones grandes */
-    .btn-huge { display: inline-flex; flex-direction: column; align-items: center; gap: 0.5rem; padding: 1.5rem 3rem; border: none; border-radius: 1rem; font-size: 1.1rem; font-weight: 700; cursor: pointer; transition: all 0.2s; min-width: 280px; box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
-    .btn-huge:active { transform: scale(0.97); }
-    .btn-start { background: linear-gradient(135deg, #10b981, #059669); color: white; }
-    .btn-confirm { background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; }
-
-    /* Content area en curso */
-    .content-area { padding: 1rem; display: grid; grid-template-rows: auto 1fr auto; gap: 1rem; min-height: 400px; }
-
-    .team-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
-    .team-tab { display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 1rem; background: white; border: 3px solid transparent; border-radius: 0.75rem; font-size: 0.95rem; font-weight: 600; color: #374151; cursor: pointer; transition: all 0.2s; }
-    .team-tab .count { margin-left: auto; padding: 0.15rem 0.5rem; background: #e5e7eb; color: #4b5563; border-radius: 9999px; font-size: 0.7rem; font-weight: 700; }
-
-    .players-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 0.75rem; align-content: start; }
-    .player-card { display: flex; align-items: center; gap: 0.75rem; padding: 1rem; background: white; border: 2px solid #e5e7eb; border-radius: 0.75rem; font-weight: 600; color: #111827; cursor: pointer; transition: all 0.15s; text-align: left; min-height: 72px; position: relative; }
-    .player-card:hover { border-color: var(--color-primario); }
-    .player-card.selected { border-color: var(--color-primario); background: color-mix(in srgb, var(--color-primario) 8%, white); }
-    .player-number { width: 44px; height: 44px; border-radius: 50%; background: var(--color-primario); color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.1rem; flex-shrink: 0; }
-    .player-info { flex: 1; min-width: 0; }
-    .player-name { font-size: 0.875rem; font-weight: 700; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .player-firstname { font-size: 0.75rem; color: #6b7280; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .player-badge { display: inline-flex; align-items: center; gap: 0.15rem; padding: 0.15rem 0.4rem; border-radius: 0.5rem; font-size: 0.7rem; font-weight: 700; }
-    .player-badge.goles { background: #d1fae5; color: #065f46; }
-    .player-badge.amarilla { background: #fef3c7; color: #92400e; }
-    .player-badge.azul { background: #dbeafe; color: #1e40af; }
-    .player-badge.roja { background: #fee2e2; color: #991b1b; }
-    .empty-players { grid-column: 1/-1; text-align: center; padding: 3rem; color: #9ca3af; }
-
-    /* Quick actions */
-    .quick-actions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; padding: 0.75rem; background: white; border-radius: 0.75rem; border: 1px solid #e5e7eb; position: sticky; bottom: 0; box-shadow: 0 -4px 16px rgba(0,0,0,0.06); }
-    .quick-actions.cols-5 { grid-template-columns: repeat(5, 1fr); }
-    .quick-actions.cols-6 { grid-template-columns: repeat(6, 1fr); }
-    @media (max-width: 640px) { .quick-actions, .quick-actions.cols-5, .quick-actions.cols-6 { grid-template-columns: repeat(3, 1fr); } }
-    .action-btn { display: flex; flex-direction: column; align-items: center; gap: 0.25rem; padding: 1rem 0.5rem; border: none; border-radius: 0.6rem; font-size: 0.8rem; font-weight: 700; cursor: pointer; transition: all 0.15s; color: white; min-height: 80px; }
-    .action-btn:active { transform: scale(0.95); }
-    .action-btn.gol { background: linear-gradient(135deg, #10b981, #059669); }
-    .action-btn.amarilla { background: linear-gradient(135deg, #f59e0b, #d97706); }
-    .action-btn.azul { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
-    .action-btn.roja { background: linear-gradient(135deg, #ef4444, #b91c1c); }
-    .action-btn.falta { background: linear-gradient(135deg, #a855f7, #7e22ce); }
-    .action-btn.finalizar { background: linear-gradient(135deg, #6b7280, #374151); }
-
-    /* Timeline */
-    .events-timeline { padding: 1rem; background: #f9fafb; border-top: 1px solid #e5e7eb; }
-    .events-list { display: flex; flex-direction: column; gap: 0.35rem; max-height: 300px; overflow-y: auto; }
-    .event-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 0.75rem; background: white; border-radius: 0.5rem; border: 1px solid #e5e7eb; font-size: 0.85rem; }
-    .event-periodo { font-size: 0.65rem; font-weight: 700; background: #dbeafe; color: #1e40af; padding: 0.1rem 0.35rem; border-radius: 0.25rem; }
-    .event-min { font-family: ui-monospace, monospace; font-weight: 700; color: #9ca3af; width: 36px; text-align: right; }
-    .event-text { flex: 1; color: #374151; }
-    .event-club { font-size: 0.7rem; color: #9ca3af; font-weight: 600; text-transform: uppercase; }
   `],
 })
 export class PanelControlComponent implements OnInit, OnDestroy {
