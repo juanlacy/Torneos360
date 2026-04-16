@@ -1,6 +1,7 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
+import { Subscription } from 'rxjs';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -10,6 +11,7 @@ import { MatTabsModule } from '@angular/material/tabs';
 import { environment } from '../../../environments/environment';
 import { ToastrService } from 'ngx-toastr';
 import { AuthService } from '../../core/services/auth.service';
+import { BrandingService } from '../../core/services/branding.service';
 
 @Component({
   selector: 'app-posiciones',
@@ -24,14 +26,6 @@ import { AuthService } from '../../core/services/auth.service';
           <p class="text-sm text-gray-500 mt-0.5">Clasificacion general y por categoria</p>
         </div>
         <div class="flex gap-3 items-center">
-          <mat-form-field appearance="outline" subscriptSizing="dynamic">
-            <mat-label>Torneo</mat-label>
-            <mat-select [(ngModel)]="torneoId" (selectionChange)="cargar()">
-              @for (t of torneos; track t.id) {
-                <mat-option [value]="t.id">{{ t.nombre }}</mat-option>
-              }
-            </mat-select>
-          </mat-form-field>
           @if (auth.isAdmin() && torneoId) {
             <button mat-stroked-button (click)="recalcular()" class="!rounded-lg">
               <mat-icon>refresh</mat-icon> Recalcular
@@ -197,35 +191,52 @@ import { AuthService } from '../../core/services/auth.service';
     ::ng-deep .posiciones-tabs .mdc-tab-indicator__content--underline { border-color: var(--color-primario, #762c7e) !important; }
   `],
 })
-export class PosicionesComponent implements OnInit {
+export class PosicionesComponent implements OnInit, OnDestroy {
   torneos: any[] = [];
   categorias: any[] = [];
   torneoId: number | null = null;
+  torneoActivoId: number | null = null;
   posicionesClub: any[] = [];
   posicionesCategoria: any[] = [];
   filtroCategoria: number | null = null;
   columnasCategoria = ['pos', 'club', 'pj', 'pg', 'pe', 'pp', 'gf', 'gc', 'dg', 'pts'];
+  private torneoSub?: Subscription;
 
-  constructor(private http: HttpClient, public auth: AuthService, private toastr: ToastrService, private cdr: ChangeDetectorRef) {}
+  constructor(
+    private http: HttpClient,
+    public auth: AuthService,
+    private toastr: ToastrService,
+    private cdr: ChangeDetectorRef,
+    public branding: BrandingService,
+  ) {}
 
   ngOnInit() {
     this.http.get<any>(`${environment.apiUrl}/torneos`).subscribe({
       next: res => {
         this.torneos = res.data;
-        if (this.torneos.length) {
-          this.torneoId = this.torneos[0].id;
-          this.categorias = this.torneos[0].categorias || [];
-          this.cargar();
+        if (this.torneoActivoId) {
+          const torneo = this.torneos.find(t => t.id === this.torneoActivoId);
+          this.categorias = torneo?.categorias || [];
         }
         this.cdr.detectChanges();
       },
     });
+
+    this.torneoSub = this.branding.torneoActivoId$.subscribe(id => {
+      this.torneoActivoId = id;
+      this.torneoId = id;
+      if (id) this.cargar();
+    });
+  }
+
+  ngOnDestroy() {
+    this.torneoSub?.unsubscribe();
   }
 
   cargar() {
     if (!this.torneoId) return;
     const torneo = this.torneos.find(t => t.id === this.torneoId);
-    this.categorias = torneo?.categorias || [];
+    if (torneo) this.categorias = torneo.categorias || [];
 
     this.http.get<any>(`${environment.apiUrl}/posiciones/${this.torneoId}/general`).subscribe({
       next: res => { this.posicionesClub = res.data; this.cdr.detectChanges(); },

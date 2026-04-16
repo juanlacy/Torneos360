@@ -15,6 +15,7 @@ import { ViewPreferenceService, ViewMode } from '../../core/services/view-prefer
 import { DniScannerComponent, DniData } from '../../shared/dni-scanner/dni-scanner.component';
 import { PersonasService, Persona } from '../../core/services/personas.service';
 import { PersonaExistenteBannerComponent } from '../../shared/persona-existente-banner/persona-existente-banner.component';
+import { BrandingService } from '../../core/services/branding.service';
 
 @Component({
   selector: 'app-staff',
@@ -365,6 +366,8 @@ export class StaffComponent implements OnInit, OnDestroy {
   form: any = { nombre: '', apellido: '', dni: '', fecha_nacimiento: '', club_id: '', rol_id: '', telefono: '', email: '' };
   personaExistente: Persona | null = null;
   private viewSub?: Subscription;
+  private torneoSub?: Subscription;
+  torneoActivoId: number | null = null;
 
   constructor(
     private http: HttpClient,
@@ -373,6 +376,7 @@ export class StaffComponent implements OnInit, OnDestroy {
     private cdr: ChangeDetectorRef,
     private viewPref: ViewPreferenceService,
     private personasService: PersonasService,
+    public branding: BrandingService,
   ) {}
 
   ngOnInit() {
@@ -381,17 +385,24 @@ export class StaffComponent implements OnInit, OnDestroy {
       this.cdr.detectChanges();
     });
 
-    this.http.get<any>(`${environment.apiUrl}/clubes`).subscribe({
-      next: res => { this.clubes = res.data; this.cdr.detectChanges(); },
-    });
     this.http.get<any>(`${environment.apiUrl}/roles-staff`).subscribe({
       next: res => { this.roles = res.data; this.cdr.detectChanges(); },
     });
-    this.cargar();
+
+    this.torneoSub = this.branding.torneoActivoId$.subscribe(id => {
+      this.torneoActivoId = id;
+      if (id) {
+        this.http.get<any>(`${environment.apiUrl}/clubes`, { params: { torneo_id: id } }).subscribe({
+          next: res => { this.clubes = res.data; this.cdr.detectChanges(); },
+        });
+        this.cargar();
+      }
+    });
   }
 
   ngOnDestroy() {
     this.viewSub?.unsubscribe();
+    this.torneoSub?.unsubscribe();
   }
 
   setView(mode: ViewMode) {
@@ -400,6 +411,7 @@ export class StaffComponent implements OnInit, OnDestroy {
 
   cargar() {
     const params: any = {};
+    if (this.torneoActivoId) params.torneo_id = this.torneoActivoId;
     if (this.filtros.club_id) params.club_id = this.filtros.club_id;
     if (this.filtros.rol_id) params.rol_id = this.filtros.rol_id;
 

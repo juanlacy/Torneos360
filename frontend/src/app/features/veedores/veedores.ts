@@ -15,6 +15,7 @@ import { ViewPreferenceService, ViewMode } from '../../core/services/view-prefer
 import { DniScannerComponent, DniData } from '../../shared/dni-scanner/dni-scanner.component';
 import { PersonasService, Persona } from '../../core/services/personas.service';
 import { PersonaExistenteBannerComponent } from '../../shared/persona-existente-banner/persona-existente-banner.component';
+import { BrandingService } from '../../core/services/branding.service';
 
 @Component({
   selector: 'app-veedores',
@@ -295,6 +296,7 @@ export class VeedoresComponent implements OnInit, OnDestroy {
   veedores: any[] = [];
   veedoresFiltrados: any[] = [];
   torneoId: number | null = null;
+  torneoActivoId: number | null = null;
   viewMode: ViewMode = 'cards';
   filtros: any = { search: '', activo: '' };
   mostrarForm = false;
@@ -303,6 +305,7 @@ export class VeedoresComponent implements OnInit, OnDestroy {
   form: any = { nombre: '', apellido: '', dni: '', fecha_nacimiento: '', telefono: '', email: '' };
   personaExistente: Persona | null = null;
   private viewSub?: Subscription;
+  private torneoSub?: Subscription;
 
   constructor(
     private http: HttpClient,
@@ -311,6 +314,7 @@ export class VeedoresComponent implements OnInit, OnDestroy {
     private cdr: ChangeDetectorRef,
     private viewPref: ViewPreferenceService,
     private personasService: PersonasService,
+    public branding: BrandingService,
   ) {}
 
   ngOnInit() {
@@ -319,19 +323,16 @@ export class VeedoresComponent implements OnInit, OnDestroy {
       this.cdr.detectChanges();
     });
 
-    this.http.get<any>(`${environment.apiUrl}/torneos`).subscribe({
-      next: res => {
-        if (res.data.length) {
-          this.torneoId = res.data[0].id;
-          this.cargar();
-        }
-        this.cdr.detectChanges();
-      },
+    this.torneoSub = this.branding.torneoActivoId$.subscribe(id => {
+      this.torneoActivoId = id;
+      this.torneoId = id;
+      if (id) this.cargar();
     });
   }
 
   ngOnDestroy() {
     this.viewSub?.unsubscribe();
+    this.torneoSub?.unsubscribe();
   }
 
   setView(mode: ViewMode) {
@@ -339,8 +340,8 @@ export class VeedoresComponent implements OnInit, OnDestroy {
   }
 
   cargar() {
-    if (!this.torneoId) return;
-    this.http.get<any>(`${environment.apiUrl}/veedores`, { params: { torneo_id: this.torneoId } }).subscribe({
+    if (!this.torneoActivoId) return;
+    this.http.get<any>(`${environment.apiUrl}/veedores`, { params: { torneo_id: this.torneoActivoId } }).subscribe({
       next: res => { this.veedores = res.data; this.filtrar(); this.cdr.detectChanges(); },
       error: () => this.toastr.error('Error al cargar veedores'),
     });

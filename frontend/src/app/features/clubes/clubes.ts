@@ -12,6 +12,7 @@ import { environment } from '../../../environments/environment';
 import { ToastrService } from 'ngx-toastr';
 import { AuthService } from '../../core/services/auth.service';
 import { ViewPreferenceService, ViewMode } from '../../core/services/view-preference.service';
+import { BrandingService } from '../../core/services/branding.service';
 
 @Component({
   selector: 'app-clubes',
@@ -65,14 +66,6 @@ import { ViewPreferenceService, ViewMode } from '../../core/services/view-prefer
               <mat-option [value]="''">Todas</mat-option>
               @for (z of zonas; track z.id) {
                 <mat-option [value]="z.id">{{ z.nombre }}</mat-option>
-              }
-            </mat-select>
-          </mat-form-field>
-          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="min-w-[160px]">
-            <mat-label>Torneo</mat-label>
-            <mat-select [(ngModel)]="filtroTorneo" (selectionChange)="cargar()">
-              @for (t of torneos; track t.id) {
-                <mat-option [value]="t.id">{{ t.nombre }}</mat-option>
               }
             </mat-select>
           </mat-form-field>
@@ -346,13 +339,14 @@ export class ClubesComponent implements OnInit, OnDestroy {
   zonas: any[] = [];
   clubes: any[] = [];
   clubesFiltrados: any[] = [];
-  filtroTorneo: number | null = null;
+  torneoActivoId: number | null = null;
   filtros: any = { search: '', zona_id: '' };
   viewMode: ViewMode = 'cards';
   mostrarForm = false;
   editando: any = null;
   form: any = { nombre: '', nombre_corto: '', sufijo: '', zona_id: null, telefono: '', email: '', direccion: '', color_primario: '#762c7e', color_secundario: '#ffffff' };
   private viewSub?: Subscription;
+  private torneoSub?: Subscription;
 
   constructor(
     private http: HttpClient,
@@ -360,6 +354,7 @@ export class ClubesComponent implements OnInit, OnDestroy {
     private toastr: ToastrService,
     private cdr: ChangeDetectorRef,
     private viewPref: ViewPreferenceService,
+    public branding: BrandingService,
   ) {}
 
   ngOnInit() {
@@ -371,18 +366,23 @@ export class ClubesComponent implements OnInit, OnDestroy {
     this.http.get<any>(`${environment.apiUrl}/torneos`).subscribe({
       next: res => {
         this.torneos = res.data;
-        if (this.torneos.length) {
-          this.filtroTorneo = this.torneos[0].id;
-          this.zonas = this.torneos[0].zonas || [];
-          this.cargar();
+        if (this.torneoActivoId) {
+          const torneo = this.torneos.find(t => t.id === this.torneoActivoId);
+          this.zonas = torneo?.zonas || [];
         }
         this.cdr.detectChanges();
       },
+    });
+
+    this.torneoSub = this.branding.torneoActivoId$.subscribe(id => {
+      this.torneoActivoId = id;
+      if (id) this.cargar();
     });
   }
 
   ngOnDestroy() {
     this.viewSub?.unsubscribe();
+    this.torneoSub?.unsubscribe();
   }
 
   setView(mode: ViewMode) {
@@ -390,10 +390,10 @@ export class ClubesComponent implements OnInit, OnDestroy {
   }
 
   cargar() {
-    if (!this.filtroTorneo) return;
-    const torneo = this.torneos.find(t => t.id === this.filtroTorneo);
+    if (!this.torneoActivoId) return;
+    const torneo = this.torneos.find(t => t.id === this.torneoActivoId);
     this.zonas = torneo?.zonas || [];
-    this.http.get<any>(`${environment.apiUrl}/clubes`, { params: { torneo_id: this.filtroTorneo } }).subscribe({
+    this.http.get<any>(`${environment.apiUrl}/clubes`, { params: { torneo_id: this.torneoActivoId } }).subscribe({
       next: res => {
         this.clubes = res.data;
         this.cargarCounts();
@@ -432,7 +432,7 @@ export class ClubesComponent implements OnInit, OnDestroy {
     if (!this.form.nombre) { this.toastr.warning('Nombre requerido'); return; }
     const data = {
       ...this.form,
-      torneo_id: this.filtroTorneo,
+      torneo_id: this.torneoActivoId,
       contacto: {
         telefono: this.form.telefono || null,
         email: this.form.email || null,

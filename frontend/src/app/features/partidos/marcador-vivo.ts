@@ -13,6 +13,7 @@ import { UpperCasePipe } from '@angular/common';
 import { environment } from '../../../environments/environment';
 import { ToastrService } from 'ngx-toastr';
 import { SocketService } from '../../core/services/socket.service';
+import { BrandingService } from '../../core/services/branding.service';
 
 @Component({
   selector: 'app-marcador-vivo',
@@ -26,14 +27,6 @@ import { SocketService } from '../../core/services/socket.service';
           Marcador en Vivo
         </h1>
         <div class="flex gap-2 items-center">
-          <mat-form-field appearance="outline" subscriptSizing="dynamic">
-            <mat-label>Torneo</mat-label>
-            <mat-select [(ngModel)]="torneoId" (selectionChange)="cargarJornadas()">
-              @for (t of torneos; track t.id) {
-                <mat-option [value]="t.id">{{ t.nombre }}</mat-option>
-              }
-            </mat-select>
-          </mat-form-field>
           <mat-form-field appearance="outline" subscriptSizing="dynamic">
             <mat-label>Jornada</mat-label>
             <mat-select [(ngModel)]="jornadaId" (selectionChange)="cargarPartidos()">
@@ -159,18 +152,30 @@ export class MarcadorVivoComponent implements OnInit, OnDestroy {
   partidos: any[] = [];
   partidosAgrupados: { categoria: string; partidos: any[] }[] = [];
   torneoId: number | null = null;
+  torneoActivoId: number | null = null;
   jornadaId: number | null = null;
   private subs: Subscription[] = [];
+  private torneoSub?: Subscription;
 
-  constructor(private http: HttpClient, private socket: SocketService, private toastr: ToastrService, private cdr: ChangeDetectorRef) {}
+  constructor(
+    private http: HttpClient,
+    private socket: SocketService,
+    private toastr: ToastrService,
+    private cdr: ChangeDetectorRef,
+    public branding: BrandingService,
+  ) {}
 
   ngOnInit() {
-    this.http.get<any>(`${environment.apiUrl}/torneos`).subscribe({
-      next: res => {
-        this.torneos = res.data;
-        if (this.torneos.length) { this.torneoId = this.torneos[0].id; this.cargarJornadas(); }
-        this.cdr.detectChanges();
-      },
+    this.torneoSub = this.branding.torneoActivoId$.subscribe(id => {
+      this.torneoActivoId = id;
+      this.torneoId = id;
+      if (id) {
+        this.jornadaId = null;
+        this.jornadas = [];
+        this.partidos = [];
+        this.partidosAgrupados = [];
+        this.cargarJornadas();
+      }
     });
     this.setupSocketListeners();
   }
@@ -178,6 +183,7 @@ export class MarcadorVivoComponent implements OnInit, OnDestroy {
   ngOnDestroy() {
     if (this.jornadaId) this.socket.leaveJornada(this.jornadaId);
     this.subs.forEach(s => s.unsubscribe());
+    this.torneoSub?.unsubscribe();
   }
 
   cargarJornadas() {
