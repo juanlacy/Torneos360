@@ -3,7 +3,7 @@ import { sequelize } from '../config/db.js';
 
 export const Documento = sequelize.define('Documento', {
   id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-  entidad_tipo: { type: DataTypes.STRING(30), allowNull: false, comment: 'jugadores|clubes|staff|arbitros' },
+  entidad_tipo: { type: DataTypes.STRING(30), allowNull: false, comment: 'personas|clubes|instituciones' },
   entidad_id: { type: DataTypes.INTEGER, allowNull: false },
   tipo: {
     type: DataTypes.STRING(30), allowNull: false,

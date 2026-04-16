@@ -15,12 +15,13 @@ import { ViewPreferenceService, ViewMode } from '../../core/services/view-prefer
 import { DniScannerComponent, DniData } from '../../shared/dni-scanner/dni-scanner.component';
 import { PersonasService, Persona } from '../../core/services/personas.service';
 import { PersonaExistenteBannerComponent } from '../../shared/persona-existente-banner/persona-existente-banner.component';
+import { DocumentosUploadComponent } from '../../shared/documentos-upload/documentos-upload.component';
 import { BrandingService } from '../../core/services/branding.service';
 
 @Component({
   selector: 'app-jugadores',
   standalone: true,
-  imports: [FormsModule, MatButtonModule, MatIconModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatMenuModule, DniScannerComponent, PersonaExistenteBannerComponent],
+  imports: [FormsModule, MatButtonModule, MatIconModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatMenuModule, DniScannerComponent, PersonaExistenteBannerComponent, DocumentosUploadComponent],
   template: `
     <div class="space-y-5 animate-fade-in">
 
@@ -151,6 +152,13 @@ import { BrandingService } from '../../core/services/branding.service';
               <button mat-flat-button color="primary" (click)="guardar()">{{ editando ? 'Actualizar' : 'Crear' }}</button>
               <button mat-stroked-button (click)="cancelarForm()">Cancelar</button>
             </div>
+
+            <!-- Documentos (solo al editar, cuando ya existe persona_id) -->
+            @if (editando?.persona_id) {
+              <div class="mt-6 pt-6 border-t border-gray-200">
+                <app-documentos-upload entidadTipo="personas" [entidadId]="editando.persona_id"></app-documentos-upload>
+              </div>
+            }
           </div>
         </div>
       }
