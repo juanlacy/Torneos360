@@ -95,17 +95,25 @@ export const recalcularPosiciones = async (torneoId) => {
       if (!clubPosMap[pos.club_id]) {
         clubPosMap[pos.club_id] = {
           torneo_id: torneoId, zona_id: pos.zona_id, club_id: pos.club_id,
-          puntos_totales: 0, detalle: {},
+          puntos_totales: 0, pj: 0, pg: 0, pe: 0, pp: 0, gf: 0, gc: 0, dg: 0,
+          detalle: {},
         };
       }
 
       const catNombre = categorias.find(c => c.id === pos.categoria_id)?.nombre || `cat_${pos.categoria_id}`;
-      clubPosMap[pos.club_id].puntos_totales += pos.puntos;
-      clubPosMap[pos.club_id].detalle[catNombre] = pos.puntos;
+      const cp = clubPosMap[pos.club_id];
+      cp.puntos_totales += pos.puntos;
+      cp.pj += pos.pj;
+      cp.pg += pos.pg;
+      cp.pe += pos.pe;
+      cp.pp += pos.pp;
+      cp.gf += pos.gf;
+      cp.gc += pos.gc;
+      cp.detalle[catNombre] = pos.puntos;
     }
 
     const clubPosiciones = Object.values(clubPosMap).map(p => ({
-      ...p, actualizado_en: new Date(),
+      ...p, dg: p.gf - p.gc, actualizado_en: new Date(),
     }));
 
     if (clubPosiciones.length) {

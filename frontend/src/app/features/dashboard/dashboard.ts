@@ -137,7 +137,6 @@ const DEFAULT_WIDGETS = ['kpis', 'posiciones_zona', 'goleadores', 'resultados_fe
                       <tr>
                         <th class="px-3 py-2 text-center text-[10px] font-medium text-gray-400 uppercase w-10">#</th>
                         <th class="px-3 py-2 text-left text-[10px] font-medium text-gray-400 uppercase">Club</th>
-                        @if (posCategoriaId !== null) {
                           <th class="px-2 py-2 text-center text-[10px] font-medium text-gray-400 uppercase">PJ</th>
                           <th class="px-2 py-2 text-center text-[10px] font-medium text-gray-400 uppercase">PG</th>
                           <th class="px-2 py-2 text-center text-[10px] font-medium text-gray-400 uppercase">PE</th>
@@ -145,7 +144,6 @@ const DEFAULT_WIDGETS = ['kpis', 'posiciones_zona', 'goleadores', 'resultados_fe
                           <th class="px-2 py-2 text-center text-[10px] font-medium text-gray-400 uppercase">GF</th>
                           <th class="px-2 py-2 text-center text-[10px] font-medium text-gray-400 uppercase">GC</th>
                           <th class="px-2 py-2 text-center text-[10px] font-medium text-gray-400 uppercase">DG</th>
-                        }
                         <th class="px-3 py-2 text-center text-[10px] font-bold text-gray-500 uppercase">PTS</th>
                       </tr>
                     </thead>
@@ -176,7 +174,6 @@ const DEFAULT_WIDGETS = ['kpis', 'posiciones_zona', 'goleadores', 'resultados_fe
                               <span class="text-xs font-medium text-gray-800 truncate">{{ row.club?.nombre_corto || row.club?.nombre }}</span>
                             </div>
                           </td>
-                          @if (posCategoriaId !== null) {
                             <td class="px-2 py-2 text-center text-xs text-gray-600">{{ row.pj }}</td>
                             <td class="px-2 py-2 text-center text-xs text-gray-600">{{ row.pg }}</td>
                             <td class="px-2 py-2 text-center text-xs text-gray-600">{{ row.pe }}</td>
@@ -187,10 +184,9 @@ const DEFAULT_WIDGETS = ['kpis', 'posiciones_zona', 'goleadores', 'resultados_fe
                               [class]="row.dg > 0 ? 'text-green-600' : row.dg < 0 ? 'text-red-600' : 'text-gray-400'">
                               {{ row.dg > 0 ? '+' : '' }}{{ row.dg }}
                             </td>
-                          }
                           <td class="px-3 py-2 text-center">
                             <span class="inline-block min-w-[28px] px-1.5 py-0.5 rounded text-xs font-bold bg-[var(--color-primario)]/10 text-[var(--color-primario)]">
-                              {{ posCategoriaId !== null ? row.puntos : row.puntos_totales }}
+                              {{ row.puntos ?? row.puntos_totales }}
                             </span>
                           </td>
                         </tr>
