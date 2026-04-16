@@ -110,6 +110,9 @@ if [ "$SKIP_FRONTEND" = false ]; then
   log "  Instalando dependencias del frontend..."
   npm install --cache ~/.npm --prefer-offline
 
+  # Desactivar prompt de analytics
+  npx ng analytics disable --global 2>/dev/null || true
+
   rm -f "$FRONTEND_DIR/dist/frontend/browser/.user.ini" 2>/dev/null || true
 
   NODE_OPTIONS="--max-old-space-size=2048" npm run build

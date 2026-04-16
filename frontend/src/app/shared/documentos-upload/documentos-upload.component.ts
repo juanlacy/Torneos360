@@ -55,7 +55,7 @@ const TIPO_LABELS: Record<string, { label: string; icon: string; color: string }
             @for (doc of documentos; track doc.id) {
               <div class="flex items-center gap-3 p-2.5 rounded-lg border border-gray-200 bg-gray-50 hover:bg-white transition-colors group">
                 <!-- Thumbnail o icono -->
-                @if (doc.mime_type?.startsWith('image/')) {
+                @if (doc.mime_type && doc.mime_type.startsWith('image/')) {
                   <img [src]="resolveUrl(doc.archivo_url)" class="w-10 h-10 rounded object-cover border border-gray-200 shrink-0" alt="">
                 } @else {
                   <div class="w-10 h-10 rounded flex items-center justify-center shrink-0"
