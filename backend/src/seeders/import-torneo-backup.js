@@ -115,6 +115,7 @@ const renameArg = args.find(a => a.startsWith('--rename='))?.split('=')[1];
     //      Compatibilidad: si el backup no trae `instituciones` (version vieja),
     //      reconstruir desde los clubes que aun tengan nombre inline.
     const instBackup = backup.instituciones || [];
+    console.log(`   (formato backup: ${instBackup.length ? 'nuevo (con instituciones)' : 'viejo (sin instituciones, compat mode)'})`);
     for (const i of instBackup) {
       let inst = await Institucion.findOne({ where: { nombre: i.nombre }, transaction: t });
       if (!inst) {
@@ -165,14 +166,21 @@ const renameArg = args.find(a => a.startsWith('--rename='))?.split('=')[1];
         continue;
       }
 
-      const creado = await Club.create({
-        institucion_id: institucionId,
-        torneo_id: torneo.id,
-        zona_id: c._zona_id_original ? mapZonas.get(c._zona_id_original) : null,
-        nombre_override: c.nombre_override || null,
-        activo: c.activo ?? true,
-      }, { transaction: t });
-      mapClubes.set(c._id_original, creado.id);
+      const zonaIdMapped = c._zona_id_original ? (mapZonas.get(c._zona_id_original) || null) : null;
+      try {
+        const creado = await Club.create({
+          institucion_id: institucionId,
+          torneo_id: torneo.id,
+          zona_id: zonaIdMapped,
+          sufijo: c.sufijo || '',
+          nombre_override: c.nombre_override || null,
+          activo: c.activo ?? true,
+        }, { transaction: t });
+        mapClubes.set(c._id_original, creado.id);
+      } catch (clubErr) {
+        console.error(`  ✗ Error creando club (inst=${institucionId}, zona=${zonaIdMapped}, sufijo="${c.sufijo || ''}"): ${clubErr.message}`);
+        throw clubErr;
+      }
     }
     console.log(`✓ Clubes (participaciones): ${backup.clubes.length}`);
 
