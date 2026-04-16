@@ -28,15 +28,16 @@ html {
         tertiary: mat.$yellow-palette,
       ),
       typography: Inter,
-      density: -2,  // COMPACTO: form fields y botones mas chicos
+      density: -1,  // Semi-compacto: balance entre compacto y respirable
     )
   );
 }
 
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  font-size: 13px;
-  line-height: 1.5;
+  font-size: 14px;
+  line-height: 1.6;
+  letter-spacing: -0.01em;
   background-color: #f8fafc;
   color: #1e293b;
   margin: 0;
@@ -137,18 +138,18 @@ body {
 // ═══════════════════════════════════════════════════════════════════════════
 .card {
   background: white;
-  border-radius: 0.75rem;
+  border-radius: 12px;
   border: 1px solid #e5e7eb;
-  box-shadow: var(--shadow-sm);
-  transition: all 0.25s ease;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 4%);
+  transition: all 0.2s ease;
 }
 
 .card-hover {
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
   &:hover {
-    transform: translateY(-3px);
-    box-shadow: var(--shadow-lg);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgb(0 0 0 / 8%);
     border-color: #d1d5db;
   }
 }
@@ -238,44 +239,52 @@ main textarea:focus {
 // Material overrides — botones compactos y redondeados
 // ═══════════════════════════════════════════════════════════════════════════
 
-// Botones filled — mas chicos y redondeados
+// Botones filled — redondeados y profesionales
 main button.mat-mdc-unelevated-button,
 main a.mat-mdc-unelevated-button {
   --mdc-filled-button-container-color: var(--color-primario) !important;
-  --mdc-filled-button-container-height: 34px !important;
+  --mdc-filled-button-container-height: 36px !important;
   border-radius: 8px !important;
-  font-size: 12px !important;
-  letter-spacing: 0.01em !important;
-  padding: 0 14px !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0 !important;
+  padding: 0 16px !important;
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--color-primario) 25%, transparent) !important;
 }
 
-// Botones stroked (outlined) — misma altura
+// Botones stroked (outlined)
 main button.mat-mdc-outlined-button,
 main a.mat-mdc-outlined-button {
-  --mdc-outlined-button-container-height: 34px !important;
+  --mdc-outlined-button-container-height: 36px !important;
   border-radius: 8px !important;
-  font-size: 12px !important;
-  padding: 0 14px !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  padding: 0 16px !important;
+  border-color: #d1d5db !important;
+  color: #374151 !important;
 }
 
-// Icon buttons — mas chicos
+// Icon buttons
 main button.mat-mdc-icon-button {
-  --mdc-icon-button-state-layer-size: 32px !important;
-  width: 32px !important;
-  height: 32px !important;
-  padding: 4px !important;
+  --mdc-icon-button-state-layer-size: 34px !important;
+  width: 34px !important;
+  height: 34px !important;
+  padding: 5px !important;
 }
 
-// Form fields — mas compactos
+// Form fields — bordes sutiles, mas respirable
 main .mat-mdc-form-field {
   --mdc-outlined-text-field-container-shape: 8px !important;
+  --mdc-outlined-text-field-outline-color: #d1d5db !important;
+  --mdc-outlined-text-field-hover-outline-color: #9ca3af !important;
+  --mdc-outlined-text-field-focus-outline-color: var(--color-primario) !important;
   font-size: 13px !important;
 }
 
-// Select options
+// Select options — mas respirable
 .mat-mdc-option {
   font-size: 13px !important;
-  min-height: 36px !important;
+  min-height: 40px !important;
 }
 
 // Material tab indicator con color primario
@@ -290,23 +299,26 @@ main .mat-mdc-form-field {
 // Action buttons inline (reemplazan menu 3 puntos)
 // ═══════════════════════════════════════════════════════════════════════════
 .action-btn {
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.15s ease;
+  transition: all 0.2s ease;
   color: #9ca3af;
+  cursor: pointer;
+  border: none;
+  background: transparent;
 
-  &:hover { color: var(--color-primario); background: color-mix(in srgb, var(--color-primario) 10%, white); }
+  &:hover { color: var(--color-primario); background: color-mix(in srgb, var(--color-primario) 10%, white); transform: scale(1.08); }
   &.action-edit:hover { color: #3b82f6; background: #eff6ff; }
   &.action-delete:hover { color: #ef4444; background: #fef2f2; }
   &.action-approve:hover { color: #22c55e; background: #f0fdf4; }
   &.action-reject:hover { color: #ef4444; background: #fef2f2; }
   &.action-view:hover { color: #8b5cf6; background: #f5f3ff; }
 
-  mat-icon { font-size: 16px !important; width: 16px !important; height: 16px !important; }
+  mat-icon { font-size: 17px !important; width: 17px !important; height: 17px !important; }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -317,23 +329,27 @@ main .mat-mdc-form-field {
   top: 0;
   right: 0;
   bottom: 0;
-  width: 480px;
+  width: 500px;
   max-width: 100vw;
   background: white;
-  box-shadow: -4px 0 24px rgb(0 0 0 / 12%);
+  box-shadow: -8px 0 32px rgb(0 0 0 / 10%);
   z-index: 50;
-  animation: slideInRight 0.25s ease-out;
+  animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   display: flex;
   flex-direction: column;
   overflow: hidden;
 
   @media (max-width: 640px) { width: 100vw; }
+
+  // Form fields dentro del drawer: mas respirable
+  .mat-mdc-form-field { margin-bottom: -4px; }
 }
 
 .edit-drawer-overlay {
   position: fixed;
   inset: 0;
-  background: rgb(0 0 0 / 30%);
+  background: rgb(0 0 0 / 25%);
+  backdrop-filter: blur(2px);
   z-index: 49;
   animation: fadeIn 0.2s ease-out;
 }

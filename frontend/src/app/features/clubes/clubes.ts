@@ -7,7 +7,6 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
-import { MatMenuModule } from '@angular/material/menu';
 import { environment } from '../../../environments/environment';
 import { ToastrService } from 'ngx-toastr';
 import { AuthService } from '../../core/services/auth.service';
@@ -17,7 +16,7 @@ import { BrandingService } from '../../core/services/branding.service';
 @Component({
   selector: 'app-clubes',
   standalone: true,
-  imports: [FormsModule, MatButtonModule, MatIconModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatMenuModule],
+  imports: [FormsModule, MatButtonModule, MatIconModule, MatFormFieldModule, MatInputModule, MatSelectModule],
   template: `
     <div class="space-y-5 animate-fade-in">
 
@@ -72,27 +71,30 @@ import { BrandingService } from '../../core/services/branding.service';
         </div>
       </div>
 
-      <!-- Formulario -->
+      <!-- Drawer lateral -->
       @if (mostrarForm) {
-        <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <div class="h-1 rounded-full bg-gradient-to-r from-[var(--color-primario)] to-[var(--color-acento)]"></div>
-          <div class="p-6">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ editando ? 'Editar' : 'Nuevo' }} Club</h3>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <mat-form-field appearance="outline">
+        <div class="edit-drawer-overlay" (click)="cancelar()"></div>
+        <div class="edit-drawer">
+          <div class="flex items-center justify-between px-5 py-4 border-b border-gray-200 shrink-0">
+            <h3 class="text-base font-semibold text-gray-900">{{ editando ? 'Editar' : 'Nuevo' }} Club</h3>
+            <button class="action-btn" (click)="cancelar()"><mat-icon>close</mat-icon></button>
+          </div>
+          <div class="flex-1 overflow-y-auto p-5 space-y-4">
+            <div class="grid grid-cols-2 gap-3">
+              <mat-form-field appearance="outline" class="w-full">
                 <mat-label>Nombre</mat-label>
                 <input matInput [(ngModel)]="form.nombre">
               </mat-form-field>
-              <mat-form-field appearance="outline">
+              <mat-form-field appearance="outline" class="w-full">
                 <mat-label>Nombre corto</mat-label>
                 <input matInput [(ngModel)]="form.nombre_corto" maxlength="30">
               </mat-form-field>
-              <mat-form-field appearance="outline">
+              <mat-form-field appearance="outline" class="w-full">
                 <mat-label>Sufijo de equipo (A, B, Reserva...)</mat-label>
                 <input matInput [(ngModel)]="form.sufijo" maxlength="20" placeholder="Vacio si es unico">
                 <mat-hint>Solo si la institucion tiene mas de un equipo en este torneo</mat-hint>
               </mat-form-field>
-              <mat-form-field appearance="outline">
+              <mat-form-field appearance="outline" class="w-full">
                 <mat-label>Zona</mat-label>
                 <mat-select [(ngModel)]="form.zona_id">
                   <mat-option [value]="null">Sin zona</mat-option>
@@ -101,31 +103,31 @@ import { BrandingService } from '../../core/services/branding.service';
                   }
                 </mat-select>
               </mat-form-field>
-              <mat-form-field appearance="outline">
+              <mat-form-field appearance="outline" class="w-full">
                 <mat-label>Telefono</mat-label>
                 <input matInput [(ngModel)]="form.telefono">
               </mat-form-field>
-              <mat-form-field appearance="outline">
+              <mat-form-field appearance="outline" class="w-full">
                 <mat-label>Email</mat-label>
                 <input matInput type="email" [(ngModel)]="form.email">
               </mat-form-field>
-              <mat-form-field appearance="outline">
+              <mat-form-field appearance="outline" class="w-full">
                 <mat-label>Direccion</mat-label>
                 <input matInput [(ngModel)]="form.direccion">
               </mat-form-field>
-              <mat-form-field appearance="outline">
+              <mat-form-field appearance="outline" class="w-full">
                 <mat-label>Color primario</mat-label>
                 <input matInput type="color" [(ngModel)]="form.color_primario">
               </mat-form-field>
-              <mat-form-field appearance="outline">
+              <mat-form-field appearance="outline" class="w-full">
                 <mat-label>Color secundario</mat-label>
                 <input matInput type="color" [(ngModel)]="form.color_secundario">
               </mat-form-field>
             </div>
-            <div class="flex gap-2 mt-4">
-              <button mat-flat-button color="primary" (click)="guardar()">{{ editando ? 'Actualizar' : 'Crear' }}</button>
-              <button mat-stroked-button (click)="cancelar()">Cancelar</button>
-            </div>
+          </div>
+          <div class="flex gap-2 px-5 py-4 border-t border-gray-200 bg-gray-50 shrink-0">
+            <button mat-flat-button color="primary" (click)="guardar()" class="flex-1">{{ editando ? 'Actualizar' : 'Crear' }}</button>
+            <button mat-stroked-button (click)="cancelar()">Cancelar</button>
           </div>
         </div>
       }
@@ -136,7 +138,7 @@ import { BrandingService } from '../../core/services/branding.service';
           @for (club of clubesFiltrados; track club.id) {
             <div class="bg-white rounded-xl border border-gray-200 hover:shadow-lg hover:border-gray-300 transition-all duration-200 overflow-hidden group">
               <!-- Header con gradiente -->
-              <div class="h-20 relative"
+              <div class="h-14 relative"
                 [style.background]="'linear-gradient(135deg, ' + (club.color_primario || '#762c7e') + ' 0%, ' + (club.color_secundario || '#4f2f7d') + ' 100%)'">
                 @if (club.zona) {
                   <span class="absolute top-3 right-3 inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-semibold bg-white/90 text-gray-700 backdrop-blur">
@@ -146,12 +148,12 @@ import { BrandingService } from '../../core/services/branding.service';
               </div>
 
               <!-- Escudo flotante -->
-              <div class="relative px-5 pb-5">
-                <div class="relative -mt-10 group/escudo shrink-0 inline-block">
+              <div class="relative px-3 pb-3">
+                <div class="relative -mt-7 group/escudo shrink-0 inline-block">
                   @if (club.escudo_url) {
-                    <img [src]="getEscudoUrl(club.escudo_url)" class="w-20 h-20 rounded-2xl object-cover border-4 border-white shadow-md" alt="Escudo">
+                    <img [src]="getEscudoUrl(club.escudo_url)" class="w-14 h-14 rounded-2xl object-cover border-4 border-white shadow-md" alt="Escudo">
                   } @else {
-                    <div class="w-20 h-20 rounded-2xl flex items-center justify-center text-2xl font-bold border-4 border-white shadow-md"
+                    <div class="w-14 h-14 rounded-2xl flex items-center justify-center text-xl font-bold border-4 border-white shadow-md"
                       [style.background-color]="club.color_primario || '#762c7e'"
                       [style.color]="club.color_secundario || '#fff'">
                       {{ (club.nombre_corto || club.nombre).substring(0, 2).toUpperCase() }}
@@ -159,7 +161,7 @@ import { BrandingService } from '../../core/services/branding.service';
                   }
                   @if (auth.puede('clubes', 'editar')) {
                     <button
-                      class="absolute inset-0 w-20 h-20 rounded-2xl bg-black/60 flex items-center justify-center opacity-0 group-hover/escudo:opacity-100 transition-opacity cursor-pointer"
+                      class="absolute inset-0 w-14 h-14 rounded-2xl bg-black/60 flex items-center justify-center opacity-0 group-hover/escudo:opacity-100 transition-opacity cursor-pointer"
                       (click)="escudoInput.click()"
                       title="Cambiar escudo">
                       <mat-icon class="text-white !text-xl">photo_camera</mat-icon>
@@ -210,15 +212,13 @@ import { BrandingService } from '../../core/services/branding.service';
                 </div>
 
                 <!-- Acciones -->
-                <div class="mt-4 flex gap-2">
-                  @if (auth.puede('clubes', 'editar')) {
-                    <button
-                      class="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium text-gray-600 bg-gray-50 hover:bg-gray-100 transition-colors"
-                      (click)="editar(club)">
-                      <mat-icon class="!text-sm !w-4 !h-4">edit</mat-icon> Editar
+                @if (auth.puede('clubes', 'editar')) {
+                  <div class="mt-3 flex gap-1">
+                    <button class="action-btn action-edit" (click)="editar(club)" title="Editar">
+                      <mat-icon>edit</mat-icon>
                     </button>
-                  }
-                </div>
+                  </div>
+                }
               </div>
             </div>
           } @empty {
@@ -311,10 +311,8 @@ import { BrandingService } from '../../core/services/branding.service';
                       </td>
                       <td class="px-4 py-3 text-right">
                         @if (auth.puede('clubes', 'editar')) {
-                          <button
-                            class="w-8 h-8 rounded-lg inline-flex items-center justify-center text-gray-400 hover:text-[var(--color-primario)] hover:bg-gray-100 transition-colors"
-                            (click)="editar(club)">
-                            <mat-icon class="!text-lg">edit</mat-icon>
+                          <button class="action-btn action-edit" (click)="editar(club)" title="Editar">
+                            <mat-icon>edit</mat-icon>
                           </button>
                         }
                       </td>
