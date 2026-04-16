@@ -1,6 +1,6 @@
 import { Op } from 'sequelize';
 import { Persona, PersonaRol, Rol, Club, Institucion } from '../models/index.js';
-import { tieneAccesoAlClub } from '../middleware/authMiddleware.js';
+import { tieneAccesoAlClub, tienePermiso, ocultarSensibles } from '../middleware/authMiddleware.js';
 import { registrarAudit } from '../services/auditService.js';
 import { obtenerOCrearPersona, normalizarDni } from './personasController.js';
 
@@ -76,7 +76,8 @@ export const listar = async (req, res) => {
       order: [['apellido', 'ASC'], ['nombre', 'ASC']],
     });
 
-    res.json({ success: true, data: personas.map(aplanar) });
+    const puedeVerSensibles = await tienePermiso(req, 'staff', 'ver_sensibles');
+    res.json({ success: true, data: ocultarSensibles(personas.map(aplanar), !puedeVerSensibles) });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

@@ -83,6 +83,48 @@ export const requireVeedor      = requireRole(['admin_sistema', 'admin_torneo', 
 export const requireStaff       = requireRole(['admin_sistema', 'admin_torneo', 'delegado', 'arbitro', 'veedor', 'entrenador']);
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// Helper: verificar permiso de forma programatica (para usar en controllers)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Verifica si el usuario actual tiene un permiso especifico.
+ * Util para logica condicional (ej: filtrar campos sensibles).
+ * admin_sistema siempre retorna true.
+ */
+export const tienePermiso = async (req, modulo, accion) => {
+  if (req.isAdminSistema) return true;
+
+  // Override por usuario
+  const override = await PermisoUsuario.findOne({
+    where: { usuario_id: req.user.id, modulo, accion },
+  });
+  if (override) return override.permite;
+
+  // Default del rol
+  const def = await PermisoDefaultRol.findOne({
+    where: { rol: req.user.rol, modulo, accion },
+  });
+  return def?.permite === true;
+};
+
+/** Campos sensibles que se ocultan si no tiene 'ver_sensibles' */
+export const CAMPOS_SENSIBLES = ['dni', 'fecha_nacimiento', 'telefono', 'email'];
+
+/** Remueve campos sensibles de un objeto o array de objetos */
+export const ocultarSensibles = (data, ocultar) => {
+  if (!ocultar) return data;
+  const limpiar = (obj) => {
+    if (!obj) return obj;
+    const copia = { ...obj };
+    for (const campo of CAMPOS_SENSIBLES) {
+      if (campo in copia) copia[campo] = undefined;
+    }
+    return copia;
+  };
+  return Array.isArray(data) ? data.map(limpiar) : limpiar(data);
+};
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // Helpers de scoping por Club (equivalente a hospitalWhere de SistemaGH)
 // ═══════════════════════════════════════════════════════════════════════════════
 

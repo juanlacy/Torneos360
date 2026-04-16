@@ -37,7 +37,7 @@ const getMsalApp = () => {
 
 // ─── Modulos y acciones para mis-permisos ────────────────────────────────────
 const TODOS_MODULOS = ['torneos', 'clubes', 'jugadores', 'fixture', 'partidos', 'posiciones', 'arbitros', 'veedores', 'staff', 'configuracion', 'reportes'];
-const TODAS_ACCIONES = ['ver', 'crear', 'editar', 'eliminar'];
+const TODAS_ACCIONES = ['ver', 'crear', 'editar', 'eliminar', 'ver_sensibles'];
 
 // ─── Multer para avatares ───────────────────────────────────────────────────
 const avatarStorage = multer.diskStorage({
@@ -520,6 +520,21 @@ export const me = async (req, res) => {
   try {
     const usuario = await Usuario.findByPk(req.user.id, {
       attributes: { exclude: ['password_hash', 'reset_token', 'reset_token_expira', 'verification_token', 'verification_token_expira', 'refresh_token', 'refresh_token_expires'] },
+      include: [
+        {
+          model: Persona, as: 'persona',
+          attributes: ['id', 'nombre', 'apellido', 'dni', 'foto_url'],
+          include: [{
+            model: PersonaRol, as: 'roles_asignados',
+            where: { activo: true },
+            required: false,
+            include: [
+              { model: Rol, as: 'rol', attributes: ['codigo', 'nombre', 'icono', 'color'] },
+              { model: Club, as: 'club', attributes: ['id'], include: [{ model: Institucion, as: 'institucion', attributes: ['nombre', 'nombre_corto'] }] },
+            ],
+          }],
+        },
+      ],
     });
 
     if (!usuario) {
@@ -547,22 +562,52 @@ export const misPermisos = async (req, res) => {
       return res.json({ success: true, data: mapa });
     }
 
-    const defaults = await PermisoDefaultRol.findAll({ where: { rol: req.user.rol } });
-    const overrides = await PermisoUsuario.findAll({ where: { usuario_id: req.user.id } });
+    // Multi-rol: recopilar TODOS los roles del usuario (del JWT + persona_roles)
+    const rolesUsuario = new Set([req.user.rol]);
 
-    const overrideMap = {};
-    for (const o of overrides) {
-      overrideMap[`${o.modulo}:${o.accion}`] = o.permite;
+    // Si tiene persona_id, buscar roles adicionales de persona_roles
+    if (req.user.persona_id) {
+      const personaRoles = await PersonaRol.findAll({
+        where: { persona_id: req.user.persona_id, activo: true },
+        include: [{ model: Rol, as: 'rol', attributes: ['codigo'] }],
+      });
+      for (const pr of personaRoles) {
+        if (pr.rol?.codigo) {
+          // Mapear codigo de rol de dominio a codigo de rol de usuario
+          const rolMap = {
+            delegado_general: 'delegado',
+            delegado_auxiliar: 'delegado',
+            entrenador: 'entrenador',
+            ayudante: 'entrenador',
+            arbitro: 'arbitro',
+            veedor: 'veedor',
+          };
+          const rolUsuario = rolMap[pr.rol.codigo] || pr.rol.codigo;
+          rolesUsuario.add(rolUsuario);
+        }
+      }
     }
 
+    // Combinar permisos de TODOS los roles (union OR)
     const mapa = {};
-    for (const d of defaults) {
-      if (!mapa[d.modulo]) mapa[d.modulo] = {};
-      const key = `${d.modulo}:${d.accion}`;
-      mapa[d.modulo][d.accion] = key in overrideMap ? overrideMap[key] : d.permite;
+    for (const m of TODOS_MODULOS) { mapa[m] = {}; for (const a of TODAS_ACCIONES) mapa[m][a] = false; }
+
+    for (const rol of rolesUsuario) {
+      const defaults = await PermisoDefaultRol.findAll({ where: { rol } });
+      for (const d of defaults) {
+        if (!mapa[d.modulo]) mapa[d.modulo] = {};
+        if (d.permite) mapa[d.modulo][d.accion] = true; // OR: si alguno permite, permite
+      }
     }
 
-    res.json({ success: true, data: mapa });
+    // Overrides de usuario tienen prioridad sobre todo
+    const overrides = await PermisoUsuario.findAll({ where: { usuario_id: req.user.id } });
+    for (const o of overrides) {
+      if (!mapa[o.modulo]) mapa[o.modulo] = {};
+      mapa[o.modulo][o.accion] = o.permite;
+    }
+
+    res.json({ success: true, data: mapa, roles: [...rolesUsuario] });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

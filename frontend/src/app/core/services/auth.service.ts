@@ -112,10 +112,16 @@ export class AuthService {
 
   // ─── Permisos ─────────────────────────────────────────────────────────────
 
+  /** Roles activos del usuario (cargados desde mis-permisos) */
+  rolesActivos: string[] = [];
+
   cargarPermisos(): void {
-    this.http.get<{ success: boolean; data: PermisosMap }>(`${this.apiUrl}/mis-permisos`).subscribe({
+    this.http.get<{ success: boolean; data: PermisosMap; roles?: string[] }>(`${this.apiUrl}/mis-permisos`).subscribe({
       next: (res) => {
-        if (res.success) this.permisosSubject.next(res.data);
+        if (res.success) {
+          this.permisosSubject.next(res.data);
+          this.rolesActivos = res.roles || [this.getUser()?.rol || 'publico'];
+        }
       },
       error: () => {},
     });

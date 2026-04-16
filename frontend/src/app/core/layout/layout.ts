@@ -141,7 +141,13 @@ interface NavGroup {
           @if (auth.getUser(); as user) {
             <div class="flex items-center gap-2 text-sm text-gray-500">
               <span class="hidden sm:inline">{{ user.nombre }} {{ user.apellido }}</span>
-              <span class="badge badge-aprobado !text-[10px]">{{ user.rol }}</span>
+              <div class="flex gap-1">
+                @for (rol of auth.rolesActivos; track rol) {
+                  <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-semibold bg-[var(--color-primario)]/10 text-[var(--color-primario)]">
+                    {{ rol }}
+                  </span>
+                }
+              </div>
             </div>
           }
         </header>
