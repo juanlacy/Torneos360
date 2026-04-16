@@ -29,7 +29,7 @@ export const obtenerTorneo = async (req, res) => {
   try {
     const torneo = await Torneo.findByPk(req.params.id, {
       include: [
-        { model: Zona, as: 'zonas', attributes: ['id', 'nombre', 'color', 'orden'] },
+        { model: Zona, as: 'zonas', attributes: ['id', 'nombre', 'color'] },
         { model: Categoria, as: 'categorias', attributes: ['id', 'nombre', 'anio_nacimiento', 'es_preliminar', 'orden'] },
       ],
     });
