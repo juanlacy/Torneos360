@@ -168,6 +168,7 @@ const renameArg = args.find(a => a.startsWith('--rename='))?.split('=')[1];
 
       const zonaIdMapped = c._zona_id_original ? (mapZonas.get(c._zona_id_original) || null) : null;
       try {
+        // validate: false bypasa validacion de Sequelize (los virtuals pueden interferir)
         const creado = await Club.create({
           institucion_id: institucionId,
           torneo_id: torneo.id,
@@ -175,10 +176,13 @@ const renameArg = args.find(a => a.startsWith('--rename='))?.split('=')[1];
           sufijo: c.sufijo || '',
           nombre_override: c.nombre_override || null,
           activo: c.activo ?? true,
-        }, { transaction: t });
+        }, { transaction: t, validate: false });
         mapClubes.set(c._id_original, creado.id);
       } catch (clubErr) {
-        console.error(`  ✗ Error creando club (inst=${institucionId}, zona=${zonaIdMapped}, sufijo="${c.sufijo || ''}"): ${clubErr.message}`);
+        console.error(`  ✗ Error creando club (inst=${institucionId}, torneo=${torneo.id}, zona=${zonaIdMapped}, sufijo="${c.sufijo || ''}")`);
+        console.error(`    Message: ${clubErr.message}`);
+        if (clubErr.errors) clubErr.errors.forEach(e => console.error(`    → ${e.path}: ${e.message} (type=${e.type})`));
+        if (clubErr.parent) console.error(`    SQL detail: ${clubErr.parent.detail || clubErr.parent.message}`);
         throw clubErr;
       }
     }
