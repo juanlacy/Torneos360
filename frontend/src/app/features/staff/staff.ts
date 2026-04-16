@@ -7,7 +7,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
-import { MatMenuModule } from '@angular/material/menu';
+
 import { environment } from '../../../environments/environment';
 import { ToastrService } from 'ngx-toastr';
 import { AuthService } from '../../core/services/auth.service';
@@ -21,7 +21,7 @@ import { DocumentosUploadComponent } from '../../shared/documentos-upload/docume
 @Component({
   selector: 'app-staff',
   standalone: true,
-  imports: [FormsModule, MatButtonModule, MatIconModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatMenuModule, DniScannerComponent, PersonaExistenteBannerComponent, DocumentosUploadComponent],
+  imports: [FormsModule, MatButtonModule, MatIconModule, MatFormFieldModule, MatInputModule, MatSelectModule, DniScannerComponent, PersonaExistenteBannerComponent, DocumentosUploadComponent],
   template: `
     <div class="space-y-5 animate-fade-in">
 
@@ -92,40 +92,45 @@ import { DocumentosUploadComponent } from '../../shared/documentos-upload/docume
         </div>
       </div>
 
-      <!-- Formulario -->
+      <!-- Drawer lateral -->
       @if (mostrarForm) {
-        <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <div class="h-1 rounded-full bg-gradient-to-r from-[var(--color-primario)] to-[var(--color-acento)]"></div>
-          <div class="p-6">
-            <div class="flex items-center justify-between mb-4">
-              <h3 class="text-lg font-semibold text-gray-900">{{ editando ? 'Editar' : 'Nuevo' }} Staff</h3>
+        <div class="edit-drawer-overlay" (click)="cancelarForm()"></div>
+        <div class="edit-drawer">
+          <div class="flex items-center justify-between px-5 py-4 border-b border-gray-200 shrink-0">
+            <h3 class="text-base font-semibold text-gray-900">{{ editando ? 'Editar' : 'Nuevo' }} Staff</h3>
+            <div class="flex items-center gap-2">
               @if (!editando) {
-                <button mat-stroked-button color="primary" (click)="abrirScannerDni()" type="button" class="!rounded-lg">
-                  <mat-icon>qr_code_scanner</mat-icon> Escanear DNI
+                <button class="action-btn" (click)="abrirScannerDni()" title="Escanear DNI">
+                  <mat-icon>qr_code_scanner</mat-icon>
                 </button>
               }
+              <button class="action-btn" (click)="cancelarForm()">
+                <mat-icon>close</mat-icon>
+              </button>
             </div>
+          </div>
+          <div class="flex-1 overflow-y-auto p-5 space-y-4">
             @if (personaExistente) {
               <app-persona-existente-banner [persona]="personaExistente"></app-persona-existente-banner>
             }
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <mat-form-field appearance="outline">
+            <div class="grid grid-cols-2 gap-3">
+              <mat-form-field appearance="outline" class="w-full">
                 <mat-label>Nombre</mat-label>
                 <input matInput [(ngModel)]="form.nombre" required>
               </mat-form-field>
-              <mat-form-field appearance="outline">
+              <mat-form-field appearance="outline" class="w-full">
                 <mat-label>Apellido</mat-label>
                 <input matInput [(ngModel)]="form.apellido" required>
               </mat-form-field>
-              <mat-form-field appearance="outline">
+              <mat-form-field appearance="outline" class="w-full">
                 <mat-label>DNI</mat-label>
                 <input matInput [(ngModel)]="form.dni" (blur)="verificarDniExistente()" required>
               </mat-form-field>
-              <mat-form-field appearance="outline">
+              <mat-form-field appearance="outline" class="w-full">
                 <mat-label>Fecha de nacimiento</mat-label>
                 <input matInput type="date" [(ngModel)]="form.fecha_nacimiento">
               </mat-form-field>
-              <mat-form-field appearance="outline">
+              <mat-form-field appearance="outline" class="w-full">
                 <mat-label>Rol</mat-label>
                 <mat-select [(ngModel)]="form.rol_id" required>
                   @for (r of roles; track r.id) {
@@ -133,7 +138,7 @@ import { DocumentosUploadComponent } from '../../shared/documentos-upload/docume
                   }
                 </mat-select>
               </mat-form-field>
-              <mat-form-field appearance="outline">
+              <mat-form-field appearance="outline" class="w-full">
                 <mat-label>Club</mat-label>
                 <mat-select [(ngModel)]="form.club_id" required>
                   @for (c of clubes; track c.id) {
@@ -141,25 +146,25 @@ import { DocumentosUploadComponent } from '../../shared/documentos-upload/docume
                   }
                 </mat-select>
               </mat-form-field>
-              <mat-form-field appearance="outline">
+              <mat-form-field appearance="outline" class="w-full">
                 <mat-label>Telefono</mat-label>
                 <input matInput [(ngModel)]="form.telefono">
               </mat-form-field>
-              <mat-form-field appearance="outline">
+              <mat-form-field appearance="outline" class="w-full">
                 <mat-label>Email</mat-label>
                 <input matInput type="email" [(ngModel)]="form.email">
               </mat-form-field>
             </div>
-            <div class="flex gap-2 mt-4">
-              <button mat-flat-button color="primary" (click)="guardar()">{{ editando ? 'Actualizar' : 'Crear' }}</button>
-              <button mat-stroked-button (click)="cancelarForm()">Cancelar</button>
-            </div>
             <!-- Documentos -->
             @if (editando?.persona_id) {
-              <div class="mt-6 pt-6 border-t border-gray-200">
+              <div class="pt-4 border-t border-gray-200">
                 <app-documentos-upload entidadTipo="personas" [entidadId]="editando.persona_id"></app-documentos-upload>
               </div>
             }
+          </div>
+          <div class="flex gap-2 px-5 py-4 border-t border-gray-200 bg-gray-50 shrink-0">
+            <button mat-flat-button color="primary" (click)="guardar()" class="flex-1">{{ editando ? 'Actualizar' : 'Crear' }}</button>
+            <button mat-stroked-button (click)="cancelarForm()">Cancelar</button>
           </div>
         </div>
       }
@@ -170,7 +175,7 @@ import { DocumentosUploadComponent } from '../../shared/documentos-upload/docume
           @for (s of staffFiltrado; track s.id) {
             <div class="bg-white rounded-xl border border-gray-200 hover:shadow-xl hover:-translate-y-1 hover:border-gray-300 transition-all duration-200 overflow-hidden">
               <!-- Header con color del club -->
-              <div class="h-20 relative"
+              <div class="h-14 relative"
                 [style.background]="'linear-gradient(135deg, ' + (s.club?.color_primario || '#762c7e') + ' 0%, ' + (s.club?.color_secundario || '#4f2f7d') + ' 100%)'">
                 <div class="absolute top-2 left-2">
                   @if (s.club?.escudo_url) {
@@ -196,9 +201,9 @@ import { DocumentosUploadComponent } from '../../shared/documentos-upload/docume
                 }
               </div>
 
-              <div class="relative px-4 pb-4">
-                <div class="relative -mt-10 inline-block">
-                  <div class="w-20 h-20 rounded-full flex items-center justify-center text-xl font-bold border-4 border-white shadow-lg text-white"
+              <div class="relative px-3 pb-3">
+                <div class="relative -mt-7 inline-block">
+                  <div class="w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold border-4 border-white shadow-lg text-white"
                     [style.background]="'linear-gradient(135deg, ' + (s.club?.color_primario || '#a78bfa') + ' 0%, ' + (s.club?.color_secundario || '#7c3aed') + ' 100%)'">
                     {{ (s.nombre?.charAt(0) || '') + (s.apellido?.charAt(0) || '') }}
                   </div>
@@ -227,18 +232,13 @@ import { DocumentosUploadComponent } from '../../shared/documentos-upload/docume
                 </div>
 
                 @if (auth.puede('staff', 'editar') || auth.isAdmin()) {
-                  <div class="mt-3 flex gap-2">
-                    <button
-                      class="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium text-gray-600 bg-gray-50 hover:bg-gray-100 transition-colors"
-                      (click)="editar(s)">
-                      <mat-icon class="!text-xs !w-3 !h-3">edit</mat-icon> Editar
+                  <div class="mt-3 flex gap-1">
+                    <button class="action-btn action-edit" (click)="editar(s)" title="Editar">
+                      <mat-icon>edit</mat-icon>
                     </button>
                     @if (auth.isAdmin()) {
-                      <button
-                        class="flex items-center justify-center px-2 py-1.5 rounded-lg text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 transition-colors"
-                        (click)="eliminar(s)"
-                        title="Eliminar">
-                        <mat-icon class="!text-xs !w-3 !h-3">delete</mat-icon>
+                      <button class="action-btn action-reject" (click)="eliminar(s)" title="Eliminar">
+                        <mat-icon>delete</mat-icon>
                       </button>
                     }
                   </div>
@@ -262,43 +262,43 @@ import { DocumentosUploadComponent } from '../../shared/documentos-upload/docume
               <table class="w-full">
                 <thead class="bg-gray-50 border-b border-gray-200">
                   <tr>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Staff</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide hidden sm:table-cell">DNI</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Club</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Rol</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide hidden md:table-cell">Contacto</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wide w-20">Acc.</th>
+                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Staff</th>
+                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wide hidden sm:table-cell">DNI</th>
+                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Club</th>
+                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Rol</th>
+                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wide hidden md:table-cell">Contacto</th>
+                    <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wide w-20">Acc.</th>
                   </tr>
                 </thead>
                 <tbody>
                   @for (s of staffFiltrado; track s.id) {
                     <tr class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                      <td class="px-4 py-3">
-                        <div class="flex items-center gap-3">
-                          <div class="w-9 h-9 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 text-white"
+                      <td class="px-3 py-2">
+                        <div class="flex items-center gap-2">
+                          <div class="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 text-white"
                             [style.background]="'linear-gradient(135deg, ' + (s.club?.color_primario || '#a78bfa') + ' 0%, ' + (s.club?.color_secundario || '#7c3aed') + ' 100%)'">
                             {{ (s.nombre?.charAt(0) || '') + (s.apellido?.charAt(0) || '') }}
                           </div>
                           <div class="min-w-0">
-                            <p class="font-medium text-gray-900 text-sm truncate">{{ s.apellido }}, {{ s.nombre }}</p>
+                            <p class="font-medium text-gray-900 text-xs truncate">{{ s.apellido }}, {{ s.nombre }}</p>
                           </div>
                         </div>
                       </td>
-                      <td class="px-4 py-3 text-sm text-gray-600 hidden sm:table-cell">{{ s.dni }}</td>
-                      <td class="px-4 py-3">
+                      <td class="px-3 py-2 text-xs text-gray-600 hidden sm:table-cell">{{ s.dni }}</td>
+                      <td class="px-3 py-2">
                         <div class="flex items-center gap-2">
                           @if (s.club?.escudo_url) {
-                            <img [src]="resolveUrl(s.club.escudo_url)" class="w-6 h-6 rounded object-cover shrink-0" alt="Escudo">
+                            <img [src]="resolveUrl(s.club.escudo_url)" class="escudo-sm shrink-0" alt="Escudo">
                           } @else {
-                            <div class="w-6 h-6 rounded flex items-center justify-center text-[9px] font-bold shrink-0 text-white"
+                            <div class="escudo-sm escudo-placeholder text-[9px] shrink-0"
                               [style.background-color]="s.club?.color_primario || '#762c7e'">
                               {{ (s.club?.nombre_corto || s.club?.nombre || '?').substring(0, 2).toUpperCase() }}
                             </div>
                           }
-                          <span class="text-sm text-gray-700 truncate">{{ s.club?.nombre_corto || s.club?.nombre }}</span>
+                          <span class="text-xs text-gray-700 truncate">{{ s.club?.nombre_corto || s.club?.nombre }}</span>
                         </div>
                       </td>
-                      <td class="px-4 py-3">
+                      <td class="px-3 py-2">
                         @if (s.rol) {
                           <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium"
                             [style.background-color]="(s.rol.color || '#762c7e') + '20'"
@@ -310,7 +310,7 @@ import { DocumentosUploadComponent } from '../../shared/documentos-upload/docume
                           </span>
                         }
                       </td>
-                      <td class="px-4 py-3 hidden md:table-cell">
+                      <td class="px-3 py-2 hidden md:table-cell">
                         <div class="space-y-0.5">
                           @if (s.telefono) {
                             <div class="flex items-center gap-1.5 text-xs text-gray-600">
@@ -326,18 +326,17 @@ import { DocumentosUploadComponent } from '../../shared/documentos-upload/docume
                           }
                         </div>
                       </td>
-                      <td class="px-4 py-3 text-right">
-                        <button
-                          class="w-8 h-8 rounded-lg inline-flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
-                          [matMenuTriggerFor]="menuStaff">
-                          <mat-icon class="!text-lg">more_vert</mat-icon>
-                        </button>
-                        <mat-menu #menuStaff="matMenu">
-                          <button mat-menu-item (click)="editar(s)"><mat-icon>edit</mat-icon> Editar</button>
+                      <td class="px-3 py-2 text-right">
+                        <div class="flex gap-1 justify-end">
+                          <button class="action-btn action-edit" (click)="editar(s)" title="Editar">
+                            <mat-icon>edit</mat-icon>
+                          </button>
                           @if (auth.isAdmin()) {
-                            <button mat-menu-item (click)="eliminar(s)"><mat-icon>delete</mat-icon> Eliminar</button>
+                            <button class="action-btn action-reject" (click)="eliminar(s)" title="Eliminar">
+                              <mat-icon>delete</mat-icon>
+                            </button>
                           }
-                        </mat-menu>
+                        </div>
                       </td>
                     </tr>
                   }

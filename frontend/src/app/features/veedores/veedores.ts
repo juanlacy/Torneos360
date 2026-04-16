@@ -7,7 +7,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
-import { MatMenuModule } from '@angular/material/menu';
+
 import { environment } from '../../../environments/environment';
 import { ToastrService } from 'ngx-toastr';
 import { AuthService } from '../../core/services/auth.service';
@@ -21,7 +21,7 @@ import { DocumentosUploadComponent } from '../../shared/documentos-upload/docume
 @Component({
   selector: 'app-veedores',
   standalone: true,
-  imports: [FormsModule, MatButtonModule, MatIconModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatMenuModule, DniScannerComponent, PersonaExistenteBannerComponent, DocumentosUploadComponent],
+  imports: [FormsModule, MatButtonModule, MatIconModule, MatFormFieldModule, MatInputModule, MatSelectModule, DniScannerComponent, PersonaExistenteBannerComponent, DocumentosUploadComponent],
   template: `
     <div class="space-y-5 animate-fade-in">
 
@@ -74,58 +74,63 @@ import { DocumentosUploadComponent } from '../../shared/documentos-upload/docume
         </div>
       </div>
 
-      <!-- Formulario -->
+      <!-- Drawer lateral -->
       @if (mostrarForm) {
-        <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <div class="h-1 rounded-full bg-gradient-to-r from-amber-400 to-yellow-500"></div>
-          <div class="p-6">
-            <div class="flex items-center justify-between mb-4">
-              <h3 class="text-lg font-semibold text-gray-900">{{ editando ? 'Editar' : 'Nuevo' }} Veedor</h3>
+        <div class="edit-drawer-overlay" (click)="cancelarForm()"></div>
+        <div class="edit-drawer">
+          <div class="flex items-center justify-between px-5 py-4 border-b border-gray-200 shrink-0">
+            <h3 class="text-base font-semibold text-gray-900">{{ editando ? 'Editar' : 'Nuevo' }} Veedor</h3>
+            <div class="flex items-center gap-2">
               @if (!editando) {
-                <button mat-stroked-button (click)="abrirScannerDni()" type="button" class="!rounded-lg !text-amber-600 !border-amber-500">
-                  <mat-icon>qr_code_scanner</mat-icon> Escanear DNI
+                <button class="action-btn" (click)="abrirScannerDni()" title="Escanear DNI">
+                  <mat-icon>qr_code_scanner</mat-icon>
                 </button>
               }
+              <button class="action-btn" (click)="cancelarForm()">
+                <mat-icon>close</mat-icon>
+              </button>
             </div>
+          </div>
+          <div class="flex-1 overflow-y-auto p-5 space-y-4">
             @if (personaExistente) {
               <app-persona-existente-banner [persona]="personaExistente"></app-persona-existente-banner>
             }
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <mat-form-field appearance="outline">
+            <div class="grid grid-cols-2 gap-3">
+              <mat-form-field appearance="outline" class="w-full">
                 <mat-label>Nombre</mat-label>
                 <input matInput [(ngModel)]="form.nombre" required>
               </mat-form-field>
-              <mat-form-field appearance="outline">
+              <mat-form-field appearance="outline" class="w-full">
                 <mat-label>Apellido</mat-label>
                 <input matInput [(ngModel)]="form.apellido" required>
               </mat-form-field>
-              <mat-form-field appearance="outline">
+              <mat-form-field appearance="outline" class="w-full">
                 <mat-label>DNI</mat-label>
                 <input matInput [(ngModel)]="form.dni" (blur)="verificarDniExistente()" required>
               </mat-form-field>
-              <mat-form-field appearance="outline">
+              <mat-form-field appearance="outline" class="w-full">
                 <mat-label>Fecha de nacimiento</mat-label>
                 <input matInput type="date" [(ngModel)]="form.fecha_nacimiento">
               </mat-form-field>
-              <mat-form-field appearance="outline">
+              <mat-form-field appearance="outline" class="w-full">
                 <mat-label>Telefono</mat-label>
                 <input matInput [(ngModel)]="form.telefono">
               </mat-form-field>
-              <mat-form-field appearance="outline">
+              <mat-form-field appearance="outline" class="w-full">
                 <mat-label>Email</mat-label>
                 <input matInput type="email" [(ngModel)]="form.email">
               </mat-form-field>
             </div>
-            <div class="flex gap-2 mt-4">
-              <button mat-flat-button (click)="guardar()" class="!bg-amber-500 !text-white">{{ editando ? 'Actualizar' : 'Crear' }}</button>
-              <button mat-stroked-button (click)="cancelarForm()">Cancelar</button>
-            </div>
             <!-- Documentos -->
             @if (editando?.persona_id) {
-              <div class="mt-6 pt-6 border-t border-gray-200">
+              <div class="pt-4 border-t border-gray-200">
                 <app-documentos-upload entidadTipo="personas" [entidadId]="editando.persona_id"></app-documentos-upload>
               </div>
             }
+          </div>
+          <div class="flex gap-2 px-5 py-4 border-t border-gray-200 bg-gray-50 shrink-0">
+            <button mat-flat-button color="primary" (click)="guardar()" class="flex-1">{{ editando ? 'Actualizar' : 'Crear' }}</button>
+            <button mat-stroked-button (click)="cancelarForm()">Cancelar</button>
           </div>
         </div>
       }
@@ -135,7 +140,7 @@ import { DocumentosUploadComponent } from '../../shared/documentos-upload/docume
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 stagger-children">
           @for (v of veedoresFiltrados; track v.id) {
             <div class="bg-white rounded-xl border border-gray-200 hover:shadow-xl hover:-translate-y-1 hover:border-amber-300 transition-all duration-200 overflow-hidden">
-              <div class="h-20 relative bg-gradient-to-br from-amber-400 to-yellow-500">
+              <div class="h-14 relative bg-gradient-to-br from-amber-400 to-yellow-500">
                 <div class="absolute top-2 left-2">
                   <div class="w-10 h-10 rounded-lg flex items-center justify-center bg-white/90 text-amber-700">
                     <mat-icon>visibility</mat-icon>
@@ -147,12 +152,12 @@ import { DocumentosUploadComponent } from '../../shared/documentos-upload/docume
                 </span>
               </div>
 
-              <div class="relative px-4 pb-4">
-                <div class="relative -mt-10 inline-block">
+              <div class="relative px-3 pb-3">
+                <div class="relative -mt-7 inline-block">
                   @if (v.foto_url) {
-                    <img [src]="resolveUrl(v.foto_url)" class="w-20 h-20 rounded-full object-cover border-4 border-white shadow-lg" alt="Foto">
+                    <img [src]="resolveUrl(v.foto_url)" class="w-14 h-14 rounded-full object-cover border-4 border-white shadow-lg" alt="Foto">
                   } @else {
-                    <div class="w-20 h-20 rounded-full flex items-center justify-center text-xl font-bold border-4 border-white shadow-lg text-white bg-gradient-to-br from-amber-400 to-yellow-500">
+                    <div class="w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold border-4 border-white shadow-lg text-white bg-gradient-to-br from-amber-400 to-yellow-500">
                       {{ (v.nombre?.charAt(0) || '') + (v.apellido?.charAt(0) || '') }}
                     </div>
                   }
@@ -183,18 +188,13 @@ import { DocumentosUploadComponent } from '../../shared/documentos-upload/docume
                 </div>
 
                 @if (auth.puede('veedores', 'editar') || auth.isAdmin()) {
-                  <div class="mt-3 flex gap-2">
-                    <button
-                      class="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium text-gray-600 bg-gray-50 hover:bg-gray-100 transition-colors"
-                      (click)="editar(v)">
-                      <mat-icon class="!text-xs !w-3 !h-3">edit</mat-icon> Editar
+                  <div class="mt-3 flex gap-1">
+                    <button class="action-btn action-edit" (click)="editar(v)" title="Editar">
+                      <mat-icon>edit</mat-icon>
                     </button>
                     @if (auth.isAdmin()) {
-                      <button
-                        class="flex items-center justify-center px-2 py-1.5 rounded-lg text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 transition-colors"
-                        (click)="eliminar(v)"
-                        title="Eliminar">
-                        <mat-icon class="!text-xs !w-3 !h-3">delete</mat-icon>
+                      <button class="action-btn action-reject" (click)="eliminar(v)" title="Eliminar">
+                        <mat-icon>delete</mat-icon>
                       </button>
                     }
                   </div>
@@ -218,32 +218,32 @@ import { DocumentosUploadComponent } from '../../shared/documentos-upload/docume
               <table class="w-full">
                 <thead class="bg-gray-50 border-b border-gray-200">
                   <tr>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Veedor</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide hidden sm:table-cell">DNI</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide hidden md:table-cell">Contacto</th>
-                    <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wide">Estado</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wide w-20">Acc.</th>
+                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Veedor</th>
+                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wide hidden sm:table-cell">DNI</th>
+                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wide hidden md:table-cell">Contacto</th>
+                    <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wide">Estado</th>
+                    <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wide w-20">Acc.</th>
                   </tr>
                 </thead>
                 <tbody>
                   @for (v of veedoresFiltrados; track v.id) {
                     <tr class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                      <td class="px-4 py-3">
-                        <div class="flex items-center gap-3">
+                      <td class="px-3 py-2">
+                        <div class="flex items-center gap-2">
                           @if (v.foto_url) {
-                            <img [src]="resolveUrl(v.foto_url)" class="w-9 h-9 rounded-full object-cover shrink-0" alt="Foto">
+                            <img [src]="resolveUrl(v.foto_url)" class="w-7 h-7 rounded-full object-cover shrink-0" alt="Foto">
                           } @else {
-                            <div class="w-9 h-9 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 text-white bg-gradient-to-br from-amber-400 to-yellow-500">
+                            <div class="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 text-white bg-gradient-to-br from-amber-400 to-yellow-500">
                               {{ (v.nombre?.charAt(0) || '') + (v.apellido?.charAt(0) || '') }}
                             </div>
                           }
                           <div class="min-w-0">
-                            <p class="font-medium text-gray-900 text-sm truncate">{{ v.apellido }}, {{ v.nombre }}</p>
+                            <p class="font-medium text-gray-900 text-xs truncate">{{ v.apellido }}, {{ v.nombre }}</p>
                           </div>
                         </div>
                       </td>
-                      <td class="px-4 py-3 text-sm text-gray-600 hidden sm:table-cell">{{ v.dni }}</td>
-                      <td class="px-4 py-3 hidden md:table-cell">
+                      <td class="px-3 py-2 text-xs text-gray-600 hidden sm:table-cell">{{ v.dni }}</td>
+                      <td class="px-3 py-2 hidden md:table-cell">
                         <div class="space-y-0.5">
                           @if (v.telefono) {
                             <div class="flex items-center gap-1.5 text-xs text-gray-600">
@@ -259,24 +259,23 @@ import { DocumentosUploadComponent } from '../../shared/documentos-upload/docume
                           }
                         </div>
                       </td>
-                      <td class="px-4 py-3 text-center">
+                      <td class="px-3 py-2 text-center">
                         <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
                           [class]="v.activo ? 'bg-amber-50 text-amber-700' : 'bg-gray-100 text-gray-500'">
                           {{ v.activo ? 'Activo' : 'Inactivo' }}
                         </span>
                       </td>
-                      <td class="px-4 py-3 text-right">
-                        <button
-                          class="w-8 h-8 rounded-lg inline-flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
-                          [matMenuTriggerFor]="menuVee">
-                          <mat-icon class="!text-lg">more_vert</mat-icon>
-                        </button>
-                        <mat-menu #menuVee="matMenu">
-                          <button mat-menu-item (click)="editar(v)"><mat-icon>edit</mat-icon> Editar</button>
+                      <td class="px-3 py-2 text-right">
+                        <div class="flex gap-1 justify-end">
+                          <button class="action-btn action-edit" (click)="editar(v)" title="Editar">
+                            <mat-icon>edit</mat-icon>
+                          </button>
                           @if (auth.isAdmin()) {
-                            <button mat-menu-item (click)="eliminar(v)"><mat-icon>delete</mat-icon> Eliminar</button>
+                            <button class="action-btn action-reject" (click)="eliminar(v)" title="Eliminar">
+                              <mat-icon>delete</mat-icon>
+                            </button>
                           }
-                        </mat-menu>
+                        </div>
                       </td>
                     </tr>
                   }

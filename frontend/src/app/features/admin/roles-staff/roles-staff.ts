@@ -11,11 +11,12 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { environment } from '../../../../environments/environment';
 import { ToastrService } from 'ngx-toastr';
 import { AuthService } from '../../../core/services/auth.service';
+import { IconPickerComponent } from '../../../shared/icon-picker/icon-picker.component';
 
 @Component({
   selector: 'app-roles-staff',
   standalone: true,
-  imports: [FormsModule, MatButtonModule, MatIconModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatMenuModule, MatSlideToggleModule],
+  imports: [FormsModule, MatButtonModule, MatIconModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatMenuModule, MatSlideToggleModule, IconPickerComponent],
   template: `
     <div class="space-y-5 animate-fade-in">
 
@@ -55,13 +56,10 @@ import { AuthService } from '../../../core/services/auth.service';
                 <mat-label>Descripcion</mat-label>
                 <input matInput [(ngModel)]="form.descripcion">
               </mat-form-field>
-              <mat-form-field appearance="outline">
-                <mat-label>Icono (material)</mat-label>
-                <input matInput [(ngModel)]="form.icono" placeholder="sports_soccer">
-                @if (form.icono) {
-                  <mat-icon matSuffix>{{ form.icono }}</mat-icon>
-                }
-              </mat-form-field>
+              <div>
+                <label class="text-xs font-medium text-gray-600 mb-1 block">Icono</label>
+                <app-icon-picker [value]="form.icono" [color]="form.color" (picked)="form.icono = $event"></app-icon-picker>
+              </div>
               <mat-form-field appearance="outline">
                 <mat-label>Color</mat-label>
                 <input matInput type="color" [(ngModel)]="form.color">
