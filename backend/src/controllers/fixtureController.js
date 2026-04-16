@@ -72,6 +72,22 @@ export const listarJornadas = async (req, res) => {
 };
 
 // GET /fixture/jornada/:jornadaId/partidos
+// GET /fixture/:torneoId/partidos?jornada_id=X
+// Ruta alternativa que acepta jornada_id como query param
+export const partidosPorTorneo = async (req, res) => {
+  try {
+    const { jornada_id, categoria_id } = req.query;
+    if (!jornada_id) {
+      return res.status(400).json({ success: false, message: 'jornada_id es requerido' });
+    }
+    // Redirigir a la logica existente
+    req.params.jornadaId = jornada_id;
+    return partidosPorJornada(req, res);
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 export const partidosPorJornada = async (req, res) => {
   try {
     const { categoria_id } = req.query;

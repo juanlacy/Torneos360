@@ -376,12 +376,23 @@ export const confirmarAlineacion = async (req, res) => {
     const clubId = tipo === 'local' ? partido.club_local_id : partido.club_visitante_id;
     const dniNorm = normalizarDni(dni);
 
-    // Validar: buscar persona por DNI y verificar que tenga un rol con puede_firmar_alineacion=true en este club
+    // Validar: buscar persona por DNI y verificar que tenga un rol con
+    // puede_firmar_alineacion=true en este club O en otro club de la misma institucion
+    const clubDelPartido = await Club.findByPk(clubId, { attributes: ['institucion_id'] });
+
+    // Buscar todos los club_ids de la misma institucion (para cruzar torneos)
+    const clubsInstitucion = clubDelPartido
+      ? (await Club.findAll({
+          where: { institucion_id: clubDelPartido.institucion_id },
+          attributes: ['id'],
+        })).map(c => c.id)
+      : [clubId];
+
     const persona = await Persona.findOne({
       where: { dni: dniNorm, activo: true },
       include: [{
         model: PersonaRol, as: 'roles_asignados',
-        where: { club_id: clubId, activo: true },
+        where: { club_id: clubsInstitucion, activo: true },
         required: true,
         include: [{
           model: Rol, as: 'rol',

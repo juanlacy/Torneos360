@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { authenticateToken, requireAdminTorneo, requirePermiso } from '../middleware/authMiddleware.js';
 import {
-  generar, eliminar, listarJornadas, partidosPorJornada, actualizarJornada,
+  generar, eliminar, listarJornadas, partidosPorJornada, partidosPorTorneo, actualizarJornada,
   crearJornada, eliminarJornada, agregarEnfrentamiento, eliminarEnfrentamiento, getHorarios,
 } from '../controllers/fixtureController.js';
 
@@ -15,6 +15,7 @@ router.delete('/:torneoId', requireAdminTorneo, eliminar);
 
 // Consultar
 router.get('/:torneoId/jornadas', requirePermiso('fixture', 'ver'), listarJornadas);
+router.get('/:torneoId/partidos', requirePermiso('fixture', 'ver'), partidosPorTorneo);
 router.get('/jornada/:jornadaId/partidos', requirePermiso('fixture', 'ver'), partidosPorJornada);
 router.get('/horarios', requirePermiso('fixture', 'ver'), getHorarios);
 
