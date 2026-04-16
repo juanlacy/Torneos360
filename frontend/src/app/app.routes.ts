@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
-import { authGuard, adminGuard, guestGuard } from './core/guards/auth.guard';
+import { authGuard, adminGuard, guestGuard, isLoggedInMatch } from './core/guards/auth.guard';
 import { LayoutComponent } from './core/layout/layout';
+import { PublicLayoutComponent } from './core/layout/public-layout';
 
 export const routes: Routes = [
   // ─── Auth (guest only) ────────────────────────────────────────────────────
@@ -17,11 +18,11 @@ export const routes: Routes = [
     ],
   },
 
-  // ─── App (authenticated, con layout) ──────────────────────────────────────
+  // ─── App (authenticated, con layout) — canMatch: si no esta logueado, cae al publico
   {
     path: '',
     component: LayoutComponent,
-    canActivate: [authGuard],
+    canMatch: [isLoggedInMatch],
     children: [
       {
         path: 'dashboard',
@@ -88,6 +89,18 @@ export const routes: Routes = [
     ],
   },
 
+  // ─── Vista Publica (sin auth) — matchea cuando no esta logueado ───────────
+  {
+    path: '',
+    component: PublicLayoutComponent,
+    children: [
+      {
+        path: '',
+        loadComponent: () => import('./features/publico/landing').then(m => m.LandingComponent),
+      },
+    ],
+  },
+
   // ─── Fallback ─────────────────────────────────────────────────────────────
-  { path: '**', redirectTo: 'dashboard' },
+  { path: '**', redirectTo: '' },
 ];

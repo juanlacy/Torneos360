@@ -17,6 +17,7 @@ import { initSocket } from './config/socket.js';
 import { sequelize } from './models/index.js';
 
 // ─── Importar rutas ──────────────────────────────────────────────────────────
+import publicoRoutes   from './routes/publico.js';
 import authRoutes      from './routes/auth.js';
 import adminRoutes     from './routes/admin.js';
 import permisosRoutes  from './routes/permisos.js';
@@ -113,6 +114,7 @@ app.use('/auth/google',          authLimiter);
 app.use('/auth/microsoft',       authLimiter);
 app.use('/auth/register',        authLimiter);
 app.use('/auth/forgot-password', authLimiter);
+app.use('/publico', apiLimiter, publicoRoutes);  // SIN authenticateToken — acceso publico
 app.use('/auth', apiLimiter, authRoutes);
 
 // ─── Archivos estaticos (avatares, uploads) ─────────────────────────────────

@@ -1,5 +1,5 @@
 import { inject } from '@angular/core';
-import { CanActivateFn, Router } from '@angular/router';
+import { CanActivateFn, CanMatchFn, Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 
 export const authGuard: CanActivateFn = () => {
@@ -37,6 +37,9 @@ export const guestGuard: CanActivateFn = () => {
   router.navigate(['/dashboard']);
   return false;
 };
+
+/** canMatch guard — retorna false sin redirigir, para que el router pruebe la siguiente ruta */
+export const isLoggedInMatch: CanMatchFn = () => inject(AuthService).isLoggedIn();
 
 /** Guard factory para roles especificos */
 export const roleGuard = (...roles: string[]): CanActivateFn => {
