@@ -79,9 +79,10 @@ export const listar = async (req, res) => {
     const { club_id, categoria_id, estado_fichaje, search, torneo_id } = req.query;
 
     const rolWhere = { activo: true };
-    const clubScope = clubWhere(req);
-    if (clubScope.club_id) rolWhere.club_id = clubScope.club_id;
-    else if (club_id) rolWhere.club_id = club_id;
+    // Lectura abierta: todos ven todos los jugadores del torneo.
+    // El filtrado por club_id es un FILTRO del usuario, no una restriccion.
+    if (club_id) rolWhere.club_id = club_id;
+    // La restriccion de edicion se maneja con permisos, no con el listado.
     if (categoria_id) rolWhere.categoria_id = categoria_id;
     if (estado_fichaje) rolWhere.estado_fichaje = estado_fichaje;
 

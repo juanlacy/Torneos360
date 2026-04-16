@@ -49,7 +49,9 @@ const incInst = { model: Institucion, as: 'institucion' };
 export const listar = async (req, res) => {
   try {
     const { torneo_id, zona_id, search } = req.query;
-    const where = { ...clubWhere(req) };
+    // Clubes: lectura abierta (todos los del torneo). El scope por club_id
+    // aplica solo a operaciones de escritura, no a listar.
+    const where = {};
     if (torneo_id) where.torneo_id = torneo_id;
     if (zona_id) where.zona_id = zona_id;
 
