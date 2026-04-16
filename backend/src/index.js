@@ -35,6 +35,7 @@ import posicionesRoutes      from './routes/posiciones.js';
 import configuracionRoutes   from './routes/configuracion.js';
 import informesRoutes        from './routes/informes.js';
 import documentosRoutes      from './routes/documentos.js';
+import estadisticasRoutes    from './routes/estadisticas.js';
 
 // ─── Swagger ─────────────────────────────────────────────────────────────────
 import swaggerJsdoc from 'swagger-jsdoc';
@@ -146,6 +147,7 @@ app.use('/posiciones',    apiLimiter, posicionesRoutes);
 app.use('/configuracion', apiLimiter, configuracionRoutes);
 app.use('/informes',      apiLimiter, informesRoutes);
 app.use('/documentos',    apiLimiter, documentosRoutes);
+app.use('/estadisticas',  apiLimiter, estadisticasRoutes);
 
 // ─── Health check ───────────────────────────────────────────────────────────
 app.get('/health', async (req, res) => {
