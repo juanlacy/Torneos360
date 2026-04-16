@@ -5,7 +5,7 @@ import {
   register, verifyEmail, resendVerification,
   forgotPassword, resetPassword, refresh,
   me, misPermisos, updatePerfil, cambiarPassword,
-  avatar, uploadAvatar, logout,
+  avatar, uploadAvatar, logout, vincularDni,
 } from '../controllers/authController.js';
 
 const router = Router();
@@ -27,6 +27,7 @@ router.get('/mis-permisos', authenticateToken, misPermisos);
 router.put('/perfil', authenticateToken, updatePerfil);
 router.put('/cambiar-password', authenticateToken, cambiarPassword);
 router.post('/avatar', authenticateToken, uploadAvatar, avatar);
+router.post('/vincular-dni', authenticateToken, vincularDni);
 router.post('/logout', authenticateToken, logout);
 
 export default router;

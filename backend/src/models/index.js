@@ -72,6 +72,10 @@ Club.belongsTo(Institucion, { foreignKey: 'institucion_id', as: 'institucion' })
 Usuario.belongsTo(Club, { foreignKey: 'club_id', as: 'club' });
 Club.hasMany(Usuario, { foreignKey: 'club_id', as: 'usuarios' });
 
+// Usuario <-> Persona (1:1)
+Usuario.belongsTo(Persona, { foreignKey: 'persona_id', as: 'persona' });
+Persona.hasOne(Usuario, { foreignKey: 'persona_id', as: 'usuario' });
+
 // ─── Personas y Roles (arquitectura unificada) ──────────────────────────────
 Persona.hasMany(PersonaRol, { foreignKey: 'persona_id', as: 'roles_asignados' });
 PersonaRol.belongsTo(Persona, { foreignKey: 'persona_id', as: 'persona' });

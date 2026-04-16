@@ -2,6 +2,16 @@ import { inject } from '@angular/core';
 import { CanActivateFn, CanMatchFn, Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 
+export const requirePerfilCompleto: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  if (auth.needsProfileCompletion()) {
+    router.navigate(['/perfil/completar']);
+    return false;
+  }
+  return true;
+};
+
 export const authGuard: CanActivateFn = () => {
   const authService = inject(AuthService);
   const router = inject(Router);

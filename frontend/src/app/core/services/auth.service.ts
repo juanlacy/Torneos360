@@ -14,6 +14,7 @@ export interface UsuarioSesion {
   club_id?: number;
   entidad_tipo?: string;
   entidad_id?: number;
+  persona_id?: number | null;
 }
 
 export interface PermisosMap {
@@ -70,6 +71,24 @@ export class AuthService {
   isAdmin(): boolean {
     const rol = this.getUser()?.rol;
     return rol === 'admin_sistema' || rol === 'admin_torneo';
+  }
+
+  needsProfileCompletion(): boolean {
+    const user = this.getUser();
+    if (!user) return false;
+    if (user.rol === 'admin_sistema') return false;
+    return !user.persona_id;
+  }
+
+  setToken(token: string): void {
+    localStorage.setItem(this.tokenKey, token);
+    this.scheduleRefresh();
+  }
+
+  setUser(user: UsuarioSesion): void {
+    localStorage.setItem(this.userKey, JSON.stringify(user));
+    this.currentUserSubject.next(user);
+    this.cargarPermisos();
   }
 
   /** Verifica si el usuario tiene un permiso especifico */

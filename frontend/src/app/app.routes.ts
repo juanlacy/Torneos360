@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { authGuard, adminGuard, guestGuard, isLoggedInMatch } from './core/guards/auth.guard';
+import { authGuard, adminGuard, guestGuard, isLoggedInMatch, requirePerfilCompleto } from './core/guards/auth.guard';
 import { LayoutComponent } from './core/layout/layout';
 import { PublicLayoutComponent } from './core/layout/public-layout';
 
@@ -18,11 +18,19 @@ export const routes: Routes = [
     ],
   },
 
+  // ─── Completar perfil (authenticated, SIN layout, SIN guard de perfil) ──────
+  {
+    path: 'perfil/completar',
+    canActivate: [authGuard],
+    loadComponent: () => import('./auth/completar-perfil/completar-perfil').then(m => m.CompletarPerfilComponent),
+  },
+
   // ─── App (authenticated, con layout) — canMatch: si no esta logueado, cae al publico
   {
     path: '',
     component: LayoutComponent,
     canMatch: [isLoggedInMatch],
+    canActivateChild: [requirePerfilCompleto],
     children: [
       {
         path: 'dashboard',

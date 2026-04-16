@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import { OAuth2Client } from 'google-auth-library';
 import { ConfidentialClientApplication } from '@azure/msal-node';
-import { Usuario, PermisoDefaultRol, PermisoUsuario } from '../models/index.js';
+import { Usuario, PermisoDefaultRol, PermisoUsuario, Persona, PersonaRol, Rol, Club, Institucion } from '../models/index.js';
 import { logAuth } from '../config/logger.js';
 import { v4 as uuidv4 } from 'uuid';
 import { enviarVerificacionEmail, enviarResetPassword } from '../services/emailService.js';
@@ -66,6 +66,7 @@ const generarToken = (usuario) => {
       rol: usuario.rol,
       avatar_url: usuario.avatar_url,
       club_id: usuario.club_id ?? null,
+      persona_id: usuario.persona_id ?? null,
       entidad_tipo: usuario.entidad_tipo ?? null,
       entidad_id: usuario.entidad_id ?? null,
     },
@@ -83,6 +84,7 @@ const usuarioResponse = (usuario) => ({
   rol: usuario.rol,
   avatar_url: usuario.avatar_url,
   club_id: usuario.club_id ?? null,
+  persona_id: usuario.persona_id ?? null,
   entidad_tipo: usuario.entidad_tipo ?? null,
   entidad_id: usuario.entidad_id ?? null,
 });
@@ -650,6 +652,164 @@ export const logout = async (req, res) => {
       { where: { id: req.user.id } }
     );
     res.json({ success: true, message: 'Sesion cerrada' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// =========================================
+// POST /auth/vincular-dni
+// Vincula el usuario logueado con una persona del sistema via DNI.
+// Auto-detecta rol y club desde persona_roles.
+// =========================================
+const ROL_PRIORIDAD = ['delegado_general', 'delegado_auxiliar', 'arbitro', 'veedor', 'entrenador', 'ayudante'];
+const ROL_MAPA = {
+  delegado_general: 'delegado',
+  delegado_auxiliar: 'delegado',
+  entrenador: 'entrenador',
+  ayudante: 'entrenador',
+  arbitro: 'arbitro',
+  veedor: 'veedor',
+};
+
+export const vincularDni = async (req, res) => {
+  try {
+    const { dni } = req.body;
+    if (!dni) return res.status(400).json({ success: false, message: 'DNI es requerido' });
+
+    const dniNorm = String(dni).replace(/[\s.\-]/g, '').trim();
+    if (!dniNorm || dniNorm.length < 7) {
+      return res.status(400).json({ success: false, message: 'DNI invalido' });
+    }
+
+    const usuario = await Usuario.findByPk(req.user.id);
+    if (!usuario) return res.status(404).json({ success: false, message: 'Usuario no encontrado' });
+
+    if (usuario.persona_id) {
+      return res.status(400).json({ success: false, message: 'Ya tenes un perfil vinculado' });
+    }
+
+    // Buscar persona por DNI
+    let persona = await Persona.findOne({ where: { dni: dniNorm } });
+    let personaCreada = false;
+
+    if (!persona) {
+      // Crear persona nueva con datos del usuario
+      persona = await Persona.create({
+        dni: dniNorm,
+        nombre: usuario.nombre,
+        apellido: usuario.apellido,
+        email: usuario.email,
+        foto_url: usuario.avatar_url,
+        activo: true,
+      });
+      personaCreada = true;
+    } else {
+      // Verificar que no haya otro usuario ya vinculado a esta persona
+      const otroUsuario = await Usuario.findOne({
+        where: { persona_id: persona.id },
+      });
+      if (otroUsuario && otroUsuario.id !== usuario.id) {
+        return res.status(409).json({
+          success: false,
+          message: 'Esta persona ya tiene un usuario vinculado. Contacta al administrador.',
+        });
+      }
+    }
+
+    // Actualizar usuario con persona_id
+    const updates = {
+      persona_id: persona.id,
+      actualizado_en: new Date(),
+    };
+
+    // Auto-detectar rol desde persona_roles
+    if (!personaCreada) {
+      const rolesActivos = await PersonaRol.findAll({
+        where: { persona_id: persona.id, activo: true },
+        include: [
+          { model: Rol, as: 'rol', attributes: ['id', 'codigo', 'nombre'] },
+          {
+            model: Club, as: 'club', attributes: ['id'],
+            include: [{ model: Institucion, as: 'institucion', attributes: ['nombre'] }],
+          },
+        ],
+      });
+
+      if (rolesActivos.length) {
+        // Encontrar el rol de mayor prioridad
+        let mejorRol = null;
+        let mejorClubId = null;
+        let mejorPrioridad = ROL_PRIORIDAD.length;
+
+        for (const pr of rolesActivos) {
+          const idx = ROL_PRIORIDAD.indexOf(pr.rol?.codigo);
+          if (idx >= 0 && idx < mejorPrioridad) {
+            mejorPrioridad = idx;
+            mejorRol = pr.rol.codigo;
+            mejorClubId = pr.club_id;
+          }
+        }
+
+        if (mejorRol) {
+          updates.rol = ROL_MAPA[mejorRol] || 'publico';
+          if (mejorClubId) updates.club_id = mejorClubId;
+        }
+
+        // Actualizar nombre/apellido desde la persona (datos mas confiables que OAuth)
+        if (persona.nombre) updates.nombre = persona.nombre;
+        if (persona.apellido) updates.apellido = persona.apellido;
+      }
+    }
+
+    await usuario.update(updates);
+    await usuario.reload();
+
+    // Generar nuevo JWT con persona_id y rol actualizado
+    const token = generarToken(usuario);
+
+    // Preparar info de roles para el frontend
+    const rolesInfo = !personaCreada
+      ? await PersonaRol.findAll({
+          where: { persona_id: persona.id, activo: true },
+          include: [
+            { model: Rol, as: 'rol', attributes: ['codigo', 'nombre', 'icono', 'color'] },
+            {
+              model: Club, as: 'club', attributes: ['id'],
+              include: [{ model: Institucion, as: 'institucion', attributes: ['nombre', 'nombre_corto'] }],
+            },
+          ],
+        })
+      : [];
+
+    registrarAudit({
+      req, accion: 'VINCULAR_DNI', entidad: 'usuarios', entidad_id: usuario.id,
+      despues: { persona_id: persona.id, rol: usuario.rol, club_id: usuario.club_id },
+    });
+
+    res.json({
+      success: true,
+      data: {
+        token,
+        user: usuarioResponse(usuario),
+        persona: {
+          id: persona.id,
+          nombre: persona.nombre,
+          apellido: persona.apellido,
+          dni: persona.dni,
+        },
+        roles: rolesInfo.map(r => ({
+          rol: r.rol?.nombre,
+          icono: r.rol?.icono,
+          color: r.rol?.color,
+          club: r.club?.institucion?.nombre_corto || r.club?.institucion?.nombre || null,
+        })),
+        persona_creada: personaCreada,
+      },
+      message: personaCreada
+        ? 'Perfil creado. Un administrador te asignara un rol.'
+        : `Bienvenido ${persona.nombre} ${persona.apellido}`,
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

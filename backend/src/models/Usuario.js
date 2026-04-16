@@ -26,9 +26,11 @@ export const Usuario = sequelize.define('Usuario', {
   google_id: { type: DataTypes.STRING(255), allowNull: true, unique: true },
   microsoft_id: { type: DataTypes.STRING(255), allowNull: true, unique: true },
   avatar_url: { type: DataTypes.STRING(500), allowNull: true },
-  // Vinculacion a entidad del dominio
-  entidad_tipo: { type: DataTypes.STRING(30), allowNull: true, comment: 'staff|arbitro|veedor' },
-  entidad_id: { type: DataTypes.INTEGER, allowNull: true, comment: 'FK a la tabla de la entidad' },
+  // Vinculacion a persona del dominio (tabla unificada)
+  persona_id: { type: DataTypes.INTEGER, allowNull: true, comment: 'FK a personas — vincula usuario con persona fisica' },
+  // Legacy (deprecated, usar persona_id + persona_roles)
+  entidad_tipo: { type: DataTypes.STRING(30), allowNull: true, comment: 'DEPRECATED' },
+  entidad_id: { type: DataTypes.INTEGER, allowNull: true, comment: 'DEPRECATED' },
   club_id: { type: DataTypes.INTEGER, allowNull: true, comment: 'Scope de datos para delegados/entrenadores' },
   // Auth & security
   email_verificado: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
