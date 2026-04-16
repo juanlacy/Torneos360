@@ -1,6 +1,7 @@
 import { Torneo, Zona, Categoria, Club, PersonaRol, Rol, Partido, FixtureJornada } from '../models/index.js';
 import { registrarAudit } from '../services/auditService.js';
 import { clonarTorneo } from '../services/torneoCloneService.js';
+import { previewTransicion, ejecutarTransicion } from '../services/torneoTransicionService.js';
 import multer from 'multer';
 import { fileURLToPath } from 'url';
 import { dirname, join, extname } from 'path';
@@ -144,6 +145,47 @@ export const eliminarZona = async (req, res) => {
     res.json({ success: true, message: 'Zona eliminada' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// GET /torneos/:id/transicion/preview — datos para el wizard de transicion
+export const transicionPreview = async (req, res) => {
+  try {
+    const data = await previewTransicion(parseInt(req.params.id));
+    res.json({ success: true, data });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+// POST /torneos/:id/transicion — ejecutar la transicion
+export const transicionEjecutar = async (req, res) => {
+  try {
+    const { nombre, anio, copiar_fixture, copiar_config, staff_ids, arbitro_ids, veedor_ids } = req.body;
+    if (!nombre || !anio) {
+      return res.status(400).json({ success: false, message: 'nombre y anio son requeridos' });
+    }
+
+    const { torneo, stats } = await ejecutarTransicion(parseInt(req.params.id), {
+      nombre: nombre.trim(),
+      anio: parseInt(anio),
+      copiar_fixture: copiar_fixture !== false,
+      copiar_config: copiar_config !== false,
+      staff_ids: staff_ids || [],
+      arbitro_ids: arbitro_ids || [],
+      veedor_ids: veedor_ids || [],
+    });
+
+    registrarAudit({
+      req, accion: 'TRANSICION_TORNEO',
+      entidad: 'torneos',
+      entidad_id: torneo.id,
+      despues: { origen_id: req.params.id, stats },
+    });
+
+    res.status(201).json({ success: true, data: torneo, stats });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
   }
 };
 

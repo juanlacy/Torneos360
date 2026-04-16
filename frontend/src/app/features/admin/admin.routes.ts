@@ -21,5 +21,9 @@ export const ADMIN_ROUTES: Routes = [
     path: 'instituciones',
     loadComponent: () => import('./instituciones/instituciones').then(m => m.InstitucionesComponent),
   },
+  {
+    path: 'transicion',
+    loadComponent: () => import('./transicion/transicion').then(m => m.TransicionComponent),
+  },
   { path: '', redirectTo: 'usuarios', pathMatch: 'full' },
 ];

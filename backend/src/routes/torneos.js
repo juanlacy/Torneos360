@@ -3,6 +3,7 @@ import { authenticateToken, requireAdminTorneo, requirePermiso } from '../middle
 import {
   listar, obtener, crear, actualizar, generarCategorias, crearZona, eliminarZona,
   getBranding, updateBranding, uploadLogo, subirLogo, getStats, duplicar,
+  transicionPreview, transicionEjecutar,
 } from '../controllers/torneosController.js';
 
 const router = Router();
@@ -14,6 +15,8 @@ router.get('/:id', requirePermiso('torneos', 'ver'), obtener);
 router.post('/',   requireAdminTorneo, crear);
 router.put('/:id', requireAdminTorneo, actualizar);
 router.post('/:id/duplicar', requireAdminTorneo, duplicar);
+router.get('/:id/transicion/preview', requireAdminTorneo, transicionPreview);
+router.post('/:id/transicion', requireAdminTorneo, transicionEjecutar);
 
 // Categorias y zonas
 router.post('/:id/generar-categorias', requireAdminTorneo, generarCategorias);
