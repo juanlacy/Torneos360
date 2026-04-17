@@ -240,8 +240,7 @@ type EventoTipo = 'gol' | 'amarilla' | 'azul' | 'roja' | 'falta';
                 </div>
                 <div class="space-y-1.5">
                   @for (a of alineacionVisible('local'); track a.id) {
-                    <div class="rounded-lg border p-2 bg-white" [class.border-gray-200]="!a._roja" [class.border-red-300]="a._roja" [class.bg-red-50]="a._roja">
-                      <div class="flex items-center gap-2">
+                    <div class="rounded-lg border p-1.5 bg-white flex items-center gap-2" [class.border-gray-200]="!a._roja" [class.border-red-300]="a._roja" [class.bg-red-50]="a._roja">
                         <!-- Badge dorsal -->
                         <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white flex-shrink-0"
                           [style.background-color]="localColor">
@@ -262,28 +261,27 @@ type EventoTipo = 'gol' | 'amarilla' | 'azul' | 'roja' | 'falta';
                         @if (a._roja) {
                           <span class="text-xs">🔴</span>
                         }
-                      </div>
-                      <!-- Botones de accion -->
+                      <!-- Botones de accion (al margen derecho) -->
                       @if (!a._roja) {
-                        <div class="flex items-center gap-1.5 mt-1.5">
-                          <button class="w-7 h-7 rounded-full bg-green-500 text-white text-xs font-bold flex items-center justify-center active:scale-90 transition-transform"
+                        <div class="flex items-center gap-1 ml-auto shrink-0">
+                          <button class="w-9 h-9 rounded-lg bg-green-500 text-white text-sm font-bold flex items-center justify-center active:scale-90 transition-transform shadow-sm"
                             title="Gol"
-                            (click)="setTab('local'); seleccionarJugador(a); registrarRapido('gol')">⚽</button>
-                          <button class="w-7 h-7 rounded-full bg-yellow-400 text-gray-900 text-xs font-bold flex items-center justify-center active:scale-90 transition-transform"
+                            (click)="registrarEventoDirecto('gol', a, 'local')">⚽</button>
+                          <button class="w-9 h-9 rounded-lg bg-yellow-400 text-gray-900 text-sm font-bold flex items-center justify-center active:scale-90 transition-transform shadow-sm"
                             title="Amarilla"
-                            (click)="setTab('local'); seleccionarJugador(a); registrarRapido('amarilla')">🟡</button>
+                            (click)="registrarEventoDirecto('amarilla', a, 'local')">🟡</button>
                           @if (configTorneo.tarjeta_azul_habilitada) {
-                            <button class="w-7 h-7 rounded-full bg-blue-500 text-white text-xs font-bold flex items-center justify-center active:scale-90 transition-transform"
+                            <button class="w-9 h-9 rounded-lg bg-blue-500 text-white text-sm font-bold flex items-center justify-center active:scale-90 transition-transform shadow-sm"
                               title="Azul"
-                              (click)="setTab('local'); seleccionarJugador(a); registrarRapido('azul')">🔵</button>
+                              (click)="registrarEventoDirecto('azul', a, 'local')">🔵</button>
                           }
-                          <button class="w-7 h-7 rounded-full bg-red-600 text-white text-xs font-bold flex items-center justify-center active:scale-90 transition-transform"
+                          <button class="w-9 h-9 rounded-lg bg-red-600 text-white text-sm font-bold flex items-center justify-center active:scale-90 transition-transform shadow-sm"
                             title="Roja"
-                            (click)="setTab('local'); seleccionarJugador(a); registrarRapido('roja')">🔴</button>
+                            (click)="registrarEventoDirecto('roja', a, 'local')">🔴</button>
                           @if (configTorneo.contar_faltas) {
-                            <button class="w-7 h-7 rounded-full bg-orange-400 text-white text-xs font-bold flex items-center justify-center active:scale-90 transition-transform"
+                            <button class="w-9 h-9 rounded-lg bg-orange-400 text-white text-sm font-bold flex items-center justify-center active:scale-90 transition-transform shadow-sm"
                               title="Falta"
-                              (click)="setTab('local'); seleccionarJugador(a); registrarRapido('falta')">⚠️</button>
+                              (click)="registrarEventoDirecto('falta', a, 'local')">⚠️</button>
                           }
                         </div>
                       }
@@ -306,8 +304,7 @@ type EventoTipo = 'gol' | 'amarilla' | 'azul' | 'roja' | 'falta';
                 </div>
                 <div class="space-y-1.5">
                   @for (a of alineacionVisible('visitante'); track a.id) {
-                    <div class="rounded-lg border p-2 bg-white" [class.border-gray-200]="!a._roja" [class.border-red-300]="a._roja" [class.bg-red-50]="a._roja">
-                      <div class="flex items-center gap-2">
+                    <div class="rounded-lg border p-1.5 bg-white flex items-center gap-2" [class.border-gray-200]="!a._roja" [class.border-red-300]="a._roja" [class.bg-red-50]="a._roja">
                         <!-- Badge dorsal -->
                         <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white flex-shrink-0"
                           [style.background-color]="visitColor">
@@ -328,28 +325,27 @@ type EventoTipo = 'gol' | 'amarilla' | 'azul' | 'roja' | 'falta';
                         @if (a._roja) {
                           <span class="text-xs">🔴</span>
                         }
-                      </div>
-                      <!-- Botones de accion -->
+                      <!-- Botones de accion (al margen derecho) -->
                       @if (!a._roja) {
-                        <div class="flex items-center gap-1.5 mt-1.5">
-                          <button class="w-7 h-7 rounded-full bg-green-500 text-white text-xs font-bold flex items-center justify-center active:scale-90 transition-transform"
+                        <div class="flex items-center gap-1 ml-auto shrink-0">
+                          <button class="w-9 h-9 rounded-lg bg-green-500 text-white text-sm font-bold flex items-center justify-center active:scale-90 transition-transform shadow-sm"
                             title="Gol"
-                            (click)="setTab('visitante'); seleccionarJugador(a); registrarRapido('gol')">⚽</button>
-                          <button class="w-7 h-7 rounded-full bg-yellow-400 text-gray-900 text-xs font-bold flex items-center justify-center active:scale-90 transition-transform"
+                            (click)="registrarEventoDirecto('gol', a, 'visitante')">⚽</button>
+                          <button class="w-9 h-9 rounded-lg bg-yellow-400 text-gray-900 text-sm font-bold flex items-center justify-center active:scale-90 transition-transform shadow-sm"
                             title="Amarilla"
-                            (click)="setTab('visitante'); seleccionarJugador(a); registrarRapido('amarilla')">🟡</button>
+                            (click)="registrarEventoDirecto('amarilla', a, 'visitante')">🟡</button>
                           @if (configTorneo.tarjeta_azul_habilitada) {
-                            <button class="w-7 h-7 rounded-full bg-blue-500 text-white text-xs font-bold flex items-center justify-center active:scale-90 transition-transform"
+                            <button class="w-9 h-9 rounded-lg bg-blue-500 text-white text-sm font-bold flex items-center justify-center active:scale-90 transition-transform shadow-sm"
                               title="Azul"
-                              (click)="setTab('visitante'); seleccionarJugador(a); registrarRapido('azul')">🔵</button>
+                              (click)="registrarEventoDirecto('azul', a, 'visitante')">🔵</button>
                           }
-                          <button class="w-7 h-7 rounded-full bg-red-600 text-white text-xs font-bold flex items-center justify-center active:scale-90 transition-transform"
+                          <button class="w-9 h-9 rounded-lg bg-red-600 text-white text-sm font-bold flex items-center justify-center active:scale-90 transition-transform shadow-sm"
                             title="Roja"
-                            (click)="setTab('visitante'); seleccionarJugador(a); registrarRapido('roja')">🔴</button>
+                            (click)="registrarEventoDirecto('roja', a, 'visitante')">🔴</button>
                           @if (configTorneo.contar_faltas) {
-                            <button class="w-7 h-7 rounded-full bg-orange-400 text-white text-xs font-bold flex items-center justify-center active:scale-90 transition-transform"
+                            <button class="w-9 h-9 rounded-lg bg-orange-400 text-white text-sm font-bold flex items-center justify-center active:scale-90 transition-transform shadow-sm"
                               title="Falta"
-                              (click)="setTab('visitante'); seleccionarJugador(a); registrarRapido('falta')">⚠️</button>
+                              (click)="registrarEventoDirecto('falta', a, 'visitante')">⚠️</button>
                           }
                         </div>
                       }
@@ -682,12 +678,12 @@ export class PanelControlComponent implements OnInit, OnDestroy {
   // ─── Alineacion ───────────────────────────────────────────
   esAlineado(jugadorId: number): boolean {
     const todas = [...(this.alineacion.local || []), ...(this.alineacion.visitante || [])];
-    return todas.some(a => a.jugador_id === jugadorId);
+    return todas.some(a => (a.persona_id || a.jugador_id) === jugadorId);
   }
 
   getCamiseta(jugadorId: number): string {
     const todas = [...(this.alineacion.local || []), ...(this.alineacion.visitante || [])];
-    const a = todas.find(x => x.jugador_id === jugadorId);
+    const a = todas.find(x => (x.persona_id || x.jugador_id) === jugadorId);
     return a?.numero_camiseta?.toString() || '';
   }
 
@@ -697,9 +693,10 @@ export class PanelControlComponent implements OnInit, OnDestroy {
 
   toggleAlineado(jugador: any, clubId: number, event: any) {
     const checked = event.target?.checked;
+    const personaId = jugador.id; // jugadores-disponibles devuelve persona_id como id
     if (checked) {
       this.http.post<any>(`${environment.apiUrl}/partidos/${this.partidoId}/alineacion`, {
-        jugador_id: jugador.id,
+        persona_id: personaId,
         club_id: clubId,
         numero_camiseta: jugador.numero_camiseta || null,
         titular: true,
@@ -708,7 +705,7 @@ export class PanelControlComponent implements OnInit, OnDestroy {
         error: (e: any) => { this.toastr.error(e.error?.message || 'Error'); event.target.checked = false; },
       });
     } else {
-      this.http.delete<any>(`${environment.apiUrl}/partidos/${this.partidoId}/alineacion/${jugador.id}`).subscribe({
+      this.http.delete<any>(`${environment.apiUrl}/partidos/${this.partidoId}/alineacion/${personaId}`).subscribe({
         next: () => { this.cargarAlineacion(); },
         error: (e: any) => { this.toastr.error(e.error?.message || 'Error'); event.target.checked = true; },
       });
@@ -719,7 +716,7 @@ export class PanelControlComponent implements OnInit, OnDestroy {
     const numero = parseInt(event.target.value);
     if (!numero) return;
     this.http.post<any>(`${environment.apiUrl}/partidos/${this.partidoId}/alineacion`, {
-      jugador_id: jugador.id,
+      persona_id: jugador.id,
       club_id: clubId,
       numero_camiseta: numero,
       titular: true,
@@ -813,8 +810,31 @@ export class PanelControlComponent implements OnInit, OnDestroy {
   }
 
   seleccionarJugador(a: any) {
-    this.jugadorSeleccionado = this.jugadorSeleccionado?.id === a.jugador_id ? null : { id: a.jugador_id, apellido: a.jugador?.apellido };
+    this.jugadorSeleccionado = this.jugadorSeleccionado?.id === (a.persona_id || a.jugador?.id) ? null : { id: a.persona_id || a.jugador?.id, apellido: a.jugador?.apellido };
     this.cdr.detectChanges();
+  }
+
+  /** Registra un evento directamente desde el botón del jugador (sin pasos intermedios) */
+  registrarEventoDirecto(tipo: EventoTipo, alineacion: any, lado: 'local' | 'visitante') {
+    const personaId = alineacion.persona_id || alineacion.jugador?.id;
+    const clubId = lado === 'local' ? this.partido.club_local_id : this.partido.club_visitante_id;
+    const apellido = alineacion.jugador?.apellido || '?';
+
+    this.http.post<any>(`${environment.apiUrl}/partidos/${this.partidoId}/evento`, {
+      tipo,
+      persona_id: personaId,
+      club_id: clubId,
+      minuto: this.currentMinute(),
+      periodo: this.partido.periodo_actual,
+    }).subscribe({
+      next: () => {
+        this.toastr.success(`${tipo.toUpperCase()}: ${apellido}`);
+        this.cargarPartido();
+        this.calcEventosJugador();
+        this.cdr.detectChanges();
+      },
+      error: (e: any) => this.toastr.error(e.error?.message || 'Error'),
+    });
   }
 
   registrarRapido(tipo: EventoTipo) {
@@ -824,7 +844,7 @@ export class PanelControlComponent implements OnInit, OnDestroy {
     const clubId = this.tabActivo === 'local' ? this.partido.club_local_id : this.partido.club_visitante_id;
     this.http.post<any>(`${environment.apiUrl}/partidos/${this.partidoId}/evento`, {
       tipo,
-      jugador_id: this.jugadorSeleccionado?.id,
+      persona_id: this.jugadorSeleccionado?.id,
       club_id: clubId,
       minuto: this.currentMinute(),
       periodo: this.partido.periodo_actual,
@@ -833,6 +853,7 @@ export class PanelControlComponent implements OnInit, OnDestroy {
         const label = tipo.toUpperCase();
         this.toastr.success(`${label}${this.jugadorSeleccionado ? ': ' + this.jugadorSeleccionado.apellido : ''}`);
         this.jugadorSeleccionado = null;
+        this.cargarPartido();
         this.cdr.detectChanges();
       },
       error: (e: any) => this.toastr.error(e.error?.message || 'Error'),
