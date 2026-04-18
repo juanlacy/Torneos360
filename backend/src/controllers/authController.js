@@ -707,8 +707,9 @@ export const logout = async (req, res) => {
 // Vincula el usuario logueado con una persona del sistema via DNI.
 // Auto-detecta rol y club desde persona_roles.
 // =========================================
-const ROL_PRIORIDAD = ['delegado_general', 'delegado_auxiliar', 'arbitro', 'veedor', 'entrenador', 'ayudante'];
+const ROL_PRIORIDAD = ['coordinador', 'delegado_general', 'delegado_auxiliar', 'arbitro', 'veedor', 'entrenador', 'ayudante'];
 const ROL_MAPA = {
+  coordinador: 'coordinador',
   delegado_general: 'delegado',
   delegado_auxiliar: 'delegado',
   entrenador: 'entrenador',

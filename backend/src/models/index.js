@@ -110,9 +110,10 @@ Club.hasMany(Partido, { foreignKey: 'club_visitante_id', as: 'partidos_visitante
 Partido.belongsTo(Club, { foreignKey: 'club_local_id', as: 'clubLocal' });
 Partido.belongsTo(Club, { foreignKey: 'club_visitante_id', as: 'clubVisitante' });
 
-// Partido arbitro/veedor → Persona
+// Partido arbitro/veedor/mejor jugador → Persona
 Partido.belongsTo(Persona, { foreignKey: 'arbitro_id', as: 'arbitro' });
 Partido.belongsTo(Persona, { foreignKey: 'veedor_id', as: 'veedor' });
+Partido.belongsTo(Persona, { foreignKey: 'mejor_jugador_id', as: 'mejorJugador' });
 
 // Partido <-> Eventos
 Partido.hasMany(PartidoEvento, { foreignKey: 'partido_id', as: 'eventos' });

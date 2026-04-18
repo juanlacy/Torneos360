@@ -223,6 +223,20 @@ import { BrandingService } from '../../../core/services/branding.service';
                         <p class="text-[10px] text-gray-500">Permite pausar el cronometro en cada evento</p>
                       </div>
                     </label>
+                    <label class="flex items-center gap-3 p-3 rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-50">
+                      <input type="checkbox" [(ngModel)]="configTorneo.elegir_mejor_jugador" class="w-5 h-5 rounded">
+                      <div>
+                        <p class="text-sm font-medium text-gray-900">Elegir mejor jugador</p>
+                        <p class="text-[10px] text-gray-500">Al finalizar, permite elegir al MVP del partido</p>
+                      </div>
+                    </label>
+                    <label class="flex items-center gap-3 p-3 rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-50">
+                      <input type="checkbox" [(ngModel)]="configTorneo.calificar_arbitro" class="w-5 h-5 rounded">
+                      <div>
+                        <p class="text-sm font-medium text-gray-900">Calificar arbitro</p>
+                        <p class="text-[10px] text-gray-500">Al cerrar el partido, calificar el arbitraje (1-5 estrellas)</p>
+                      </div>
+                    </label>
                   </div>
 
                   <button mat-flat-button color="primary" (click)="guardarConfigTorneo()" class="mt-4">
@@ -319,6 +333,8 @@ export class ConfiguracionComponent implements OnInit {
     tarjeta_azul_habilitada: false,
     contar_faltas: false,
     reloj_parado: false,
+    elegir_mejor_jugador: false,
+    calificar_arbitro: false,
   };
 
   // IA
@@ -403,6 +419,8 @@ export class ConfiguracionComponent implements OnInit {
       tarjeta_azul_habilitada: config.tarjeta_azul_habilitada ?? false,
       contar_faltas: config.contar_faltas ?? false,
       reloj_parado: config.reloj_parado ?? false,
+      elegir_mejor_jugador: config.elegir_mejor_jugador ?? false,
+      calificar_arbitro: config.calificar_arbitro ?? false,
     };
   }
 

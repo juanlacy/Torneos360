@@ -15,7 +15,7 @@ export const Usuario = sequelize.define('Usuario', {
     allowNull: false,
     defaultValue: 'publico',
     validate: {
-      isIn: [['admin_sistema', 'admin_torneo', 'delegado', 'arbitro', 'veedor', 'entrenador', 'publico']],
+      isIn: [['admin_sistema', 'admin_torneo', 'coordinador', 'delegado', 'arbitro', 'veedor', 'entrenador', 'publico']],
     },
   },
   oauth_provider: {

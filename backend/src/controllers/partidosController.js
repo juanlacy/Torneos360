@@ -376,31 +376,51 @@ export const confirmarAlineacion = async (req, res) => {
     const clubId = tipo === 'local' ? partido.club_local_id : partido.club_visitante_id;
     const dniNorm = normalizarDni(dni);
 
-    // Validar: buscar persona por DNI y verificar que tenga un rol con
-    // puede_firmar_alineacion=true en este club O en otro club de la misma institucion
-    const clubDelPartido = await Club.findByPk(clubId, { attributes: ['institucion_id'] });
+    // Admin bypass: admin_sistema puede confirmar con su propio DNI sin ser delegado
+    const isAdmin = req.user?.rol === 'admin_sistema' || req.user?.rol === 'admin_torneo';
 
-    // Buscar todos los club_ids de la misma institucion (para cruzar torneos)
-    const clubsInstitucion = clubDelPartido
-      ? (await Club.findAll({
-          where: { institucion_id: clubDelPartido.institucion_id },
-          attributes: ['id'],
-        })).map(c => c.id)
-      : [clubId];
+    let persona = null;
+    if (isAdmin) {
+      // Para admin, buscar la persona por DNI sin validar rol
+      persona = await Persona.findOne({ where: { dni: dniNorm, activo: true } });
+      if (!persona) {
+        // Si el admin no tiene persona, crearla al vuelo
+        persona = await Persona.findOne({ where: { dni: dniNorm } });
+        if (!persona) {
+          const usuario = await (await import('../models/index.js')).Usuario.findByPk(req.user.id);
+          persona = await Persona.create({
+            dni: dniNorm,
+            nombre: usuario?.nombre || 'Admin',
+            apellido: usuario?.apellido || 'Sistema',
+            activo: true,
+          });
+        }
+      }
+    } else {
+      // Validar: buscar persona por DNI y verificar que tenga un rol con
+      // puede_firmar_alineacion=true en este club O en otro club de la misma institucion
+      const clubDelPartido = await Club.findByPk(clubId, { attributes: ['institucion_id'] });
+      const clubsInstitucion = clubDelPartido
+        ? (await Club.findAll({
+            where: { institucion_id: clubDelPartido.institucion_id },
+            attributes: ['id'],
+          })).map(c => c.id)
+        : [clubId];
 
-    const persona = await Persona.findOne({
-      where: { dni: dniNorm, activo: true },
-      include: [{
-        model: PersonaRol, as: 'roles_asignados',
-        where: { club_id: clubsInstitucion, activo: true },
-        required: true,
+      persona = await Persona.findOne({
+        where: { dni: dniNorm, activo: true },
         include: [{
-          model: Rol, as: 'rol',
-          where: { puede_firmar_alineacion: true },
+          model: PersonaRol, as: 'roles_asignados',
+          where: { club_id: clubsInstitucion, activo: true },
           required: true,
+          include: [{
+            model: Rol, as: 'rol',
+            where: { puede_firmar_alineacion: true },
+            required: true,
+          }],
         }],
-      }],
-    });
+      });
+    }
 
     if (!persona) {
       return res.status(403).json({
@@ -456,17 +476,26 @@ export const cerrarPartido = async (req, res) => {
     }
 
     const dniNorm = normalizarDni(dni);
+    const isAdmin = req.user?.rol === 'admin_sistema' || req.user?.rol === 'admin_torneo';
 
-    if (!partido.arbitro_id) {
-      return res.status(400).json({ success: false, message: 'El partido no tiene arbitro asignado' });
-    }
+    let nombreFirmante = 'Admin';
 
-    const arbitro = await Persona.findByPk(partido.arbitro_id);
-    if (!arbitro || normalizarDni(arbitro.dni) !== dniNorm) {
-      return res.status(403).json({
-        success: false,
-        message: 'El DNI no corresponde al arbitro asignado al partido',
-      });
+    if (isAdmin) {
+      // Admin bypass: puede cerrar el partido con su propio DNI
+      const persona = await Persona.findOne({ where: { dni: dniNorm } });
+      nombreFirmante = persona ? `${persona.apellido}, ${persona.nombre}` : `Admin (${dniNorm})`;
+    } else {
+      if (!partido.arbitro_id) {
+        return res.status(400).json({ success: false, message: 'El partido no tiene arbitro asignado' });
+      }
+      const arbitro = await Persona.findByPk(partido.arbitro_id);
+      if (!arbitro || normalizarDni(arbitro.dni) !== dniNorm) {
+        return res.status(403).json({
+          success: false,
+          message: 'El DNI no corresponde al arbitro asignado al partido',
+        });
+      }
+      nombreFirmante = `${arbitro.apellido}, ${arbitro.nombre}`;
     }
 
     await PartidoConfirmacion.create({
@@ -475,7 +504,7 @@ export const cerrarPartido = async (req, res) => {
       dni_ingresado: dniNorm,
       firma_data_url: firma,
       usuario_id: req.user?.id,
-      nombre_firmante: `${arbitro.apellido}, ${arbitro.nombre}`,
+      nombre_firmante: nombreFirmante,
     });
 
     await partido.update({ confirmado_arbitro: true, actualizado_en: new Date() });
