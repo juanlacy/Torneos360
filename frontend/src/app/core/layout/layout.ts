@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { AsyncPipe } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
@@ -75,22 +75,12 @@ interface NavGroup {
           }
         </nav>
 
-        <!-- Usuario (minimo — perfil completo en /perfil) -->
+        <!-- Logout (usuario se ve en el header superior derecho) -->
         <div class="border-t border-white/10 p-3">
-          @if (auth.getUser(); as user) {
-            <div class="flex items-center gap-2 px-2">
-              <a routerLink="/perfil" class="flex items-center gap-2 flex-1 min-w-0 hover:bg-white/10 rounded-lg px-1 py-1 transition-colors">
-                <div class="w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0"
-                  [style.background-color]="(branding.branding$ | async)?.color_primario || '#762c7e'">
-                  {{ user.nombre.charAt(0) }}{{ user.apellido.charAt(0) }}
-                </div>
-                <p class="text-white/80 text-xs font-medium truncate">{{ user.nombre }}</p>
-              </a>
-              <button (click)="auth.logout()" class="text-gray-400 hover:text-white transition-colors shrink-0" title="Cerrar sesion">
-                <mat-icon class="!text-lg">logout</mat-icon>
-              </button>
-            </div>
-          }
+          <button (click)="auth.logout()" class="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-white/10 transition-colors">
+            <mat-icon class="!text-lg">logout</mat-icon>
+            <span>Cerrar sesion</span>
+          </button>
         </div>
       </aside>
 
@@ -166,7 +156,7 @@ interface NavGroup {
     :host { display: block; height: 100vh; }
   `],
 })
-export class LayoutComponent {
+export class LayoutComponent implements OnInit {
   sidebarOpen = false;
   torneoDropdown = false;
 
@@ -209,7 +199,14 @@ export class LayoutComponent {
     },
   ];
 
-  constructor(public auth: AuthService, public branding: BrandingService) {}
+  constructor(public auth: AuthService, public branding: BrandingService, private cdr: ChangeDetectorRef) {}
+
+  ngOnInit() {
+    // Re-renderizar cuando los permisos terminen de cargar (fix para refresh)
+    this.auth.permisos$.subscribe(() => {
+      this.cdr.detectChanges();
+    });
+  }
 
   canShow(item: NavItem): boolean {
     if (item.adminOnly) return this.auth.isAdmin();
