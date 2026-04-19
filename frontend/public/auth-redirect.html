@@ -2,11 +2,21 @@
 <html>
 <head><title>Autenticando...</title></head>
 <body>
+<p style="text-align:center;margin-top:40vh;font-family:sans-serif;color:#666">Autenticando...</p>
+<script src="https://alcdn.msauth.net/browser/2.38.3/js/msal-browser.min.js"></script>
 <script>
-  // Esta pagina es el redirect target de MSAL loginPopup.
-  // MSAL abre un popup que va a Microsoft, Microsoft redirige aqui,
-  // y MSAL cierra el popup automaticamente al detectar el hash/code.
-  // No necesita hacer nada — MSAL lo maneja.
+  var msalInstance = new msal.PublicClientApplication({
+    auth: {
+      clientId: '8373ec57-6435-4455-8356-ed4b7e218f4c',
+      authority: 'https://login.microsoftonline.com/02354681-4209-4c2e-b521-ac3d47939ec3',
+      redirectUri: window.location.origin + '/auth-redirect.html'
+    }
+  });
+  msalInstance.initialize().then(function() {
+    msalInstance.handleRedirectPromise().catch(function(err) {
+      console.error('MSAL redirect error:', err);
+    });
+  });
 </script>
 </body>
 </html>
