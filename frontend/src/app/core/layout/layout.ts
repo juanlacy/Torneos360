@@ -75,19 +75,18 @@ interface NavGroup {
           }
         </nav>
 
-        <!-- Usuario -->
+        <!-- Usuario (minimo — perfil completo en /perfil) -->
         <div class="border-t border-white/10 p-3">
           @if (auth.getUser(); as user) {
-            <div class="flex items-center gap-3 px-2">
-              <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
-                [style.background-color]="(branding.branding$ | async)?.color_primario || '#762c7e'">
-                {{ user.nombre.charAt(0) }}{{ user.apellido.charAt(0) }}
-              </div>
-              <div class="flex-1 min-w-0">
-                <p class="text-white text-xs font-medium truncate">{{ user.nombre }} {{ user.apellido }}</p>
-                <p class="text-white/50 text-[10px]">{{ user.rol }}</p>
-              </div>
-              <button (click)="auth.logout()" class="text-gray-400 hover:text-white transition-colors" title="Cerrar sesion">
+            <div class="flex items-center gap-2 px-2">
+              <a routerLink="/perfil" class="flex items-center gap-2 flex-1 min-w-0 hover:bg-white/10 rounded-lg px-1 py-1 transition-colors">
+                <div class="w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0"
+                  [style.background-color]="(branding.branding$ | async)?.color_primario || '#762c7e'">
+                  {{ user.nombre.charAt(0) }}{{ user.apellido.charAt(0) }}
+                </div>
+                <p class="text-white/80 text-xs font-medium truncate">{{ user.nombre }}</p>
+              </a>
+              <button (click)="auth.logout()" class="text-gray-400 hover:text-white transition-colors shrink-0" title="Cerrar sesion">
                 <mat-icon class="!text-lg">logout</mat-icon>
               </button>
             </div>
@@ -139,14 +138,18 @@ interface NavGroup {
           <span class="flex-1"></span>
 
           @if (auth.getUser(); as user) {
-            <a routerLink="/perfil" class="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition-colors cursor-pointer">
-              <span class="hidden sm:inline">{{ user.nombre }} {{ user.apellido }}</span>
-              <div class="flex gap-1">
-                @for (rol of auth.rolesActivos; track rol) {
-                  <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-semibold bg-[var(--color-primario)]/10 text-[var(--color-primario)]">
-                    {{ rol }}
-                  </span>
-                }
+            <a routerLink="/perfil" class="flex items-center gap-2 hover:bg-gray-100 rounded-lg px-2 py-1.5 transition-colors cursor-pointer" title="Mi perfil">
+              <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
+                [style.background-color]="'var(--color-primario)'">
+                {{ user.nombre.charAt(0) }}{{ user.apellido.charAt(0) }}
+              </div>
+              <div class="hidden sm:block text-right min-w-0">
+                <p class="text-xs font-medium text-gray-700 truncate leading-tight">{{ user.nombre }} {{ user.apellido }}</p>
+                <p class="text-[10px] text-gray-400 leading-tight">
+                  @for (rol of auth.rolesActivos; track rol; let last = $last) {
+                    {{ rol }}{{ last ? '' : ' · ' }}
+                  }
+                </p>
               </div>
             </a>
           }

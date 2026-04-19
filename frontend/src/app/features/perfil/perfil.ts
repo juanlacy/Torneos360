@@ -9,7 +9,9 @@ import { AuthService } from '../../core/services/auth.service';
 import { environment } from '../../../environments/environment';
 
 interface RolAsignado {
-  rol: string;
+  rol_nombre: string;
+  rol_icono?: string;
+  rol_color?: string;
   club_nombre?: string;
   torneo_nombre?: string;
 }
@@ -26,8 +28,9 @@ interface PerfilData {
     id: number;
     dni?: string;
     telefono?: string;
-    roles_asignados?: RolAsignado[];
+    roles_asignados?: any[];
   };
+  _roles?: RolAsignado[]; // mapeado
 }
 
 @Component({
@@ -113,15 +116,15 @@ interface PerfilData {
         </div>
 
         <!-- Roles -->
-        @if (perfil.persona?.roles_asignados?.length) {
+        @if (perfil._roles?.length) {
           <div class="bg-white rounded-xl border border-gray-200 p-6">
             <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Mis roles</h3>
             <div class="space-y-2">
-              @for (r of perfil.persona!.roles_asignados!; track r.rol + (r.club_nombre || '')) {
+              @for (r of perfil._roles; track r.rol_nombre + (r.club_nombre || '')) {
                 <div class="flex items-center gap-3 px-4 py-3 bg-gray-50 rounded-lg border border-gray-100">
-                  <mat-icon class="!text-purple-600">{{ rolIcon(r.rol) }}</mat-icon>
+                  <mat-icon [style.color]="r.rol_color">{{ r.rol_icono }}</mat-icon>
                   <div class="flex-1 min-w-0">
-                    <span class="text-sm font-medium text-gray-800 capitalize">{{ r.rol.replace('_', ' ') }}</span>
+                    <span class="text-sm font-medium text-gray-800">{{ r.rol_nombre }}</span>
                   </div>
                   @if (r.club_nombre) {
                     <span class="text-xs px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full font-medium">{{ r.club_nombre }}</span>
@@ -240,6 +243,14 @@ export class PerfilComponent {
             apellido: this.perfil.apellido || '',
             email: this.perfil.email || '',
           };
+          // Mapear roles desde la estructura Sequelize
+          this.perfil._roles = (this.perfil.persona?.roles_asignados || []).map((ra: any) => ({
+            rol_nombre: ra.rol?.nombre || ra.rol?.codigo || '?',
+            rol_icono: ra.rol?.icono || 'person',
+            rol_color: ra.rol?.color || '#762c7e',
+            club_nombre: ra.club?.institucion?.nombre_corto || ra.club?.institucion?.nombre || null,
+            torneo_nombre: ra.torneo?.nombre || null,
+          }));
         }
         this.loading = false;
         this.cdr.detectChanges();
