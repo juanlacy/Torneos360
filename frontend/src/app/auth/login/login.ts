@@ -151,6 +151,16 @@ export class LoginComponent implements OnInit {
   ngOnInit() {
     this.showMicrosoft = !!environment.microsoftClientId;
     this.initGoogleSignIn();
+    this.checkPendingMsalToken();
+  }
+
+  /** Si main.ts guardo un token de MSAL en sessionStorage, procesarlo */
+  private checkPendingMsalToken() {
+    const pendingToken = sessionStorage.getItem('msal_pending_token');
+    if (pendingToken) {
+      sessionStorage.removeItem('msal_pending_token');
+      this.processMicrosoftToken(pendingToken);
+    }
   }
 
   // ─── Google Identity Services (igual que Predict) ───────────────────────
@@ -218,41 +228,63 @@ export class LoginComponent implements OnInit {
       return;
     }
     try {
-      const { PublicClientApplication } = await import('@azure/msal-browser');
-      const msalInstance = new PublicClientApplication({
-        auth: {
-          clientId: environment.microsoftClientId,
-          authority: `https://login.microsoftonline.com/${environment.microsoftTenantId}`,
-          redirectUri: window.location.origin,
-        },
-      });
-      await msalInstance.initialize();
+      const msalInstance = await this.getMsalInstance();
 
-      // Limpiar interacciones previas que quedaron colgadas
-      const activeAccount = msalInstance.getActiveAccount();
-      if (!activeAccount && msalInstance.getAllAccounts().length > 0) {
-        msalInstance.setActiveAccount(msalInstance.getAllAccounts()[0]);
-      }
-
-      const result = await msalInstance.loginPopup({ scopes: ['User.Read'], prompt: 'select_account' });
-
-      if (result.accessToken) {
-        this.loading = true;
-        this.cdr.detectChanges();
-        this.auth.loginMicrosoft(result.accessToken).subscribe({
-          next: () => this.router.navigate(['/dashboard']),
-          error: (err) => {
-            this.loading = false;
-            this.toastr.error(err.error?.message || 'Error con Microsoft');
-            this.cdr.detectChanges();
-          },
+      // Intentar popup primero, si falla usar redirect
+      try {
+        const result = await msalInstance.loginPopup({
+          scopes: ['User.Read'],
+          prompt: 'select_account',
         });
+
+        if (result?.accessToken) {
+          this.processMicrosoftToken(result.accessToken);
+        }
+      } catch (popupErr: any) {
+        // Si el popup fue bloqueado o fallo, usar redirect
+        if (popupErr?.errorCode === 'popup_window_error' ||
+            popupErr?.errorCode === 'interaction_in_progress' ||
+            popupErr?.errorCode === 'empty_window_error') {
+          await msalInstance.loginRedirect({
+            scopes: ['User.Read'],
+            prompt: 'select_account',
+          });
+        } else if (popupErr?.errorCode !== 'user_cancelled') {
+          this.toastr.error(popupErr?.message || 'Error con Microsoft');
+        }
       }
     } catch (err: any) {
-      if (err?.errorCode !== 'user_cancelled') {
-        this.toastr.error(err?.message || 'Error con Microsoft');
-      }
+      this.toastr.error('Error iniciando Microsoft Sign-In');
     }
+  }
+
+  private async getMsalInstance() {
+    const { PublicClientApplication } = await import('@azure/msal-browser');
+    const instance = new PublicClientApplication({
+      auth: {
+        clientId: environment.microsoftClientId,
+        authority: `https://login.microsoftonline.com/${environment.microsoftTenantId}`,
+        redirectUri: window.location.origin,
+      },
+    });
+    await instance.initialize();
+    return instance;
+  }
+
+  private processMicrosoftToken(accessToken: string) {
+    this.loading = true;
+    this.cdr.detectChanges();
+    this.auth.loginMicrosoft(accessToken).subscribe({
+      next: () => {
+        window.history.replaceState({}, '', window.location.pathname);
+        this.router.navigate(['/dashboard']);
+      },
+      error: (err) => {
+        this.loading = false;
+        this.toastr.error(err.error?.message || 'Error con Microsoft');
+        this.cdr.detectChanges();
+      },
+    });
   }
 
   // ─── Email/Password ─────────────────────────────────────────────────────
