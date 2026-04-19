@@ -101,7 +101,7 @@ import { BrandingService } from '../../core/services/branding.service';
               @if (jornada.zona) {
                 <span class="mr-3">Zona {{ jornada.zona.nombre }}</span>
               }
-              <span class="badge" [class]="'badge-' + jornada.estado">{{ jornada.estado }}</span>
+              <span class="badge" [class]="'badge-' + (jornada._estadoVisual || jornada.estado)">{{ jornada._estadoVisual || jornada.estado }}</span>
               @if (jornada.fecha) {
                 <span class="ml-3">{{ jornada.fecha }}</span>
               }
@@ -228,14 +228,20 @@ import { BrandingService } from '../../core/services/branding.service';
                           @if (p.clubLocal?.escudo_url) {
                             <img [src]="resolveUrl(p.clubLocal.escudo_url)" class="escudo-sm" alt="">
                           }
-                          <span class="text-xs">{{ p.clubLocal?.nombre_corto }}</span>
-                          <span class="text-[10px] text-gray-400">vs</span>
+                          <span class="text-xs font-medium" [class.font-bold]="p.estado === 'finalizado' && p.goles_local > p.goles_visitante">{{ p.clubLocal?.nombre_corto }}</span>
+                          @if (p.estado === 'finalizado') {
+                            <span class="font-bold text-sm bg-gray-900 text-white px-2 py-0.5 rounded">{{ p.goles_local }} - {{ p.goles_visitante }}</span>
+                          } @else if (p.estado === 'en_curso') {
+                            <span class="font-bold text-sm bg-red-600 text-white px-2 py-0.5 rounded animate-pulse">{{ p.goles_local ?? 0 }} - {{ p.goles_visitante ?? 0 }}</span>
+                          } @else {
+                            <span class="text-[10px] text-gray-400">vs</span>
+                          }
                           @if (p.clubVisitante?.escudo_url) {
                             <img [src]="resolveUrl(p.clubVisitante.escudo_url)" class="escudo-sm" alt="">
                           }
-                          <span class="text-xs">{{ p.clubVisitante?.nombre_corto }}</span>
+                          <span class="text-xs font-medium" [class.font-bold]="p.estado === 'finalizado' && p.goles_visitante > p.goles_local">{{ p.clubVisitante?.nombre_corto }}</span>
                         </div>
-                        <span class="badge text-xs" [class]="'badge-' + p.estado">{{ p.estado }}</span>
+                        <span class="badge text-[10px]" [class]="'badge-' + p.estado">{{ p.estado }}</span>
                         <a [routerLink]="['/partidos', p.id]" class="text-gray-400 hover:text-gray-600">
                           <mat-icon class="!text-sm">open_in_new</mat-icon>
                         </a>
@@ -441,6 +447,16 @@ export class FixtureComponent implements OnInit {
           cruce.finalizados = cruce.resultados.filter((r: any) => r.estado === 'finalizado').length;
         }
         jornada._cruces = Object.values(cruces);
+
+        // Actualizar estado visual de la jornada segun sus partidos
+        const estados = res.data.map((p: any) => p.estado);
+        if (estados.every((e: string) => e === 'finalizado')) {
+          jornada._estadoVisual = 'finalizada';
+        } else if (estados.some((e: string) => e === 'en_curso' || e === 'finalizado')) {
+          jornada._estadoVisual = 'en_curso';
+        } else {
+          jornada._estadoVisual = 'programada';
+        }
         this.cdr.detectChanges();
       },
       error: () => { jornada._loading = false; this.toastr.error('Error al cargar partidos'); this.cdr.detectChanges(); },
