@@ -130,10 +130,17 @@ import { BrandingService } from '../../core/services/branding.service';
                     }
                   </div>
 
-                  <!-- VS badge -->
-                  <div class="px-3 py-1 rounded-full bg-white border border-gray-200 shadow-sm">
-                    <span class="text-[10px] font-bold text-gray-500">VS</span>
-                  </div>
+                  <!-- Marcador / VS -->
+                  @if (cruce.finalizados > 0) {
+                    <div class="px-3 py-1 rounded-lg bg-gray-900 text-white shadow-sm text-center min-w-[70px]">
+                      <div class="text-lg font-black leading-none">{{ cruce.puntosLocal }} - {{ cruce.puntosVisitante }}</div>
+                      <div class="text-[8px] text-gray-400 mt-0.5">{{ cruce.finalizados }}/{{ cruce.partidos }} cat</div>
+                    </div>
+                  } @else {
+                    <div class="px-3 py-1 rounded-full bg-white border border-gray-200 shadow-sm">
+                      <span class="text-[10px] font-bold text-gray-500">VS</span>
+                    </div>
+                  }
 
                   <!-- Visitante -->
                   <div class="flex-1 flex items-center gap-2">
@@ -165,6 +172,31 @@ import { BrandingService } from '../../core/services/branding.service';
                     </button>
                   }
                 </div>
+                <!-- Resultados por categoria (si hay finalizados) -->
+                @if (cruce.finalizados > 0) {
+                  <div class="ml-4 mr-4 mb-3 pl-4 border-l-2 border-gray-200 space-y-0.5">
+                    @for (r of cruce.resultados; track r.categoria) {
+                      <div class="flex items-center gap-2 text-xs text-gray-500">
+                        <span class="w-20 text-right truncate" [class.text-gray-400]="r.es_preliminar" [class.italic]="r.es_preliminar">
+                          {{ r.categoria }}{{ r.es_preliminar ? ' *' : '' }}
+                        </span>
+                        @if (r.estado === 'finalizado') {
+                          <span class="font-bold min-w-[40px] text-center"
+                            [class]="r.goles_local > r.goles_visitante ? 'text-green-700' : r.goles_local < r.goles_visitante ? 'text-red-600' : 'text-gray-500'">
+                            {{ r.goles_local }}
+                          </span>
+                          <span class="text-gray-300">-</span>
+                          <span class="font-bold min-w-[40px] text-center"
+                            [class]="r.goles_visitante > r.goles_local ? 'text-green-700' : r.goles_visitante < r.goles_local ? 'text-red-600' : 'text-gray-500'">
+                            {{ r.goles_visitante }}
+                          </span>
+                        } @else {
+                          <span class="text-gray-400 italic">prog.</span>
+                        }
+                      </div>
+                    }
+                  </div>
+                }
               }
 
               @if (!jornada._cruces?.length) {
@@ -371,6 +403,28 @@ export class FixtureComponent implements OnInit {
             };
           }
           cruces[key].partidos++;
+          // Agregar resultado por categoria si finalizado
+          if (!cruces[key].resultados) cruces[key].resultados = [];
+          cruces[key].resultados.push({
+            categoria: p.categoria?.nombre,
+            es_preliminar: p.categoria?.es_preliminar,
+            estado: p.estado,
+            goles_local: p.goles_local ?? 0,
+            goles_visitante: p.goles_visitante ?? 0,
+          });
+        }
+        // Calcular puntos del cruce (sin preliminar)
+        for (const cruce of Object.values(cruces) as any[]) {
+          let ptsLocal = 0, ptsVisit = 0;
+          for (const r of (cruce.resultados || [])) {
+            if (r.estado !== 'finalizado' || r.es_preliminar) continue;
+            if (r.goles_local > r.goles_visitante) ptsLocal += 3;
+            else if (r.goles_local < r.goles_visitante) ptsVisit += 3;
+            else { ptsLocal += 1; ptsVisit += 1; }
+          }
+          cruce.puntosLocal = ptsLocal;
+          cruce.puntosVisitante = ptsVisit;
+          cruce.finalizados = cruce.resultados.filter((r: any) => r.estado === 'finalizado').length;
         }
         jornada._cruces = Object.values(cruces);
         this.cdr.detectChanges();

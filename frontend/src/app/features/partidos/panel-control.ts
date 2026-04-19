@@ -95,6 +95,21 @@ type EventoTipo = 'gol' | 'amarilla' | 'azul' | 'roja' | 'falta';
               }
             </div>
           </div>
+
+          <!-- Contador de faltas (solo si config lo habilita y partido en curso) -->
+          @if (configTorneo.contar_faltas && partido.estado === 'en_curso') {
+            <div class="flex items-center justify-between px-6 py-2 bg-gray-900/80 text-white text-xs">
+              <div class="flex items-center gap-2">
+                <span class="text-gray-400 uppercase text-[10px]">Faltas T{{ partido.periodo_actual }}</span>
+                <span class="bg-orange-500 text-white font-bold px-2 py-0.5 rounded min-w-[24px] text-center">{{ contarFaltasPeriodo('local') }}</span>
+              </div>
+              <span class="text-gray-500 text-[10px]">⚠️ 6ta falta = tiro libre</span>
+              <div class="flex items-center gap-2">
+                <span class="bg-orange-500 text-white font-bold px-2 py-0.5 rounded min-w-[24px] text-center">{{ contarFaltasPeriodo('visitante') }}</span>
+                <span class="text-gray-400 uppercase text-[10px]">Faltas T{{ partido.periodo_actual }}</span>
+              </div>
+            </div>
+          }
         </div>
 
         <!-- ═══ C) FASE PREPARACION ═══ -->
@@ -434,30 +449,7 @@ type EventoTipo = 'gol' | 'amarilla' | 'azul' | 'roja' | 'falta';
                   </div>
                 }
 
-                <!-- Calificacion del arbitro -->
-                @if (configTorneo.calificar_arbitro) {
-                  <div class="bg-white rounded-xl border border-gray-200 p-4">
-                    <label class="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-2">
-                      <mat-icon class="!text-lg text-blue-500">gavel</mat-icon>
-                      Calificacion del arbitro
-                    </label>
-                    <div class="flex items-center gap-1 mb-2">
-                      @for (star of [1,2,3,4,5]; track star) {
-                        <button (click)="calificacionArbitro = star"
-                          class="w-10 h-10 rounded-lg flex items-center justify-center text-2xl transition-all"
-                          [class]="star <= calificacionArbitro ? 'bg-yellow-100 text-yellow-500 scale-110' : 'bg-gray-100 text-gray-300 hover:bg-gray-200'">
-                          ★
-                        </button>
-                      }
-                      @if (calificacionArbitro) {
-                        <span class="ml-2 text-sm font-bold text-yellow-600">{{ calificacionArbitro }}/5</span>
-                      }
-                    </div>
-                    <input type="text" [(ngModel)]="comentarioArbitro"
-                      placeholder="Comentario opcional..."
-                      class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[var(--color-primario)] focus:border-transparent outline-none">
-                  </div>
-                }
+                <!-- Calificacion del arbitro se hace DESPUES del cierre -->
 
                 <!-- Boton cerrar -->
                 @if (auth.getUser()?.rol === 'arbitro' || auth.isAdmin()) {
@@ -470,23 +462,62 @@ type EventoTipo = 'gol' | 'amarilla' | 'azul' | 'roja' | 'falta';
               </div>
             }
 
-            <!-- Info MVP y calificacion si ya cerrado -->
+            <!-- Info post-cierre -->
             @if (partido.confirmado_arbitro) {
-              <div class="max-w-md mx-auto space-y-2">
+              <div class="max-w-md mx-auto space-y-3">
+                <!-- MVP asignado -->
                 @if (partido.mejor_jugador_id && partido.mejorJugador) {
-                  <div class="flex items-center gap-2 text-sm text-gray-600">
-                    <mat-icon class="!text-base text-yellow-500">star</mat-icon>
-                    MVP: <strong>{{ partido.mejorJugador.apellido }}, {{ partido.mejorJugador.nombre }}</strong>
+                  <div class="flex items-center gap-2 p-3 bg-yellow-50 rounded-xl border border-yellow-200 text-sm">
+                    <mat-icon class="text-yellow-500">star</mat-icon>
+                    <span class="text-gray-600">MVP:</span>
+                    <strong class="text-gray-900">{{ partido.mejorJugador.apellido }}, {{ partido.mejorJugador.nombre }}</strong>
                   </div>
                 }
-                @if (partido.calificacion_arbitro) {
-                  <div class="flex items-center gap-1 text-sm text-gray-600">
-                    <mat-icon class="!text-base text-blue-500">gavel</mat-icon>
-                    Arbitro:
-                    @for (s of [1,2,3,4,5]; track s) {
-                      <span [class]="s <= partido.calificacion_arbitro ? 'text-yellow-500' : 'text-gray-300'">★</span>
-                    }
-                  </div>
+
+                <!-- Calificacion del arbitro — post cierre, delegados/veedores pueden calificar -->
+                @if (configTorneo.calificar_arbitro) {
+                  @if (partido.calificacion_arbitro) {
+                    <!-- Ya calificado -->
+                    <div class="flex items-center gap-2 p-3 bg-blue-50 rounded-xl border border-blue-200 text-sm">
+                      <mat-icon class="text-blue-500">gavel</mat-icon>
+                      <span class="text-gray-600">Arbitro:</span>
+                      @for (s of [1,2,3,4,5]; track s) {
+                        <span class="text-lg" [class]="s <= partido.calificacion_arbitro ? 'text-yellow-500' : 'text-gray-300'">★</span>
+                      }
+                      @if (partido.comentario_arbitro) {
+                        <span class="text-xs text-gray-400 italic ml-1">{{ partido.comentario_arbitro }}</span>
+                      }
+                    </div>
+                  } @else {
+                    <!-- Pendiente de calificacion — delegados/veedores/admin pueden calificar -->
+                    <div class="bg-white rounded-xl border border-gray-200 p-4">
+                      <label class="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-2">
+                        <mat-icon class="!text-lg text-blue-500">gavel</mat-icon>
+                        Calificar al arbitro
+                      </label>
+                      <div class="flex items-center gap-1 mb-2">
+                        @for (star of [1,2,3,4,5]; track star) {
+                          <button (click)="calificacionArbitro = star"
+                            class="w-11 h-11 rounded-lg flex items-center justify-center text-2xl transition-all"
+                            [class]="star <= calificacionArbitro ? 'bg-yellow-100 text-yellow-500 scale-110' : 'bg-gray-100 text-gray-300 hover:bg-gray-200'">
+                            ★
+                          </button>
+                        }
+                        @if (calificacionArbitro) {
+                          <span class="ml-2 text-sm font-bold text-yellow-600">{{ calificacionArbitro }}/5</span>
+                        }
+                      </div>
+                      <input type="text" [(ngModel)]="comentarioArbitro"
+                        placeholder="Comentario opcional..."
+                        class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mb-2 outline-none focus:ring-2 focus:ring-blue-400">
+                      @if (calificacionArbitro) {
+                        <button class="w-full py-2 rounded-lg bg-blue-500 text-white text-sm font-semibold hover:bg-blue-600 transition-colors"
+                          (click)="guardarCalificacion()">
+                          Enviar calificacion
+                        </button>
+                      }
+                    </div>
+                  }
                 }
               </div>
             }
@@ -750,7 +781,8 @@ export class PanelControlComponent implements OnInit, OnDestroy {
     if (this.partido?.estado !== 'en_curso' || !this.partido.hora_inicio) return;
     this.clockSub?.unsubscribe();
     this.clockSub = interval(1000).subscribe(() => {
-      if (this.relojPausado) return;
+      // Pausar si reloj_parado activado O si estamos en descanso entre tiempos
+      if (this.relojPausado || this.fase === 'descanso') return;
       const inicio = new Date(this.partido.hora_inicio).getTime();
       this.clockSeconds = Math.floor((Date.now() - inicio) / 1000);
       this.cdr.detectChanges();
@@ -759,9 +791,13 @@ export class PanelControlComponent implements OnInit, OnDestroy {
 
   formatClock(): string {
     if (this.partido?.estado === 'programado') return '00:00';
-    if (this.partido?.estado === 'finalizado' && this.partido?.hora_inicio && this.partido?.hora_fin) {
-      const s = Math.floor((new Date(this.partido.hora_fin).getTime() - new Date(this.partido.hora_inicio).getTime()) / 1000);
-      return this.secsToTime(s);
+    if (this.fase === 'descanso' || this.partido?.estado === 'finalizado') {
+      // Mostrar el tiempo al momento del fin del periodo/partido
+      if (this.partido?.hora_inicio && this.partido?.hora_fin) {
+        const s = Math.floor((new Date(this.partido.hora_fin).getTime() - new Date(this.partido.hora_inicio).getTime()) / 1000);
+        return this.secsToTime(s);
+      }
+      return this.secsToTime(this.clockSeconds); // mantener el ultimo valor
     }
     return this.secsToTime(this.clockSeconds);
   }
@@ -845,18 +881,36 @@ export class PanelControlComponent implements OnInit, OnDestroy {
     };
   }
 
+  /** Cuenta faltas de un equipo en el periodo actual */
+  contarFaltasPeriodo(lado: 'local' | 'visitante'): number {
+    const clubId = lado === 'local' ? this.partido.club_local_id : this.partido.club_visitante_id;
+    const periodo = this.partido.periodo_actual;
+    return (this.partido.eventos || []).filter((e: any) =>
+      e.tipo === 'falta' && e.club_id === clubId && e.periodo === periodo
+    ).length;
+  }
+
   /** Devuelve todos los jugadores alineados de ambos equipos */
   todosAlineados(): any[] {
     return [...(this.alineacion.local || []), ...(this.alineacion.visitante || [])];
   }
 
-  /** Guarda MVP + calificación y abre el modal de cierre DNI */
+  /** Guarda la calificacion del arbitro (post-cierre, por delegados/veedores) */
+  guardarCalificacion() {
+    this.http.put<any>(`${environment.apiUrl}/partidos/${this.partidoId}`, {
+      calificacion_arbitro: this.calificacionArbitro,
+      comentario_arbitro: this.comentarioArbitro,
+    }).subscribe({
+      next: () => { this.toastr.success('Calificacion enviada'); this.cargarPartido(); },
+      error: (e: any) => this.toastr.error(e.error?.message || 'Error'),
+    });
+  }
+
+  /** Guarda MVP y abre el modal de cierre DNI */
   guardarYCerrar() {
-    // Guardar MVP y calificación antes de abrir el modal
+    // Guardar MVP antes de abrir el modal (calificacion la hace un delegado/veedor despues)
     const updates: any = {};
     if (this.mejorJugadorId) updates.mejor_jugador_id = this.mejorJugadorId;
-    if (this.calificacionArbitro) updates.calificacion_arbitro = this.calificacionArbitro;
-    if (this.comentarioArbitro) updates.comentario_arbitro = this.comentarioArbitro;
 
     if (Object.keys(updates).length) {
       this.http.put<any>(`${environment.apiUrl}/partidos/${this.partidoId}`, updates).subscribe({
