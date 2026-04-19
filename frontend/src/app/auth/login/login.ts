@@ -24,7 +24,7 @@ declare const google: any;
 
         <!-- Brand header -->
         <div class="text-center mb-8">
-          <img src="Torneos360_Logo_Trans.png"
+          <img src="Torneos360_Logo_Blanco.png"
             alt="Torneo360"
             class="h-32 mx-auto object-contain drop-shadow-2xl mb-3" />
           <h1 class="text-2xl font-bold text-white tracking-wide">Torneo<span class="text-[#8cb24d]">360</span></h1>
