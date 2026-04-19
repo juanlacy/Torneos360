@@ -244,6 +244,10 @@ export class LoginComponent implements OnInit {
       });
       await msalInstance.initialize();
 
+      // Limpiar interacciones previas atrapadas
+      const keys = Object.keys(sessionStorage).filter(k => k.startsWith('msal.'));
+      keys.forEach(k => sessionStorage.removeItem(k));
+
       const result = await msalInstance.loginPopup({
         scopes: ['User.Read'],
       });
