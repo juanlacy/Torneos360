@@ -389,31 +389,105 @@ type EventoTipo = 'gol' | 'amarilla' | 'azul' | 'roja' | 'falta';
 
         <!-- ═══ F) FASE FINALIZADO ═══ -->
         @if (fase === 'finalizado') {
-          <div class="p-8 text-center space-y-6">
-            @if (!partido.confirmado_arbitro) {
-              <div class="inline-flex items-center gap-3 px-8 py-5 rounded-2xl bg-amber-50 border-2 border-amber-300 text-amber-700">
-                <mat-icon class="!text-4xl !w-10 !h-10">hourglass_empty</mat-icon>
-                <div class="text-left">
-                  <p class="text-2xl font-bold">PARTIDO TERMINADO</p>
-                  <p class="text-sm">{{ partido.goles_local }} - {{ partido.goles_visitante }} · Resultado final</p>
+          <div class="p-6 space-y-5">
+            <!-- Banner resultado -->
+            <div class="flex items-center justify-center">
+              @if (!partido.confirmado_arbitro) {
+                <div class="inline-flex items-center gap-3 px-6 py-4 rounded-2xl bg-amber-50 border-2 border-amber-300 text-amber-700">
+                  <mat-icon class="!text-3xl">hourglass_empty</mat-icon>
+                  <div class="text-left">
+                    <p class="text-xl font-bold">PARTIDO TERMINADO</p>
+                    <p class="text-sm">{{ partido.goles_local }} - {{ partido.goles_visitante }} · Pendiente de cierre</p>
+                  </div>
                 </div>
-              </div>
-              @if (auth.getUser()?.rol === 'arbitro' || auth.isAdmin()) {
-                <div>
-                  <button class="inline-flex flex-col items-center gap-2 px-12 py-5 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 text-white font-bold text-lg shadow-xl hover:shadow-2xl active:scale-[0.97] transition-all min-w-[280px]"
-                    (click)="abrirCierre()">
-                    <mat-icon class="!text-4xl !w-10 !h-10">verified</mat-icon>
-                    <span>CERRAR PARTIDO (ARBITRO)</span>
-                  </button>
+              } @else {
+                <div class="inline-flex items-center gap-3 px-6 py-4 rounded-2xl bg-green-50 border-2 border-green-500 text-green-700">
+                  <mat-icon class="!text-3xl">verified</mat-icon>
+                  <div class="text-left">
+                    <p class="text-xl font-bold">CONFIRMADO</p>
+                    <p class="text-sm">{{ partido.goles_local }} - {{ partido.goles_visitante }} · Partido cerrado</p>
+                  </div>
                 </div>
               }
-            } @else {
-              <div class="inline-flex items-center gap-3 px-8 py-5 rounded-2xl bg-green-50 border-2 border-green-500 text-green-700">
-                <mat-icon class="!text-4xl !w-10 !h-10">verified</mat-icon>
-                <div class="text-left">
-                  <p class="text-2xl font-bold">CONFIRMADO POR EL ARBITRO</p>
-                  <p class="text-sm">{{ partido.goles_local }} - {{ partido.goles_visitante }} · Partido cerrado</p>
-                </div>
+            </div>
+
+            @if (!partido.confirmado_arbitro) {
+              <div class="max-w-md mx-auto space-y-4">
+
+                <!-- Mejor jugador del partido -->
+                @if (configTorneo.elegir_mejor_jugador) {
+                  <div class="bg-white rounded-xl border border-gray-200 p-4">
+                    <label class="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-2">
+                      <mat-icon class="!text-lg text-yellow-500">star</mat-icon>
+                      Mejor jugador del partido
+                    </label>
+                    <select [(ngModel)]="mejorJugadorId"
+                      class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm bg-white focus:ring-2 focus:ring-[var(--color-primario)] focus:border-transparent outline-none">
+                      <option [ngValue]="null">— Seleccionar —</option>
+                      @for (a of todosAlineados(); track a.persona_id || a.jugador?.id) {
+                        <option [ngValue]="a.persona_id || a.jugador?.id">
+                          {{ a.jugador?.apellido }}, {{ a.jugador?.nombre }} (#{{ a.numero_camiseta }})
+                          — {{ a.club_id === partido.club_local_id ? (partido.clubLocal?.nombre_corto) : (partido.clubVisitante?.nombre_corto) }}
+                        </option>
+                      }
+                    </select>
+                  </div>
+                }
+
+                <!-- Calificacion del arbitro -->
+                @if (configTorneo.calificar_arbitro) {
+                  <div class="bg-white rounded-xl border border-gray-200 p-4">
+                    <label class="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-2">
+                      <mat-icon class="!text-lg text-blue-500">gavel</mat-icon>
+                      Calificacion del arbitro
+                    </label>
+                    <div class="flex items-center gap-1 mb-2">
+                      @for (star of [1,2,3,4,5]; track star) {
+                        <button (click)="calificacionArbitro = star"
+                          class="w-10 h-10 rounded-lg flex items-center justify-center text-2xl transition-all"
+                          [class]="star <= calificacionArbitro ? 'bg-yellow-100 text-yellow-500 scale-110' : 'bg-gray-100 text-gray-300 hover:bg-gray-200'">
+                          ★
+                        </button>
+                      }
+                      @if (calificacionArbitro) {
+                        <span class="ml-2 text-sm font-bold text-yellow-600">{{ calificacionArbitro }}/5</span>
+                      }
+                    </div>
+                    <input type="text" [(ngModel)]="comentarioArbitro"
+                      placeholder="Comentario opcional..."
+                      class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[var(--color-primario)] focus:border-transparent outline-none">
+                  </div>
+                }
+
+                <!-- Boton cerrar -->
+                @if (auth.getUser()?.rol === 'arbitro' || auth.isAdmin()) {
+                  <button class="w-full flex items-center justify-center gap-3 px-8 py-4 rounded-xl bg-gradient-to-r from-blue-500 to-blue-700 text-white font-bold text-base shadow-xl hover:shadow-2xl active:scale-[0.97] transition-all"
+                    (click)="guardarYCerrar()">
+                    <mat-icon class="!text-2xl">verified</mat-icon>
+                    CERRAR PARTIDO
+                  </button>
+                }
+              </div>
+            }
+
+            <!-- Info MVP y calificacion si ya cerrado -->
+            @if (partido.confirmado_arbitro) {
+              <div class="max-w-md mx-auto space-y-2">
+                @if (partido.mejor_jugador_id && partido.mejorJugador) {
+                  <div class="flex items-center gap-2 text-sm text-gray-600">
+                    <mat-icon class="!text-base text-yellow-500">star</mat-icon>
+                    MVP: <strong>{{ partido.mejorJugador.apellido }}, {{ partido.mejorJugador.nombre }}</strong>
+                  </div>
+                }
+                @if (partido.calificacion_arbitro) {
+                  <div class="flex items-center gap-1 text-sm text-gray-600">
+                    <mat-icon class="!text-base text-blue-500">gavel</mat-icon>
+                    Arbitro:
+                    @for (s of [1,2,3,4,5]; track s) {
+                      <span [class]="s <= partido.calificacion_arbitro ? 'text-yellow-500' : 'text-gray-300'">★</span>
+                    }
+                  </div>
+                }
               </div>
             }
           </div>
@@ -488,7 +562,14 @@ export class PanelControlComponent implements OnInit, OnDestroy {
     reloj_parado: false,
     cantidad_tiempos: 2,
     minutos_por_tiempo: 25,
+    elegir_mejor_jugador: false,
+    calificar_arbitro: false,
   };
+
+  // MVP y calificación (fase finalizado)
+  mejorJugadorId: number | null = null;
+  calificacionArbitro = 0;
+  comentarioArbitro = '';
 
   modalConfirmacion: { tipo: 'local' | 'visitante' | 'cierre'; titulo: string; subtitulo: string } | null = null;
 
@@ -742,6 +823,29 @@ export class PanelControlComponent implements OnInit, OnDestroy {
       titulo: 'Cerrar partido',
       subtitulo: 'El arbitro asignado debe confirmar con DNI y firma',
     };
+  }
+
+  /** Devuelve todos los jugadores alineados de ambos equipos */
+  todosAlineados(): any[] {
+    return [...(this.alineacion.local || []), ...(this.alineacion.visitante || [])];
+  }
+
+  /** Guarda MVP + calificación y abre el modal de cierre DNI */
+  guardarYCerrar() {
+    // Guardar MVP y calificación antes de abrir el modal
+    const updates: any = {};
+    if (this.mejorJugadorId) updates.mejor_jugador_id = this.mejorJugadorId;
+    if (this.calificacionArbitro) updates.calificacion_arbitro = this.calificacionArbitro;
+    if (this.comentarioArbitro) updates.comentario_arbitro = this.comentarioArbitro;
+
+    if (Object.keys(updates).length) {
+      this.http.put<any>(`${environment.apiUrl}/partidos/${this.partidoId}`, updates).subscribe({
+        next: () => this.abrirCierre(),
+        error: () => this.abrirCierre(), // abrir igual si falla el update
+      });
+    } else {
+      this.abrirCierre();
+    }
   }
 
   onConfirmModal(result: DniFirmaResult) {

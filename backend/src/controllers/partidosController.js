@@ -9,8 +9,9 @@ import { emitMatchStart, emitMatchEventNew, emitMatchEnd, emitMatchConfirm, emit
 import { normalizarDni } from './personasController.js';
 
 // ─── Helper: include de "persona como arbitro/veedor" ───────────────────────
-const incArbitro = { model: Persona, as: 'arbitro', attributes: ['id', 'nombre', 'apellido', 'dni'] };
-const incVeedor  = { model: Persona, as: 'veedor',  attributes: ['id', 'nombre', 'apellido', 'dni'] };
+const incArbitro      = { model: Persona, as: 'arbitro', attributes: ['id', 'nombre', 'apellido', 'dni'] };
+const incVeedor       = { model: Persona, as: 'veedor',  attributes: ['id', 'nombre', 'apellido', 'dni'] };
+const incMejorJugador = { model: Persona, as: 'mejorJugador', attributes: ['id', 'nombre', 'apellido'] };
 
 // GET /partidos/:id
 export const obtener = async (req, res) => {
@@ -22,6 +23,7 @@ export const obtener = async (req, res) => {
         { model: Categoria, as: 'categoria', attributes: ['id', 'nombre', 'anio_nacimiento'] },
         incArbitro,
         incVeedor,
+        incMejorJugador,
         { model: FixtureJornada, as: 'jornada', attributes: ['id', 'numero_jornada', 'fase', 'fecha'] },
         {
           model: PartidoEvento, as: 'eventos',
@@ -97,7 +99,7 @@ export const actualizar = async (req, res) => {
     const partido = await Partido.findByPk(req.params.id);
     if (!partido) return res.status(404).json({ success: false, message: 'Partido no encontrado' });
 
-    const campos = ['arbitro_id', 'veedor_id', 'cancha', 'observaciones'];
+    const campos = ['arbitro_id', 'veedor_id', 'cancha', 'observaciones', 'mejor_jugador_id', 'calificacion_arbitro', 'comentario_arbitro'];
     const updates = { actualizado_en: new Date() };
     for (const c of campos) {
       if (req.body[c] !== undefined) updates[c] = req.body[c];
