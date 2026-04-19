@@ -24,23 +24,13 @@ export const uploadEscudo = multer({
 }).single('escudo');
 
 /**
- * Aplana un Club con su Institucion incluida para mantener
- * compatibilidad con el frontend existente (que espera
- * nombre, nombre_corto, escudo_url, etc a nivel club).
+ * Serializa un Club. Los virtuals del modelo ya aplanan institucion y
+ * concatenan el sufijo en nombre/nombre_corto ("12 de Octubre A"), asi
+ * que alcanza con toJSON() — sobreescribirlos haria perder el sufijo.
  */
 const aplanar = (club) => {
   if (!club) return null;
-  const plain = club.toJSON ? club.toJSON() : club;
-  const inst = plain.institucion;
-  return {
-    ...plain,
-    nombre: plain.nombre_override || inst?.nombre || null,
-    nombre_corto: inst?.nombre_corto || null,
-    escudo_url: inst?.escudo_url || null,
-    color_primario: inst?.color_primario || null,
-    color_secundario: inst?.color_secundario || null,
-    contacto: inst?.contacto || {},
-  };
+  return club.toJSON ? club.toJSON() : club;
 };
 
 const incInst = { model: Institucion, as: 'institucion' };

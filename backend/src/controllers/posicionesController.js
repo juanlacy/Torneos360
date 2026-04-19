@@ -12,9 +12,9 @@ export const porCategoria = async (req, res) => {
     const posiciones = await TablaPosiciones.findAll({
       where,
       include: [
-        { model: Club, as: 'club', attributes: ['id', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'], include: [{ model: Institucion, as: 'institucion' }] },
-        { model: Categoria, as: 'categoria', attributes: ['id', 'nombre', 'anio_nacimiento', 'es_preliminar'] },
-        { model: Zona, as: 'zona', attributes: ['id', 'nombre', 'color'] },
+        { model: Club, as: 'club', attributes: ['id', 'sufijo', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'], include: [{ model: Institucion, as: 'institucion' }] },
+        { model: Categoria, as: 'categoria', attributes: ['id', 'sufijo', 'nombre', 'anio_nacimiento', 'es_preliminar'] },
+        { model: Zona, as: 'zona', attributes: ['id', 'sufijo', 'nombre', 'color'] },
       ],
       order: [['puntos', 'DESC'], ['dg', 'DESC'], ['gf', 'DESC']],
     });
@@ -35,8 +35,8 @@ export const general = async (req, res) => {
     const posiciones = await TablaPosicionesClub.findAll({
       where,
       include: [
-        { model: Club, as: 'club', attributes: ['id', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'], include: [{ model: Institucion, as: 'institucion' }] },
-        { model: Zona, as: 'zona', attributes: ['id', 'nombre', 'color'] },
+        { model: Club, as: 'club', attributes: ['id', 'sufijo', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'], include: [{ model: Institucion, as: 'institucion' }] },
+        { model: Zona, as: 'zona', attributes: ['id', 'sufijo', 'nombre', 'color'] },
       ],
       order: [['puntos_totales', 'DESC']],
     });

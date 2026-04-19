@@ -42,8 +42,8 @@ const includeJugador = (extraWhere = {}) => ({
   where: { activo: true, ...extraWhere },
   include: [
     { model: Rol, as: 'rol', where: { codigo: 'jugador' }, attributes: ['id', 'codigo', 'nombre', 'color'] },
-    { model: Club, as: 'club', attributes: ['id', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'], include: [{ model: Institucion, as: 'institucion' }] },
-    { model: Categoria, as: 'categoria', attributes: ['id', 'nombre', 'anio_nacimiento'] },
+    { model: Club, as: 'club', attributes: ['id', 'sufijo', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'], include: [{ model: Institucion, as: 'institucion' }] },
+    { model: Categoria, as: 'categoria', attributes: ['id', 'sufijo', 'nombre', 'anio_nacimiento'] },
   ],
 });
 
@@ -95,7 +95,7 @@ export const listar = async (req, res) => {
       ];
     }
 
-    const includeClub = { model: Club, as: 'club', attributes: ['id', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'], include: [{ model: Institucion, as: 'institucion' }] };
+    const includeClub = { model: Club, as: 'club', attributes: ['id', 'sufijo', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'], include: [{ model: Institucion, as: 'institucion' }] };
     if (torneo_id) includeClub.where = { torneo_id };
 
     const personas = await Persona.findAll({
@@ -108,7 +108,7 @@ export const listar = async (req, res) => {
         include: [
           { model: Rol, as: 'rol', where: { codigo: 'jugador' }, attributes: ['id', 'codigo', 'nombre', 'color'] },
           { ...includeClub },
-          { model: Categoria, as: 'categoria', attributes: ['id', 'nombre', 'anio_nacimiento'] },
+          { model: Categoria, as: 'categoria', attributes: ['id', 'sufijo', 'nombre', 'anio_nacimiento'] },
         ],
       }],
       order: [['apellido', 'ASC'], ['nombre', 'ASC']],

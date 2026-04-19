@@ -88,9 +88,9 @@ export const listar = async (req, res) => {
           where: { activo: true },
           include: [
             { model: Rol, as: 'rol', attributes: ['id', 'codigo', 'nombre', 'icono', 'color', 'categoria_fn', 'ambito'] },
-            { model: Club, as: 'club', attributes: ['id', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'], include: [{ model: Institucion, as: 'institucion' }] },
-            { model: Torneo, as: 'torneo', attributes: ['id', 'nombre'] },
-            { model: Categoria, as: 'categoria', attributes: ['id', 'nombre', 'anio_nacimiento'] },
+            { model: Club, as: 'club', attributes: ['id', 'sufijo', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'], include: [{ model: Institucion, as: 'institucion' }] },
+            { model: Torneo, as: 'torneo', attributes: ['id', 'sufijo', 'nombre'] },
+            { model: Categoria, as: 'categoria', attributes: ['id', 'sufijo', 'nombre', 'anio_nacimiento'] },
           ],
           separate: false,
         },
@@ -122,9 +122,9 @@ export const buscarPorDni = async (req, res) => {
           required: false,
           include: [
             { model: Rol, as: 'rol', attributes: ['id', 'codigo', 'nombre', 'icono', 'color', 'categoria_fn'] },
-            { model: Club, as: 'club', attributes: ['id', 'nombre', 'nombre_corto'] },
-            { model: Torneo, as: 'torneo', attributes: ['id', 'nombre'] },
-            { model: Categoria, as: 'categoria', attributes: ['id', 'nombre'] },
+            { model: Club, as: 'club', attributes: ['id', 'sufijo', 'nombre', 'nombre_corto'] },
+            { model: Torneo, as: 'torneo', attributes: ['id', 'sufijo', 'nombre'] },
+            { model: Categoria, as: 'categoria', attributes: ['id', 'sufijo', 'nombre'] },
           ],
         },
       ],
@@ -151,9 +151,9 @@ export const obtener = async (req, res) => {
           as: 'roles_asignados',
           include: [
             { model: Rol, as: 'rol' },
-            { model: Club, as: 'club', attributes: ['id', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'], include: [{ model: Institucion, as: 'institucion' }] },
-            { model: Torneo, as: 'torneo', attributes: ['id', 'nombre'] },
-            { model: Categoria, as: 'categoria', attributes: ['id', 'nombre', 'anio_nacimiento'] },
+            { model: Club, as: 'club', attributes: ['id', 'sufijo', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'], include: [{ model: Institucion, as: 'institucion' }] },
+            { model: Torneo, as: 'torneo', attributes: ['id', 'sufijo', 'nombre'] },
+            { model: Categoria, as: 'categoria', attributes: ['id', 'sufijo', 'nombre', 'anio_nacimiento'] },
           ],
         },
       ],
@@ -256,9 +256,9 @@ export const asignarRol = async (req, res) => {
     const completa = await PersonaRol.findByPk(asignacion.id, {
       include: [
         { model: Rol, as: 'rol' },
-        { model: Club, as: 'club', attributes: ['id', 'nombre', 'nombre_corto', 'escudo_url'] },
-        { model: Torneo, as: 'torneo', attributes: ['id', 'nombre'] },
-        { model: Categoria, as: 'categoria', attributes: ['id', 'nombre'] },
+        { model: Club, as: 'club', attributes: ['id', 'sufijo', 'nombre', 'nombre_corto', 'escudo_url'] },
+        { model: Torneo, as: 'torneo', attributes: ['id', 'sufijo', 'nombre'] },
+        { model: Categoria, as: 'categoria', attributes: ['id', 'sufijo', 'nombre'] },
       ],
     });
 

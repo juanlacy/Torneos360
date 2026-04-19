@@ -16,7 +16,7 @@ const includeStaffRol = (extraWhere = {}) => ({
   where: { activo: true, ...extraWhere },
   include: [
     { model: Rol, as: 'rol', where: { categoria_fn: 'staff_club' }, attributes: ['id', 'codigo', 'nombre', 'icono', 'color', 'puede_firmar_alineacion'] },
-    { model: Club, as: 'club', attributes: ['id', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'], include: [{ model: Institucion, as: 'institucion' }] },
+    { model: Club, as: 'club', attributes: ['id', 'sufijo', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'], include: [{ model: Institucion, as: 'institucion' }] },
   ],
 });
 
@@ -70,7 +70,7 @@ export const listar = async (req, res) => {
         where: rolWhere,
         include: [
           { model: Rol, as: 'rol', where: { categoria_fn: 'staff_club' }, attributes: ['id', 'codigo', 'nombre', 'icono', 'color', 'puede_firmar_alineacion'] },
-          { model: Club, as: 'club', attributes: ['id', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'], include: [{ model: Institucion, as: 'institucion' }] },
+          { model: Club, as: 'club', attributes: ['id', 'sufijo', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'], include: [{ model: Institucion, as: 'institucion' }] },
         ],
       }],
       order: [['apellido', 'ASC'], ['nombre', 'ASC']],

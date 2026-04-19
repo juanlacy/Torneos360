@@ -9,18 +9,18 @@ import { emitMatchStart, emitMatchEventNew, emitMatchEnd, emitMatchConfirm, emit
 import { normalizarDni } from './personasController.js';
 
 // ─── Helper: include de "persona como arbitro/veedor" ───────────────────────
-const incArbitro      = { model: Persona, as: 'arbitro', attributes: ['id', 'nombre', 'apellido', 'dni'] };
-const incVeedor       = { model: Persona, as: 'veedor',  attributes: ['id', 'nombre', 'apellido', 'dni'] };
-const incMejorJugador = { model: Persona, as: 'mejorJugador', attributes: ['id', 'nombre', 'apellido'] };
+const incArbitro      = { model: Persona, as: 'arbitro', attributes: ['id', 'sufijo', 'nombre', 'apellido', 'dni'] };
+const incVeedor       = { model: Persona, as: 'veedor',  attributes: ['id', 'sufijo', 'nombre', 'apellido', 'dni'] };
+const incMejorJugador = { model: Persona, as: 'mejorJugador', attributes: ['id', 'sufijo', 'nombre', 'apellido'] };
 
 // GET /partidos/:id
 export const obtener = async (req, res) => {
   try {
     const partido = await Partido.findByPk(req.params.id, {
       include: [
-        { model: Club, as: 'clubLocal', attributes: ['id', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'], include: [{ model: Institucion, as: 'institucion' }] },
-        { model: Club, as: 'clubVisitante', attributes: ['id', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'], include: [{ model: Institucion, as: 'institucion' }] },
-        { model: Categoria, as: 'categoria', attributes: ['id', 'nombre', 'anio_nacimiento'] },
+        { model: Club, as: 'clubLocal', attributes: ['id', 'sufijo', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'], include: [{ model: Institucion, as: 'institucion' }] },
+        { model: Club, as: 'clubVisitante', attributes: ['id', 'sufijo', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'], include: [{ model: Institucion, as: 'institucion' }] },
+        { model: Categoria, as: 'categoria', attributes: ['id', 'sufijo', 'nombre', 'anio_nacimiento'] },
         incArbitro,
         incVeedor,
         incMejorJugador,
@@ -28,8 +28,8 @@ export const obtener = async (req, res) => {
         {
           model: PartidoEvento, as: 'eventos',
           include: [
-            { model: Persona, as: 'jugador', attributes: ['id', 'nombre', 'apellido'] },
-            { model: Club, as: 'club', attributes: ['id', 'nombre_corto'] },
+            { model: Persona, as: 'jugador', attributes: ['id', 'sufijo', 'nombre', 'apellido'] },
+            { model: Club, as: 'club', attributes: ['id', 'sufijo', 'nombre_corto'] },
           ],
           order: [['minuto', 'ASC'], ['creado_en', 'ASC']],
         },
@@ -202,8 +202,8 @@ export const registrarEvento = async (req, res) => {
 
     const eventoCompleto = await PartidoEvento.findByPk(evento.id, {
       include: [
-        { model: Persona, as: 'jugador', attributes: ['id', 'nombre', 'apellido'] },
-        { model: Club, as: 'club', attributes: ['id', 'nombre_corto'] },
+        { model: Persona, as: 'jugador', attributes: ['id', 'sufijo', 'nombre', 'apellido'] },
+        { model: Club, as: 'club', attributes: ['id', 'sufijo', 'nombre_corto'] },
       ],
     });
 
@@ -300,7 +300,7 @@ export const getAlineacion = async (req, res) => {
     const alineaciones = await PartidoAlineacion.findAll({
       where: { partido_id: partido.id },
       include: [
-        { model: Persona, as: 'jugador', attributes: ['id', 'nombre', 'apellido', 'dni', 'foto_url'] },
+        { model: Persona, as: 'jugador', attributes: ['id', 'sufijo', 'nombre', 'apellido', 'dni', 'foto_url'] },
       ],
       order: [['numero_camiseta', 'ASC']],
     });

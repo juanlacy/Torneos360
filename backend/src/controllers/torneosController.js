@@ -30,8 +30,8 @@ export const listar = async (req, res) => {
     const torneos = await Torneo.findAll({
       order: [['anio', 'DESC']],
       include: [
-        { model: Zona, as: 'zonas', attributes: ['id', 'nombre', 'color'] },
-        { model: Categoria, as: 'categorias', attributes: ['id', 'nombre', 'anio_nacimiento', 'es_preliminar', 'orden'] },
+        { model: Zona, as: 'zonas', attributes: ['id', 'sufijo', 'nombre', 'color'] },
+        { model: Categoria, as: 'categorias', attributes: ['id', 'sufijo', 'nombre', 'anio_nacimiento', 'es_preliminar', 'orden'] },
       ],
     });
     res.json({ success: true, data: torneos });
@@ -45,9 +45,9 @@ export const obtener = async (req, res) => {
   try {
     const torneo = await Torneo.findByPk(req.params.id, {
       include: [
-        { model: Zona, as: 'zonas', include: [{ model: Club, as: 'clubes', attributes: ['id', 'nombre', 'nombre_corto', 'escudo_url'] }] },
+        { model: Zona, as: 'zonas', include: [{ model: Club, as: 'clubes', attributes: ['id', 'sufijo', 'nombre', 'nombre_corto', 'escudo_url'] }] },
         { model: Categoria, as: 'categorias', order: [['orden', 'ASC']] },
-        { model: Club, as: 'clubes', attributes: ['id', 'nombre', 'nombre_corto', 'escudo_url', 'zona_id', 'activo'] },
+        { model: Club, as: 'clubes', attributes: ['id', 'sufijo', 'nombre', 'nombre_corto', 'escudo_url', 'zona_id', 'activo'] },
       ],
     });
     if (!torneo) return res.status(404).json({ success: false, message: 'Torneo no encontrado' });
@@ -249,9 +249,9 @@ export const getStats = async (req, res) => {
     const proximosPartidos = jornadaIds.length ? await Partido.findAll({
       where: { jornada_id: jornadaIds, estado: 'programado' },
       include: [
-        { model: Club, as: 'clubLocal', attributes: ['id', 'nombre', 'nombre_corto', 'escudo_url'] },
-        { model: Club, as: 'clubVisitante', attributes: ['id', 'nombre', 'nombre_corto', 'escudo_url'] },
-        { model: Categoria, as: 'categoria', attributes: ['id', 'nombre'] },
+        { model: Club, as: 'clubLocal', attributes: ['id', 'sufijo', 'nombre', 'nombre_corto', 'escudo_url'] },
+        { model: Club, as: 'clubVisitante', attributes: ['id', 'sufijo', 'nombre', 'nombre_corto', 'escudo_url'] },
+        { model: Categoria, as: 'categoria', attributes: ['id', 'sufijo', 'nombre'] },
         { model: FixtureJornada, as: 'jornada', attributes: ['numero_jornada', 'fase', 'fecha'] },
       ],
       order: [[{ model: FixtureJornada, as: 'jornada' }, 'fecha', 'ASC'], ['hora_inicio', 'ASC']],
@@ -275,7 +275,7 @@ export const getStats = async (req, res) => {
 export const getBranding = async (req, res) => {
   try {
     const torneo = await Torneo.findByPk(req.params.id, {
-      attributes: ['id', 'nombre', 'logo_url', 'favicon_url', 'color_primario', 'color_secundario', 'color_acento'],
+      attributes: ['id', 'sufijo', 'nombre', 'logo_url', 'favicon_url', 'color_primario', 'color_secundario', 'color_acento'],
     });
     if (!torneo) return res.status(404).json({ success: false, message: 'Torneo no encontrado' });
     res.json({ success: true, data: torneo });
