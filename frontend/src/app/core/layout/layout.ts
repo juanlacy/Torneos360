@@ -75,13 +75,8 @@ interface NavGroup {
           }
         </nav>
 
-        <!-- Logout (usuario se ve en el header superior derecho) -->
-        <div class="border-t border-white/10 p-3">
-          <button (click)="auth.logout()" class="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-white/10 transition-colors">
-            <mat-icon class="!text-lg">logout</mat-icon>
-            <span>Cerrar sesion</span>
-          </button>
-        </div>
+        <!-- Espacio vacio (usuario y logout estan en el header superior derecho) -->
+        <div class="border-t border-white/10 p-2"></div>
       </aside>
 
       <!-- ═══ CONTENIDO PRINCIPAL ═══ -->
@@ -128,20 +123,25 @@ interface NavGroup {
           <span class="flex-1"></span>
 
           @if (auth.getUser(); as user) {
-            <a routerLink="/perfil" class="flex items-center gap-2 hover:bg-gray-100 rounded-lg px-2 py-1.5 transition-colors cursor-pointer" title="Mi perfil">
-              <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
-                [style.background-color]="'var(--color-primario)'">
-                {{ user.nombre.charAt(0) }}{{ user.apellido.charAt(0) }}
-              </div>
-              <div class="hidden sm:block text-right min-w-0">
-                <p class="text-xs font-medium text-gray-700 truncate leading-tight">{{ user.nombre }} {{ user.apellido }}</p>
-                <p class="text-[10px] text-gray-400 leading-tight">
-                  @for (rol of auth.rolesActivos; track rol; let last = $last) {
-                    {{ rol }}{{ last ? '' : ' · ' }}
-                  }
-                </p>
-              </div>
-            </a>
+            <div class="flex items-center gap-1">
+              <a routerLink="/perfil" class="flex items-center gap-2 hover:bg-gray-100 rounded-lg px-2 py-1.5 transition-colors cursor-pointer" title="Mi perfil">
+                <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
+                  [style.background-color]="'var(--color-primario)'">
+                  {{ user.nombre.charAt(0) }}{{ user.apellido.charAt(0) }}
+                </div>
+                <div class="hidden sm:block text-right min-w-0">
+                  <p class="text-xs font-medium text-gray-700 truncate leading-tight">{{ user.nombre }} {{ user.apellido }}</p>
+                  <p class="text-[10px] text-gray-400 leading-tight">
+                    @for (rol of auth.rolesActivos; track rol; let last = $last) {
+                      {{ rol }}{{ last ? '' : ' · ' }}
+                    }
+                  </p>
+                </div>
+              </a>
+              <button (click)="auth.logout()" class="action-btn text-gray-400 hover:text-red-500" title="Cerrar sesion">
+                <mat-icon>logout</mat-icon>
+              </button>
+            </div>
           }
         </header>
 
@@ -199,18 +199,29 @@ export class LayoutComponent implements OnInit {
     },
   ];
 
+  permisosLoaded = false;
+
   constructor(public auth: AuthService, public branding: BrandingService, private cdr: ChangeDetectorRef) {}
 
   ngOnInit() {
-    // Re-renderizar cuando los permisos terminen de cargar (fix para refresh)
-    this.auth.permisos$.subscribe(() => {
-      this.cdr.detectChanges();
+    // Re-renderizar cuando los permisos terminen de cargar (fix navbar vacio al refresh)
+    this.auth.permisos$.subscribe((p) => {
+      if (p) {
+        this.permisosLoaded = true;
+        // Forzar un tick completo para actualizar todos los @if del template
+        setTimeout(() => this.cdr.detectChanges(), 0);
+      }
     });
   }
 
   canShow(item: NavItem): boolean {
     if (item.adminOnly) return this.auth.isAdmin();
-    if (item.permiso) return this.auth.puede(item.permiso.modulo, item.permiso.accion);
+    if (item.permiso) {
+      // Si los permisos no cargaron todavia, mostrar los items por defecto
+      // (para que no parpadeen vacios al refresh)
+      if (!this.permisosLoaded) return true;
+      return this.auth.puede(item.permiso.modulo, item.permiso.accion);
+    }
     return true;
   }
 
