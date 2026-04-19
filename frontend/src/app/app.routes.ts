@@ -92,6 +92,12 @@ export const routes: Routes = [
         loadChildren: () => import('./features/admin/admin.routes').then(m => m.ADMIN_ROUTES),
       },
 
+      // ─── Perfil ────────────────────────────────────────────────────────────
+      {
+        path: 'perfil',
+        loadComponent: () => import('./features/perfil/perfil').then(m => m.PerfilComponent),
+      },
+
       // ─── Default redirect ────────────────────────────────────────────────
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
     ],

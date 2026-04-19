@@ -139,7 +139,7 @@ interface NavGroup {
           <span class="flex-1"></span>
 
           @if (auth.getUser(); as user) {
-            <div class="flex items-center gap-2 text-sm text-gray-500">
+            <a routerLink="/perfil" class="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition-colors cursor-pointer">
               <span class="hidden sm:inline">{{ user.nombre }} {{ user.apellido }}</span>
               <div class="flex gap-1">
                 @for (rol of auth.rolesActivos; track rol) {
@@ -148,7 +148,7 @@ interface NavGroup {
                   </span>
                 }
               </div>
-            </div>
+            </a>
           }
         </header>
 
