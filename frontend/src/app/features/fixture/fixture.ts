@@ -172,29 +172,37 @@ import { BrandingService } from '../../core/services/branding.service';
                     </button>
                   }
                 </div>
-                <!-- Resultados por categoria (si hay finalizados) -->
+                <!-- Resultados por categoria (colapsable) -->
                 @if (cruce.finalizados > 0) {
-                  <div class="ml-4 mr-4 mb-3 pl-4 border-l-2 border-gray-200 space-y-0.5">
-                    @for (r of cruce.resultados; track r.categoria) {
-                      <div class="flex items-center gap-2 text-xs text-gray-500">
-                        <span class="w-20 text-right truncate" [class.text-gray-400]="r.es_preliminar" [class.italic]="r.es_preliminar">
-                          {{ r.categoria }}{{ r.es_preliminar ? ' *' : '' }}
-                        </span>
-                        @if (r.estado === 'finalizado') {
-                          <span class="font-bold min-w-[40px] text-center"
-                            [class]="r.goles_local > r.goles_visitante ? 'text-green-700' : r.goles_local < r.goles_visitante ? 'text-red-600' : 'text-gray-500'">
-                            {{ r.goles_local }}
+                  @if (cruce._showDetail) {
+                    <div class="ml-4 mr-4 mb-3 pl-4 border-l-2 border-gray-200 space-y-0.5 animate-fade-in">
+                      @for (r of cruce.resultados; track r.categoria) {
+                        <div class="flex items-center gap-2 text-xs text-gray-500">
+                          <span class="w-20 text-right truncate" [class.text-gray-400]="r.es_preliminar" [class.italic]="r.es_preliminar">
+                            {{ r.categoria }}{{ r.es_preliminar ? ' *' : '' }}
                           </span>
-                          <span class="text-gray-300">-</span>
-                          <span class="font-bold min-w-[40px] text-center"
-                            [class]="r.goles_visitante > r.goles_local ? 'text-green-700' : r.goles_visitante < r.goles_local ? 'text-red-600' : 'text-gray-500'">
-                            {{ r.goles_visitante }}
-                          </span>
-                        } @else {
-                          <span class="text-gray-400 italic">prog.</span>
-                        }
-                      </div>
-                    }
+                          @if (r.estado === 'finalizado') {
+                            <span class="font-bold min-w-[40px] text-center"
+                              [class]="r.goles_local > r.goles_visitante ? 'text-green-700' : r.goles_local < r.goles_visitante ? 'text-red-600' : 'text-gray-500'">
+                              {{ r.goles_local }}
+                            </span>
+                            <span class="text-gray-300">-</span>
+                            <span class="font-bold min-w-[40px] text-center"
+                              [class]="r.goles_visitante > r.goles_local ? 'text-green-700' : r.goles_visitante < r.goles_local ? 'text-red-600' : 'text-gray-500'">
+                              {{ r.goles_visitante }}
+                            </span>
+                          } @else {
+                            <span class="text-gray-400 italic">prog.</span>
+                          }
+                        </div>
+                      }
+                    </div>
+                  }
+                  <div class="ml-4 mr-4 mb-2">
+                    <button class="text-[10px] text-[var(--color-primario)] hover:underline cursor-pointer"
+                      (click)="cruce._showDetail = !cruce._showDetail">
+                      {{ cruce._showDetail ? 'Ocultar detalle' : 'Ver detalle de resultados' }}
+                    </button>
                   </div>
                 }
               }
@@ -317,6 +325,8 @@ import { BrandingService } from '../../core/services/branding.service';
 export class FixtureComponent implements OnInit {
   zonas: any[] = [];
   clubes: any[] = [];
+  ptsVictoria = 2;
+  ptsEmpate = 1;
   arbitros: any[] = [];
   jornadas: any[] = [];
   jornadasFiltradas: any[] = [];
@@ -346,6 +356,10 @@ export class FixtureComponent implements OnInit {
       next: res => {
         this.zonas = res.data.zonas || [];
         this.clubes = res.data.clubes || [];
+        // Leer config de puntos del torneo
+        const cfg = res.data.config || {};
+        this.ptsVictoria = cfg.puntos_victoria ?? 2;
+        this.ptsEmpate = cfg.puntos_empate ?? 1;
         this.cargarJornadas();
         this.cdr.detectChanges();
       },
@@ -413,14 +427,14 @@ export class FixtureComponent implements OnInit {
             goles_visitante: p.goles_visitante ?? 0,
           });
         }
-        // Calcular puntos del cruce (sin preliminar)
+        // Calcular puntos del cruce (sin preliminar, con config del torneo)
         for (const cruce of Object.values(cruces) as any[]) {
           let ptsLocal = 0, ptsVisit = 0;
           for (const r of (cruce.resultados || [])) {
             if (r.estado !== 'finalizado' || r.es_preliminar) continue;
-            if (r.goles_local > r.goles_visitante) ptsLocal += 3;
-            else if (r.goles_local < r.goles_visitante) ptsVisit += 3;
-            else { ptsLocal += 1; ptsVisit += 1; }
+            if (r.goles_local > r.goles_visitante) ptsLocal += this.ptsVictoria;
+            else if (r.goles_local < r.goles_visitante) ptsVisit += this.ptsVictoria;
+            else { ptsLocal += this.ptsEmpate; ptsVisit += this.ptsEmpate; }
           }
           cruce.puntosLocal = ptsLocal;
           cruce.puntosVisitante = ptsVisit;
