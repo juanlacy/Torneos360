@@ -228,7 +228,13 @@ export class LoginComponent implements OnInit {
       });
       await msalInstance.initialize();
 
-      const result = await msalInstance.loginPopup({ scopes: ['User.Read'] });
+      // Limpiar interacciones previas que quedaron colgadas
+      const activeAccount = msalInstance.getActiveAccount();
+      if (!activeAccount && msalInstance.getAllAccounts().length > 0) {
+        msalInstance.setActiveAccount(msalInstance.getAllAccounts()[0]);
+      }
+
+      const result = await msalInstance.loginPopup({ scopes: ['User.Read'], prompt: 'select_account' });
 
       if (result.accessToken) {
         this.loading = true;
