@@ -708,6 +708,7 @@ export class PanelControlComponent implements OnInit, OnDestroy {
           });
         }
 
+        this.calcEventosJugador();
         this.startClock();
         this.cdr.detectChanges();
       },
@@ -964,8 +965,9 @@ export class PanelControlComponent implements OnInit, OnDestroy {
     const todas = [...(this.alineacion.local || []), ...(this.alineacion.visitante || [])];
     todas.forEach(a => { a._goles = 0; a._amarillas = 0; a._azules = 0; a._roja = false; });
     for (const ev of this.partido?.eventos || []) {
-      if (!ev.jugador_id) continue;
-      const a = todas.find(x => x.jugador_id === ev.jugador_id);
+      const evPersonaId = ev.persona_id ?? ev.jugador?.id;
+      if (!evPersonaId) continue;
+      const a = todas.find(x => (x.persona_id ?? x.jugador?.id) === evPersonaId);
       if (!a) continue;
       if (ev.tipo === 'gol') a._goles++;
       if (ev.tipo === 'amarilla') a._amarillas++;

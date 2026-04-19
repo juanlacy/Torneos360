@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import { OAuth2Client } from 'google-auth-library';
 import { ConfidentialClientApplication } from '@azure/msal-node';
-import { Usuario, PermisoDefaultRol, PermisoUsuario, Persona, PersonaRol, Rol, Club, Institucion } from '../models/index.js';
+import { Usuario, PermisoDefaultRol, PermisoUsuario, Persona, PersonaRol, Rol, Club, Institucion, Torneo } from '../models/index.js';
 import { logAuth } from '../config/logger.js';
 import { v4 as uuidv4 } from 'uuid';
 import { enviarVerificacionEmail, enviarResetPassword } from '../services/emailService.js';
@@ -523,7 +523,7 @@ export const me = async (req, res) => {
       include: [
         {
           model: Persona, as: 'persona',
-          attributes: ['id', 'nombre', 'apellido', 'dni', 'foto_url'],
+          attributes: ['id', 'nombre', 'apellido', 'dni', 'telefono', 'foto_url'],
           include: [{
             model: PersonaRol, as: 'roles_asignados',
             where: { activo: true },
@@ -531,6 +531,7 @@ export const me = async (req, res) => {
             include: [
               { model: Rol, as: 'rol', attributes: ['codigo', 'nombre', 'icono', 'color'] },
               { model: Club, as: 'club', attributes: ['id'], include: [{ model: Institucion, as: 'institucion', attributes: ['nombre', 'nombre_corto'] }] },
+              { model: Torneo, as: 'torneo', attributes: ['id', 'nombre'] },
             ],
           }],
         },
@@ -621,15 +622,28 @@ export const updatePerfil = async (req, res) => {
     const usuario = await Usuario.findByPk(req.user.id);
     if (!usuario) return res.status(404).json({ success: false, message: 'Usuario no encontrado' });
 
-    const { nombre, apellido } = req.body;
+    const { nombre, apellido, email } = req.body;
     const updates = {};
     if (nombre) updates.nombre = nombre.trim();
     if (apellido) updates.apellido = apellido.trim();
-    updates.actualizado_en = new Date();
 
+    if (email && email.trim().toLowerCase() !== usuario.email) {
+      const esLocal = !usuario.oauth_provider || usuario.oauth_provider === 'local';
+      if (!esLocal) {
+        return res.status(400).json({ success: false, message: 'No se puede cambiar el email de cuentas vinculadas a Google o Microsoft' });
+      }
+      const nuevoEmail = email.trim().toLowerCase();
+      const yaExiste = await Usuario.findOne({ where: { email: nuevoEmail } });
+      if (yaExiste && yaExiste.id !== usuario.id) {
+        return res.status(409).json({ success: false, message: 'Ese email ya esta en uso por otro usuario' });
+      }
+      updates.email = nuevoEmail;
+    }
+
+    updates.actualizado_en = new Date();
     await usuario.update(updates);
 
-    res.json({ success: true, data: { nombre: usuario.nombre, apellido: usuario.apellido, avatar_url: usuario.avatar_url } });
+    res.json({ success: true, data: { nombre: usuario.nombre, apellido: usuario.apellido, email: usuario.email, avatar_url: usuario.avatar_url } });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

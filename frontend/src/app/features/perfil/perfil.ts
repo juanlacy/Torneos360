@@ -94,8 +94,14 @@ interface PerfilData {
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none">
             </div>
             <div>
-              <label class="block text-xs font-medium text-gray-500 mb-1">Email</label>
-              <input type="email" [(ngModel)]="form.email"
+              <label class="block text-xs font-medium text-gray-500 mb-1">
+                Email
+                @if (esOAuth()) {
+                  <span class="ml-1 text-[10px] font-normal text-gray-400">(gestionado por {{ perfil.oauth_provider }})</span>
+                }
+              </label>
+              <input type="email" [(ngModel)]="form.email" [readonly]="esOAuth()"
+                [class.bg-gray-50]="esOAuth()" [class.text-gray-500]="esOAuth()" [class.cursor-not-allowed]="esOAuth()"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none">
             </div>
             <div>
@@ -361,6 +367,11 @@ export class PerfilComponent {
       publico: 'person',
     };
     return map[rol] || 'person';
+  }
+
+  esOAuth(): boolean {
+    const p = this.perfil?.oauth_provider;
+    return !!p && p !== 'local';
   }
 
   formatFecha(iso: string): string {

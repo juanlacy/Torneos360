@@ -133,7 +133,9 @@ export const obtener = async (req, res) => {
     if (!persona || !persona.roles_asignados?.length) {
       return res.status(404).json({ success: false, message: 'Jugador no encontrado' });
     }
-    res.json({ success: true, data: aplanar(persona) });
+
+    const puedeVerSensibles = await tienePermiso(req, 'jugadores', 'ver_sensibles');
+    res.json({ success: true, data: ocultarSensibles(aplanar(persona), !puedeVerSensibles) });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

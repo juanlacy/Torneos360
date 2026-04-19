@@ -162,14 +162,22 @@ node src/seeders/export-torneo-backup.js
 - **Azure redirect URI (SPA)**: `https://torneos360.huelemu.com.ar/auth/login`
 
 ## Pendientes para proxima sesion
-- Pantalla Mi Perfil: verificar que roles se muestren bien, ultimo_acceso
 - Consolidar 12 de Octubre A/B (correr script en VPS)
 - Pulir UI: responsive mobile, loading states, empty states
 - Probar flujo MVP + calificacion arbitro con config habilitada
 - Estadisticas avanzadas: exportar PDF, tabla de tarjetas
 - Vista publica de datos: /torneo/:id con posiciones completas
-- Pantalla /admin/permisos: verificar que ver_sensibles funcione end-to-end
-- Panel de control: verificar dorsales, tarjeta azul, contador de faltas
+- Probar en server los fixes de la sesion 2 (ver abajo)
+
+## Verificaciones completadas (2026-04-19 sesion 2)
+- **Mi Perfil**: backend `/auth/me` ahora incluye `telefono` + `torneo` en roles asignados.
+  Email editable solo para cuentas locales (OAuth retorna 400). Valida unicidad.
+- **`/admin/permisos` con ver_sensibles**: `GET /jugadores/:id` ahora aplica
+  `ocultarSensibles` (antes leakeaba DNI/tel/email en el detalle singular).
+- **Panel de Control**: acumuladores por jugador (goles/amarillas/azules/roja)
+  matcheaban por `jugador_id` inexistente → fixed a `persona_id`. `calcEventosJugador`
+  tambien se llama al cargar el partido (antes solo al cargar alineacion, que podia
+  correr antes que partido y dejar los contadores vacios).
 
 ## Git
 - Rama principal: `main`
