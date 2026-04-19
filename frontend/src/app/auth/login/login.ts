@@ -222,69 +222,41 @@ export class LoginComponent implements OnInit {
   }
 
   // ─── Microsoft MSAL (igual que Predict) ─────────────────────────────────
+  /** Microsoft login — replica exacta del patron de Predict */
   async onMicrosoftLogin(): Promise<void> {
-    if (!environment.microsoftClientId) {
-      this.toastr.warning('Microsoft Sign-In no configurado');
-      return;
-    }
     try {
-      const msalInstance = await this.getMsalInstance();
+      const { PublicClientApplication } = await import('@azure/msal-browser');
+      const msalInstance = new PublicClientApplication({
+        auth: {
+          clientId: environment.microsoftClientId,
+          authority: `https://login.microsoftonline.com/${environment.microsoftTenantId}`,
+          redirectUri: window.location.origin,
+        },
+      });
+      await msalInstance.initialize();
 
-      // Intentar popup primero, si falla usar redirect
-      try {
-        const result = await msalInstance.loginPopup({
-          scopes: ['User.Read'],
-          prompt: 'select_account',
+      const result = await msalInstance.loginPopup({
+        scopes: ['User.Read'],
+      });
+
+      if (result.accessToken) {
+        this.loading = true;
+        this.cdr.detectChanges();
+        this.auth.loginMicrosoft(result.accessToken).subscribe({
+          next: () => this.router.navigate(['/dashboard']),
+          error: (err) => {
+            this.loading = false;
+            this.toastr.error(err.error?.message || 'Error con Microsoft');
+            this.cdr.detectChanges();
+          },
         });
-
-        if (result?.accessToken) {
-          this.processMicrosoftToken(result.accessToken);
-        }
-      } catch (popupErr: any) {
-        // Si el popup fue bloqueado o fallo, usar redirect
-        if (popupErr?.errorCode === 'popup_window_error' ||
-            popupErr?.errorCode === 'interaction_in_progress' ||
-            popupErr?.errorCode === 'empty_window_error') {
-          await msalInstance.loginRedirect({
-            scopes: ['User.Read'],
-            prompt: 'select_account',
-          });
-        } else if (popupErr?.errorCode !== 'user_cancelled') {
-          this.toastr.error(popupErr?.message || 'Error con Microsoft');
-        }
       }
     } catch (err: any) {
-      this.toastr.error('Error iniciando Microsoft Sign-In');
+      if (err?.errorCode !== 'user_cancelled') {
+        this.toastr.error('Error al iniciar sesion con Microsoft');
+        console.error('MSAL error:', err);
+      }
     }
-  }
-
-  private async getMsalInstance() {
-    const { PublicClientApplication } = await import('@azure/msal-browser');
-    const instance = new PublicClientApplication({
-      auth: {
-        clientId: environment.microsoftClientId,
-        authority: `https://login.microsoftonline.com/${environment.microsoftTenantId}`,
-        redirectUri: window.location.origin,
-      },
-    });
-    await instance.initialize();
-    return instance;
-  }
-
-  private processMicrosoftToken(accessToken: string) {
-    this.loading = true;
-    this.cdr.detectChanges();
-    this.auth.loginMicrosoft(accessToken).subscribe({
-      next: () => {
-        window.history.replaceState({}, '', window.location.pathname);
-        this.router.navigate(['/dashboard']);
-      },
-      error: (err) => {
-        this.loading = false;
-        this.toastr.error(err.error?.message || 'Error con Microsoft');
-        this.cdr.detectChanges();
-      },
-    });
   }
 
   // ─── Email/Password ─────────────────────────────────────────────────────
