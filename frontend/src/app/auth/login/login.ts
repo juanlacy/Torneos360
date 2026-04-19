@@ -159,7 +159,16 @@ export class LoginComponent implements OnInit {
     const pendingToken = sessionStorage.getItem('msal_pending_token');
     if (pendingToken) {
       sessionStorage.removeItem('msal_pending_token');
-      this.processMicrosoftToken(pendingToken);
+      this.loading = true;
+      this.cdr.detectChanges();
+      this.auth.loginMicrosoft(pendingToken).subscribe({
+        next: () => this.router.navigate(['/dashboard']),
+        error: (err) => {
+          this.loading = false;
+          this.toastr.error(err.error?.message || 'Error con Microsoft');
+          this.cdr.detectChanges();
+        },
+      });
     }
   }
 
