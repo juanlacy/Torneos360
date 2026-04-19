@@ -15,7 +15,7 @@ import {
 export const listarTorneos = async (req, res) => {
   try {
     const torneos = await Torneo.findAll({
-      attributes: ['id', 'sufijo', 'nombre', 'anio', 'estado', 'logo_url', 'favicon_url', 'color_primario', 'color_secundario', 'color_acento'],
+      attributes: ['id', 'nombre', 'anio', 'estado', 'logo_url', 'favicon_url', 'color_primario', 'color_secundario', 'color_acento'],
       order: [['anio', 'DESC'], ['nombre', 'ASC']],
     });
     res.json({ success: true, data: torneos });
@@ -29,8 +29,8 @@ export const obtenerTorneo = async (req, res) => {
   try {
     const torneo = await Torneo.findByPk(req.params.id, {
       include: [
-        { model: Zona, as: 'zonas', attributes: ['id', 'sufijo', 'nombre', 'color'] },
-        { model: Categoria, as: 'categorias', attributes: ['id', 'sufijo', 'nombre', 'anio_nacimiento', 'es_preliminar', 'orden'] },
+        { model: Zona, as: 'zonas', attributes: ['id', 'nombre', 'color'] },
+        { model: Categoria, as: 'categorias', attributes: ['id', 'nombre', 'anio_nacimiento', 'es_preliminar', 'orden'] },
       ],
     });
     if (!torneo) return res.status(404).json({ success: false, message: 'Torneo no encontrado' });
@@ -44,7 +44,7 @@ export const obtenerTorneo = async (req, res) => {
 export const branding = async (req, res) => {
   try {
     const torneo = await Torneo.findByPk(req.params.id, {
-      attributes: ['id', 'sufijo', 'nombre', 'logo_url', 'favicon_url', 'color_primario', 'color_secundario', 'color_acento'],
+      attributes: ['id', 'nombre', 'logo_url', 'favicon_url', 'color_primario', 'color_secundario', 'color_acento'],
     });
     if (!torneo) return res.status(404).json({ success: false, message: 'Torneo no encontrado' });
     res.json({ success: true, data: torneo });
@@ -68,7 +68,7 @@ export const posiciones = async (req, res) => {
         where,
         include: [
           { model: Club, as: 'club', attributes: ['id', 'sufijo', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'], include: [{ model: Institucion, as: 'institucion' }] },
-          { model: Zona, as: 'zona', attributes: ['id', 'sufijo', 'nombre', 'color'] },
+          { model: Zona, as: 'zona', attributes: ['id', 'nombre', 'color'] },
         ],
         order: [['puntos', 'DESC'], ['dg', 'DESC'], ['gf', 'DESC']],
       });
@@ -83,7 +83,7 @@ export const posiciones = async (req, res) => {
       where,
       include: [
         { model: Club, as: 'club', attributes: ['id', 'sufijo', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'], include: [{ model: Institucion, as: 'institucion' }] },
-        { model: Zona, as: 'zona', attributes: ['id', 'sufijo', 'nombre', 'color'] },
+        { model: Zona, as: 'zona', attributes: ['id', 'nombre', 'color'] },
       ],
       order: [['puntos_totales', 'DESC'], ['dg', 'DESC'], ['gf', 'DESC']],
     });
@@ -129,7 +129,7 @@ export const goleadores = async (req, res) => {
 
     for (const g of golesRaw) {
       const persona = await Persona.findByPk(g.persona_id, {
-        attributes: ['id', 'sufijo', 'nombre', 'apellido', 'foto_url'],
+        attributes: ['id', 'nombre', 'apellido', 'foto_url'],
       });
       if (!persona) continue;
 
@@ -143,7 +143,7 @@ export const goleadores = async (req, res) => {
 
       const pr = rolJugador ? await PersonaRol.findOne({
         where: { persona_id: g.persona_id, rol_id: rolJugador.id, club_id: g.club_id, activo: true },
-        include: [{ model: Categoria, as: 'categoria', attributes: ['id', 'sufijo', 'nombre'] }],
+        include: [{ model: Categoria, as: 'categoria', attributes: ['id', 'nombre'] }],
       }) : null;
 
       resultado.push({
@@ -176,7 +176,7 @@ export const fixture = async (req, res) => {
         include: [
           { model: Club, as: 'clubLocal', attributes: ['id', 'sufijo', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'], include: [{ model: Institucion, as: 'institucion' }] },
           { model: Club, as: 'clubVisitante', attributes: ['id', 'sufijo', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'], include: [{ model: Institucion, as: 'institucion' }] },
-          { model: Categoria, as: 'categoria', attributes: ['id', 'sufijo', 'nombre'] },
+          { model: Categoria, as: 'categoria', attributes: ['id', 'nombre'] },
         ],
         order: [['categoria_id', 'ASC'], ['id', 'ASC']],
       });

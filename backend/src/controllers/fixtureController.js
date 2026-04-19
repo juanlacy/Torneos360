@@ -62,7 +62,7 @@ export const listarJornadas = async (req, res) => {
 
     const jornadas = await FixtureJornada.findAll({
       where,
-      include: [{ model: Zona, as: 'zona', attributes: ['id', 'sufijo', 'nombre', 'color'] }],
+      include: [{ model: Zona, as: 'zona', attributes: ['id', 'nombre', 'color'] }],
       order: [['fase', 'ASC'], ['numero_jornada', 'ASC']],
     });
     res.json({ success: true, data: jornadas });
@@ -99,8 +99,8 @@ export const partidosPorJornada = async (req, res) => {
       include: [
         { model: Club, as: 'clubLocal', attributes: ['id', 'sufijo', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'], include: [{ model: Institucion, as: 'institucion' }] },
         { model: Club, as: 'clubVisitante', attributes: ['id', 'sufijo', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'], include: [{ model: Institucion, as: 'institucion' }] },
-        { model: Categoria, as: 'categoria', attributes: ['id', 'sufijo', 'nombre', 'anio_nacimiento', 'es_preliminar'] },
-        { model: Persona, as: 'arbitro', attributes: ['id', 'sufijo', 'nombre', 'apellido'] },
+        { model: Categoria, as: 'categoria', attributes: ['id', 'nombre', 'anio_nacimiento', 'es_preliminar'] },
+        { model: Persona, as: 'arbitro', attributes: ['id', 'nombre', 'apellido'] },
       ],
       order: [['categoria_id', 'ASC']],
     });
@@ -233,7 +233,7 @@ export const agregarEnfrentamiento = async (req, res) => {
       include: [
         { model: Club, as: 'clubLocal', attributes: ['id', 'sufijo', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'], include: [{ model: Institucion, as: 'institucion' }] },
         { model: Club, as: 'clubVisitante', attributes: ['id', 'sufijo', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'], include: [{ model: Institucion, as: 'institucion' }] },
-        { model: Categoria, as: 'categoria', attributes: ['id', 'sufijo', 'nombre', 'anio_nacimiento'] },
+        { model: Categoria, as: 'categoria', attributes: ['id', 'nombre', 'anio_nacimiento'] },
       ],
       order: [['hora_inicio', 'ASC']],
     });

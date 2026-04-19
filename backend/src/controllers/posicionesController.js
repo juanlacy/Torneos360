@@ -13,8 +13,8 @@ export const porCategoria = async (req, res) => {
       where,
       include: [
         { model: Club, as: 'club', attributes: ['id', 'sufijo', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'], include: [{ model: Institucion, as: 'institucion' }] },
-        { model: Categoria, as: 'categoria', attributes: ['id', 'sufijo', 'nombre', 'anio_nacimiento', 'es_preliminar'] },
-        { model: Zona, as: 'zona', attributes: ['id', 'sufijo', 'nombre', 'color'] },
+        { model: Categoria, as: 'categoria', attributes: ['id', 'nombre', 'anio_nacimiento', 'es_preliminar'] },
+        { model: Zona, as: 'zona', attributes: ['id', 'nombre', 'color'] },
       ],
       order: [['puntos', 'DESC'], ['dg', 'DESC'], ['gf', 'DESC']],
     });
@@ -36,7 +36,7 @@ export const general = async (req, res) => {
       where,
       include: [
         { model: Club, as: 'club', attributes: ['id', 'sufijo', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'], include: [{ model: Institucion, as: 'institucion' }] },
-        { model: Zona, as: 'zona', attributes: ['id', 'sufijo', 'nombre', 'color'] },
+        { model: Zona, as: 'zona', attributes: ['id', 'nombre', 'color'] },
       ],
       order: [['puntos_totales', 'DESC']],
     });

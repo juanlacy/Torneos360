@@ -43,7 +43,7 @@ const includeJugador = (extraWhere = {}) => ({
   include: [
     { model: Rol, as: 'rol', where: { codigo: 'jugador' }, attributes: ['id', 'codigo', 'nombre', 'color'] },
     { model: Club, as: 'club', attributes: ['id', 'sufijo', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'], include: [{ model: Institucion, as: 'institucion' }] },
-    { model: Categoria, as: 'categoria', attributes: ['id', 'sufijo', 'nombre', 'anio_nacimiento'] },
+    { model: Categoria, as: 'categoria', attributes: ['id', 'nombre', 'anio_nacimiento'] },
   ],
 });
 
@@ -108,7 +108,7 @@ export const listar = async (req, res) => {
         include: [
           { model: Rol, as: 'rol', where: { codigo: 'jugador' }, attributes: ['id', 'codigo', 'nombre', 'color'] },
           { ...includeClub },
-          { model: Categoria, as: 'categoria', attributes: ['id', 'sufijo', 'nombre', 'anio_nacimiento'] },
+          { model: Categoria, as: 'categoria', attributes: ['id', 'nombre', 'anio_nacimiento'] },
         ],
       }],
       order: [['apellido', 'ASC'], ['nombre', 'ASC']],
