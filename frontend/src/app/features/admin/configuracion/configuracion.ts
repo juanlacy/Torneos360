@@ -239,6 +239,24 @@ import { BrandingService } from '../../../core/services/branding.service';
                     </label>
                   </div>
 
+                  <h4 class="text-sm font-semibold text-gray-700 mt-4 mb-2">Reglas de tarjetas</h4>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    <div class="p-3 rounded-lg border border-gray-200">
+                      <label class="text-xs font-medium text-gray-600 mb-1 block">Doble amarilla genera:</label>
+                      <select [(ngModel)]="configTorneo.doble_amarilla_genera" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                        <option value="roja">Tarjeta Roja (expulsion)</option>
+                        <option value="azul">Tarjeta Azul (suspension temporal)</option>
+                        <option value="nada">Nada (sin acumulacion)</option>
+                      </select>
+                    </div>
+                    <div class="p-3 rounded-lg border border-gray-200">
+                      <label class="text-xs font-medium text-gray-600 mb-1 block">Amarillas para suspension:</label>
+                      <input type="number" [(ngModel)]="configTorneo.amarillas_para_suspension" min="0" max="10"
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="5 (entre partidos)">
+                      <p class="text-[10px] text-gray-400 mt-1">Cantidad de amarillas acumuladas entre partidos para suspension automatica (0 = sin limite)</p>
+                    </div>
+                  </div>
+
                   <button mat-flat-button color="primary" (click)="guardarConfigTorneo()" class="mt-4">
                     <mat-icon>save</mat-icon> Guardar reglas
                   </button>
@@ -335,6 +353,8 @@ export class ConfiguracionComponent implements OnInit {
     reloj_parado: false,
     elegir_mejor_jugador: false,
     calificar_arbitro: false,
+    doble_amarilla_genera: 'roja',
+    amarillas_para_suspension: 5,
   };
 
   // IA
@@ -421,6 +441,8 @@ export class ConfiguracionComponent implements OnInit {
       reloj_parado: config.reloj_parado ?? false,
       elegir_mejor_jugador: config.elegir_mejor_jugador ?? false,
       calificar_arbitro: config.calificar_arbitro ?? false,
+      doble_amarilla_genera: config.doble_amarilla_genera ?? 'roja',
+      amarillas_para_suspension: config.amarillas_para_suspension ?? 5,
     };
   }
 

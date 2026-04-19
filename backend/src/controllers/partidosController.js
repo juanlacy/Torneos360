@@ -24,7 +24,7 @@ export const obtener = async (req, res) => {
         incArbitro,
         incVeedor,
         incMejorJugador,
-        { model: FixtureJornada, as: 'jornada', attributes: ['id', 'numero_jornada', 'fase', 'fecha'] },
+        { model: FixtureJornada, as: 'jornada', attributes: ['id', 'numero_jornada', 'fase', 'fecha', 'torneo_id'] },
         {
           model: PartidoEvento, as: 'eventos',
           include: [
@@ -153,14 +153,43 @@ export const registrarEvento = async (req, res) => {
     } = req.body;
     if (!tipo) return res.status(400).json({ success: false, message: 'tipo es requerido' });
 
+    const personaIdFinal = persona_id || jugador_id || null;
+
     const evento = await PartidoEvento.create({
       partido_id: partido.id,
       tipo,
-      persona_id: persona_id || jugador_id || null,
+      persona_id: personaIdFinal,
       persona_reemplaza_id: persona_reemplaza_id || jugador_reemplaza_id || null,
       club_id, minuto, periodo, detalle,
       registrado_por: req.user.id,
     });
+
+    // ─── Regla de doble amarilla ──────────────────────────────────
+    if (tipo === 'amarilla' && personaIdFinal) {
+      // Contar amarillas del jugador en este partido
+      const amarillasEnPartido = await PartidoEvento.count({
+        where: { partido_id: partido.id, tipo: 'amarilla', persona_id: personaIdFinal },
+      });
+
+      if (amarillasEnPartido >= 2) {
+        // Obtener config del torneo
+        const jornada = await FixtureJornada.findByPk(partido.jornada_id, { attributes: ['torneo_id'] });
+        const torneo = jornada ? await Torneo.findByPk(jornada.torneo_id, { attributes: ['config'] }) : null;
+        const regla = torneo?.config?.doble_amarilla_genera || 'roja';
+
+        if (regla !== 'nada') {
+          // Crear evento automatico (roja o azul segun config)
+          await PartidoEvento.create({
+            partido_id: partido.id,
+            tipo: regla,
+            persona_id: personaIdFinal,
+            club_id, minuto, periodo,
+            detalle: `${regla.toUpperCase()} automatica por doble amarilla`,
+            registrado_por: req.user.id,
+          });
+        }
+      }
+    }
 
     // Actualizar marcador si es gol
     if (tipo === 'gol' && club_id) {

@@ -504,15 +504,35 @@ type EventoTipo = 'gol' | 'amarilla' | 'azul' | 'roja' | 'falta';
               @for (ev of partido.eventos; track ev.id) {
                 <div class="flex items-center gap-2 px-2 py-1.5 bg-white rounded border border-gray-100 text-sm">
                   @if (ev.periodo) {
-                    <span class="text-[0.6rem] font-bold bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">T{{ ev.periodo }}</span>
+                    <span class="text-[0.6rem] font-bold bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded">T{{ ev.periodo }}</span>
                   }
                   <span class="font-mono font-bold text-gray-400 w-8 text-right text-xs">{{ ev.minuto ? ev.minuto + "'" : '--' }}</span>
-                  <mat-icon class="!text-base !w-4 !h-4" [class]="iconClassEvento(ev.tipo)">{{ iconEvento(ev.tipo) }}</mat-icon>
+                  <!-- Badge visual distinguible por tipo -->
+                  @switch (ev.tipo) {
+                    @case ('gol') {
+                      <span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold bg-green-100 text-green-700 border border-green-300">⚽ GOL</span>
+                    }
+                    @case ('amarilla') {
+                      <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-yellow-300 text-yellow-900 border border-yellow-400">🟡 AMAR</span>
+                    }
+                    @case ('azul') {
+                      <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-500 text-white border border-blue-600">🔵 AZUL</span>
+                    }
+                    @case ('roja') {
+                      <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-600 text-white border border-red-700">🔴 ROJA</span>
+                    }
+                    @case ('falta') {
+                      <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-orange-100 text-orange-700 border border-orange-300">⚠️ FALTA</span>
+                    }
+                    @default {
+                      <mat-icon class="!text-base !w-4 !h-4" [class]="iconClassEvento(ev.tipo)">{{ iconEvento(ev.tipo) }}</mat-icon>
+                    }
+                  }
                   <span class="flex-1 text-gray-700 text-xs truncate">
                     @if (ev.jugador) {
-                      {{ ev.jugador.apellido }}@if (ev.jugador.numero_camiseta) { (#{{ ev.jugador.numero_camiseta }}) }
+                      {{ ev.jugador.apellido }}
                     }
-                    @if (ev.detalle) { — {{ ev.detalle }} }
+                    @if (ev.detalle && !ev.jugador) { {{ ev.detalle }} }
                   </span>
                   <span class="text-[0.6rem] text-gray-400 font-semibold uppercase">{{ ev.club?.nombre_corto }}</span>
                 </div>
