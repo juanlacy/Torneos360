@@ -151,25 +151,8 @@ export class LoginComponent implements OnInit {
   ngOnInit() {
     this.showMicrosoft = !!environment.microsoftClientId;
     this.initGoogleSignIn();
-    this.checkPendingMsalToken();
-  }
-
-  /** Si main.ts guardo un token de MSAL en sessionStorage, procesarlo */
-  private checkPendingMsalToken() {
-    const pendingToken = sessionStorage.getItem('msal_pending_token');
-    if (pendingToken) {
-      sessionStorage.removeItem('msal_pending_token');
-      this.loading = true;
-      this.cdr.detectChanges();
-      this.auth.loginMicrosoft(pendingToken).subscribe({
-        next: () => this.router.navigate(['/dashboard']),
-        error: (err) => {
-          this.loading = false;
-          this.toastr.error(err.error?.message || 'Error con Microsoft');
-          this.cdr.detectChanges();
-        },
-      });
-    }
+    // Si la pagina cargo con #code= (redirect de Microsoft), procesarlo
+    this.handleMsalRedirectResponse();
   }
 
   // ─── Google Identity Services (igual que Predict) ───────────────────────
@@ -230,46 +213,71 @@ export class LoginComponent implements OnInit {
     this.toastr.warning('Google Sign-In cargando... Intenta de nuevo en unos segundos.');
   }
 
-  // ─── Microsoft MSAL (igual que Predict) ─────────────────────────────────
-  /** Microsoft login — replica exacta del patron de Predict */
+  // ─── Microsoft MSAL (redirect, no popup) ─────────────────────────────────
   async onMicrosoftLogin(): Promise<void> {
     try {
-      const { PublicClientApplication } = await import('@azure/msal-browser');
-      const msalInstance = new PublicClientApplication({
-        auth: {
-          clientId: environment.microsoftClientId,
-          authority: `https://login.microsoftonline.com/${environment.microsoftTenantId}`,
-          redirectUri: window.location.origin + '/auth-redirect.html',
-        },
-      });
-      await msalInstance.initialize();
-
-      // Limpiar interacciones previas atrapadas
-      const keys = Object.keys(sessionStorage).filter(k => k.startsWith('msal.'));
-      keys.forEach(k => sessionStorage.removeItem(k));
-
-      const result = await msalInstance.loginPopup({
+      const msalInstance = await this.getMsalInstance();
+      // Redirect: la pagina entera va a Microsoft, vuelve con el code
+      await msalInstance.loginRedirect({
         scopes: ['User.Read'],
+        prompt: 'select_account',
       });
+    } catch (err: any) {
+      this.toastr.error('Error al iniciar Microsoft Sign-In');
+      console.error('MSAL error:', err);
+    }
+  }
 
-      if (result.accessToken) {
-        this.loading = true;
-        this.cdr.detectChanges();
+  /** Procesar la respuesta de Microsoft redirect al cargar la pagina */
+  private async handleMsalRedirectResponse(): Promise<void> {
+    if (!environment.microsoftClientId) return;
+    // Solo procesar si hay un hash con code (redirect de Microsoft)
+    const hash = window.location.hash;
+    if (!hash || !hash.includes('code=')) return;
+
+    this.loading = true;
+    this.cdr.detectChanges();
+
+    try {
+      const msalInstance = await this.getMsalInstance();
+      const result = await msalInstance.handleRedirectPromise();
+
+      if (result?.accessToken) {
         this.auth.loginMicrosoft(result.accessToken).subscribe({
-          next: () => this.router.navigate(['/dashboard']),
+          next: () => {
+            window.history.replaceState({}, '', '/auth/login');
+            this.router.navigate(['/dashboard']);
+          },
           error: (err) => {
             this.loading = false;
             this.toastr.error(err.error?.message || 'Error con Microsoft');
             this.cdr.detectChanges();
           },
         });
+        return;
       }
     } catch (err: any) {
-      if (err?.errorCode !== 'user_cancelled') {
-        this.toastr.error('Error al iniciar sesion con Microsoft');
-        console.error('MSAL error:', err);
-      }
+      console.error('MSAL handle redirect error:', err);
     }
+    this.loading = false;
+    // Limpiar el hash para que no quede basura en la URL
+    window.history.replaceState({}, '', '/auth/login');
+    this.cdr.detectChanges();
+  }
+
+  private async getMsalInstance() {
+    const { PublicClientApplication } = await import('@azure/msal-browser');
+    // Limpiar interacciones previas
+    Object.keys(sessionStorage).filter(k => k.startsWith('msal.')).forEach(k => sessionStorage.removeItem(k));
+    const instance = new PublicClientApplication({
+      auth: {
+        clientId: environment.microsoftClientId,
+        authority: `https://login.microsoftonline.com/${environment.microsoftTenantId}`,
+        redirectUri: window.location.origin + '/auth/login',
+      },
+    });
+    await instance.initialize();
+    return instance;
   }
 
   // ─── Email/Password ─────────────────────────────────────────────────────
