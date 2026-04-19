@@ -2,7 +2,7 @@ import { PermisoDefaultRol, PermisoUsuario, Usuario } from '../models/index.js';
 import { registrarAudit } from '../services/auditService.js';
 
 const TODOS_MODULOS = ['torneos', 'clubes', 'jugadores', 'fixture', 'partidos', 'posiciones', 'arbitros', 'veedores', 'staff', 'configuracion', 'reportes'];
-const TODAS_ACCIONES = ['ver', 'crear', 'editar', 'eliminar'];
+const TODAS_ACCIONES = ['ver', 'crear', 'editar', 'eliminar', 'ver_sensibles'];
 
 // =========================================
 // GET /permisos/defaults

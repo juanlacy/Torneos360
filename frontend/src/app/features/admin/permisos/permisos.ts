@@ -35,7 +35,9 @@ import { ToastrService } from 'ngx-toastr';
                   <tr class="border-b border-gray-200">
                     <th class="text-left p-2 text-gray-500">Modulo</th>
                     @for (a of acciones; track a) {
-                      <th class="text-center p-2 text-gray-500 capitalize">{{ a }}</th>
+                      <th class="text-center p-2 text-gray-500 text-xs" [class.bg-amber-50]="a === 'ver_sensibles'">
+                        {{ a === 'ver_sensibles' ? 'Ver DNI/Tel' : a }}
+                      </th>
                     }
                   </tr>
                 </thead>
@@ -44,7 +46,7 @@ import { ToastrService } from 'ngx-toastr';
                     <tr class="border-b border-gray-100 hover:bg-gray-50">
                       <td class="p-2 text-gray-900 capitalize">{{ m }}</td>
                       @for (a of acciones; track a) {
-                        <td class="text-center p-2">
+                        <td class="text-center p-2" [class.bg-amber-50]="a === 'ver_sensibles'">
                           <mat-checkbox
                             [checked]="getPermiso(m, a)"
                             (change)="togglePermiso(m, a, $event.checked)"
@@ -64,7 +66,7 @@ import { ToastrService } from 'ngx-toastr';
   `,
 })
 export class PermisosComponent implements OnInit {
-  roles = ['admin_torneo', 'delegado', 'arbitro', 'veedor', 'entrenador', 'publico'];
+  roles = ['admin_torneo', 'coordinador', 'delegado', 'arbitro', 'veedor', 'entrenador', 'publico'];
   modulos: string[] = [];
   acciones: string[] = [];
   selectedRol = 'admin_torneo';
