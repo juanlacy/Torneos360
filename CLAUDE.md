@@ -43,7 +43,7 @@ Torneo360/
 │   │   └── ...        (dashboard, torneos, clubes, jugadores, staff, arbitros, veedores, fixture, posiciones)
 │   └── shared/        (dni-scanner, dni-firma-modal, documentos-upload, icon-picker, persona-existente-banner)
 ├── deploy.sh          (deploy automatizado: git pull, migrate, build, PM2 restart)
-├── generate-icons.js  (genera iconos PWA desde logo con Sharp)
+├── backend/scripts/generate-icons.js (genera favicon + iconos PWA desde logo Torneos360)
 └── CLAUDE.md          (este archivo)
 ```
 
@@ -134,8 +134,10 @@ cd frontend && npx ng build
 # Deploy (en el VPS)
 cd /www/wwwroot/torneos360 && bash deploy.sh
 
-# Generar iconos PWA (en el VPS, desde backend/)
-cd backend && sudo node --input-type=module -e "import sharp from 'sharp'; ..."
+# Generar favicon + iconos PWA desde logo Torneos360
+#   - tamanos <=152: isotipo (pelota + orbita) sobre fondo purpura #762c7e
+#   - tamanos >=192: logo completo sobre fondo purpura
+cd backend && node scripts/generate-icons.js
 
 # Seeders utiles (en el VPS)
 node src/seeders/reset-datos.js --apply --i-know-what-im-doing
