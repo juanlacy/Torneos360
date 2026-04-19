@@ -18,7 +18,7 @@ async function handleMsalRedirect(): Promise<void> {
       auth: {
         clientId: environment.microsoftClientId,
         authority: `https://login.microsoftonline.com/${environment.microsoftTenantId}`,
-        redirectUri: window.location.origin,
+        redirectUri: window.location.origin + '/auth-redirect.html',
       },
     });
     await msalInstance.initialize();
