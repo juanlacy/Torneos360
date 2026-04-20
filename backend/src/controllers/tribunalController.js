@@ -8,6 +8,87 @@ import { registrarAudit } from '../services/auditService.js';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
+/**
+ * Recorre las sanciones en estado='aplicada' de un torneo y marca como
+ * 'cumplida' aquellas donde el club del jugador ya jugo N fechas posteriores
+ * al partido origen (N = fechas_suspension).
+ *
+ * Criterio de "posterior":
+ *  - Si la jornada origen tiene fecha calendario, se usa fecha > origen.fecha
+ *  - Si no, se usa el orden natural: ida{numero > origen}, o toda vuelta si
+ *    origen era ida; vuelta{numero > origen} si origen era vuelta.
+ */
+const evaluarSancionesCumplidas = async (torneoId) => {
+  try {
+    const rolJugador = await Rol.findOne({ where: { codigo: 'jugador' }, attributes: ['id'] });
+    if (!rolJugador) return;
+
+    const sanciones = await SancionDisciplinaria.findAll({
+      where: { torneo_id: torneoId, estado: 'aplicada', fechas_suspension: { [Op.gt]: 0 } },
+      include: [{ model: Partido, as: 'partido', include: [{ model: FixtureJornada, as: 'jornada' }] }],
+    });
+
+    for (const s of sanciones) {
+      if (!s.partido || !s.partido.jornada) continue;
+      const jOrigen = s.partido.jornada;
+
+      const pr = await PersonaRol.findOne({
+        where: { persona_id: s.persona_id, rol_id: rolJugador.id, categoria_id: s.partido.categoria_id, activo: true },
+        attributes: ['club_id'],
+      });
+      if (!pr?.club_id) continue;
+
+      const jornadaWhere = { torneo_id: torneoId };
+      if (jOrigen.fecha) {
+        jornadaWhere.fecha = { [Op.gt]: jOrigen.fecha };
+      } else if (jOrigen.fase === 'ida') {
+        jornadaWhere[Op.or] = [
+          { fase: 'ida', numero_jornada: { [Op.gt]: jOrigen.numero_jornada } },
+          { fase: 'vuelta' },
+        ];
+      } else {
+        jornadaWhere.fase = 'vuelta';
+        jornadaWhere.numero_jornada = { [Op.gt]: jOrigen.numero_jornada };
+      }
+
+      const jugadas = await Partido.count({
+        where: {
+          categoria_id: s.partido.categoria_id,
+          estado: 'finalizado',
+          [Op.or]: [{ club_local_id: pr.club_id }, { club_visitante_id: pr.club_id }],
+        },
+        include: [{ model: FixtureJornada, as: 'jornada', where: jornadaWhere, attributes: [], required: true }],
+      });
+
+      if (jugadas >= s.fechas_suspension) {
+        await s.update({ estado: 'cumplida', resuelta_en: s.resuelta_en || new Date() });
+      }
+    }
+  } catch (e) {
+    console.error('[evaluarSancionesCumplidas]', e.message);
+  }
+};
+
+/**
+ * Para una sancion, devuelve el club_id del jugador afectado segun su
+ * PersonaRol activa en la categoria del partido origen. Usado para validar
+ * permisos de apelacion.
+ */
+const clubIdJugadorSancion = async (sancion) => {
+  if (!sancion) return null;
+  let categoriaId = null;
+  if (sancion.partido_id) {
+    const p = await Partido.findByPk(sancion.partido_id, { attributes: ['categoria_id'] });
+    categoriaId = p?.categoria_id;
+  }
+  const rolJugador = await Rol.findOne({ where: { codigo: 'jugador' }, attributes: ['id'] });
+  if (!rolJugador) return null;
+  const where = { persona_id: sancion.persona_id, rol_id: rolJugador.id, activo: true };
+  if (categoriaId) where.categoria_id = categoriaId;
+  const pr = await PersonaRol.findOne({ where, attributes: ['club_id'] });
+  return pr?.club_id ?? null;
+};
+
 /** Lee el reglamento del torneo con defaults */
 const leerReglamento = (torneo) => {
   const c = torneo?.config || {};
@@ -34,6 +115,9 @@ export const pendientes = async (req, res) => {
     const torneo = await Torneo.findByPk(torneoId);
     if (!torneo) return res.status(404).json({ success: false, message: 'Torneo no encontrado' });
     const regla = leerReglamento(torneo);
+
+    // Evaluar cumplidas antes de calcular pendientes
+    await evaluarSancionesCumplidas(torneoId);
 
     // Jornadas + partidos del torneo
     const jornadaIds = (await FixtureJornada.findAll({
@@ -179,6 +263,9 @@ export const listar = async (req, res) => {
     const torneoId = parseInt(req.params.torneoId);
     const { estado, persona_id, motivo } = req.query;
 
+    // Evaluar cumplidas antes de listar
+    await evaluarSancionesCumplidas(torneoId);
+
     const where = { torneo_id: torneoId };
     if (estado)     where.estado = estado;
     if (persona_id) where.persona_id = persona_id;
@@ -189,13 +276,26 @@ export const listar = async (req, res) => {
       include: [
         { model: Persona, as: 'persona', attributes: ['id', 'nombre', 'apellido', 'foto_url', 'dni'] },
         { model: Partido, as: 'partido', required: false, include: [
-          { model: Categoria, as: 'categoria', attributes: ['nombre'] },
+          { model: Categoria, as: 'categoria', attributes: ['id', 'nombre'] },
         ] },
       ],
       order: [['creado_en', 'DESC']],
     });
 
-    res.json({ success: true, data: sanciones });
+    // Enriquecer con club_id del jugador (para validar permiso de apelacion en front)
+    const rolJugador = await Rol.findOne({ where: { codigo: 'jugador' }, attributes: ['id'] });
+    const data = await Promise.all(sanciones.map(async (s) => {
+      const plain = s.toJSON();
+      if (rolJugador) {
+        const where2 = { persona_id: s.persona_id, rol_id: rolJugador.id, activo: true };
+        if (plain.partido?.categoria?.id) where2.categoria_id = plain.partido.categoria.id;
+        const pr = await PersonaRol.findOne({ where: where2, attributes: ['club_id'] });
+        plain.club_id_jugador = pr?.club_id ?? null;
+      }
+      return plain;
+    }));
+
+    res.json({ success: true, data });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -292,13 +392,32 @@ export const actualizarSancion = async (req, res) => {
     const s = await SancionDisciplinaria.findByPk(req.params.id);
     if (!s) return res.status(404).json({ success: false, message: 'Sancion no encontrada' });
 
+    const esApelacion = req.body.estado === 'apelada' || req.body.apelacion_texto !== undefined;
+    const esResolucion = !!req.body.resolucion_apelacion;
+    const esAdmin = req.isAdminSistema || req.isAdminTorneo;
+
+    // Apelacion: solo el delegado del club del jugador (o admin) puede registrarla
+    if (esApelacion && !esResolucion && !esAdmin) {
+      const userClubId = req.user?.club_id;
+      const userRol = req.user?.rol;
+      const isDelegado = userRol === 'delegado' || (req.rolesActivos || []).includes('delegado');
+      const clubJugador = await clubIdJugadorSancion(s);
+
+      if (!isDelegado || !userClubId || !clubJugador || userClubId !== clubJugador) {
+        return res.status(403).json({
+          success: false,
+          message: 'Solo el delegado del club del jugador sancionado puede registrar una apelacion',
+        });
+      }
+    }
+
     const antes = s.toJSON();
     const campos = ['fechas_suspension', 'multa', 'detalle', 'estado', 'apelacion_texto', 'resolucion_apelacion'];
     const updates = { actualizado_en: new Date() };
     for (const c of campos) if (req.body[c] !== undefined) updates[c] = req.body[c];
 
     // Si resuelve apelacion, sellar
-    if (req.body.resolucion_apelacion) {
+    if (esResolucion) {
       updates.resuelta_en = new Date();
       let resuelta_por = null;
       if (req.user?.id) {

@@ -231,14 +231,11 @@ type Tab = 'pendientes' | 'historial' | 'reglamento';
                           <div class="flex items-center gap-2">
                             <button (click)="abrirHistorial(s.persona_id)"
                               class="text-[11px] text-[var(--color-primario)] hover:underline">Antecedentes</button>
-                            @if (s.estado === 'aplicada' && reglamento.permite_apelacion) {
+                            @if (s.estado === 'aplicada' && reglamento.permite_apelacion && puedeApelar(s)) {
                               <button (click)="abrirApelar(s)" class="text-[11px] text-amber-600 hover:underline">Apelar</button>
                             }
-                            @if (s.estado === 'apelada') {
+                            @if (s.estado === 'apelada' && puedeResolver()) {
                               <button (click)="abrirResolver(s)" class="text-[11px] text-green-700 hover:underline font-semibold">Resolver</button>
-                            }
-                            @if (s.estado === 'aplicada') {
-                              <button (click)="marcarCumplida(s)" class="text-[11px] text-gray-500 hover:underline">Marcar cumplida</button>
                             }
                           </div>
                         </td>
@@ -551,6 +548,21 @@ export class TribunalComponent implements OnInit, OnDestroy {
     return (this.auth.rolesActivos || []).includes('admin_torneo');
   }
 
+  /** Delegado del club del jugador sancionado, o admin */
+  puedeApelar(s: any): boolean {
+    if (this.auth.isAdmin()) return true;
+    const user = this.auth.getUser();
+    const rolesActivos = this.auth.rolesActivos || [];
+    const esDelegado = rolesActivos.includes('delegado');
+    return esDelegado && user?.club_id && s?.club_id_jugador && user.club_id === s.club_id_jugador;
+  }
+
+  /** Tribunal o admin pueden resolver apelaciones */
+  puedeResolver(): boolean {
+    if (this.auth.isAdmin()) return true;
+    return (this.auth.rolesActivos || []).includes('tribunal') || (this.auth.rolesActivos || []).includes('admin_torneo');
+  }
+
   cargar() {
     if (!this.torneoId) return;
     if (this.tab === 'pendientes') this.cargarPendientes();
@@ -691,14 +703,6 @@ export class TribunalComponent implements OnInit, OnDestroy {
     }
     this.http.put(`${environment.apiUrl}/tribunal/sanciones/${this.modalResolver.id}`, body).subscribe({
       next: () => { this.toastr.success('Apelacion resuelta'); this.modalResolver = null; this.cargarHistorial(); },
-      error: (e: any) => this.toastr.error(e.error?.message || 'Error'),
-    });
-  }
-
-  marcarCumplida(s: any) {
-    if (!confirm(`Marcar como cumplida la sancion de ${s.persona?.apellido}?`)) return;
-    this.http.put(`${environment.apiUrl}/tribunal/sanciones/${s.id}`, { estado: 'cumplida' }).subscribe({
-      next: () => { this.toastr.success('Sancion marcada como cumplida'); this.cargarHistorial(); },
       error: (e: any) => this.toastr.error(e.error?.message || 'Error'),
     });
   }
