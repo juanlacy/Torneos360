@@ -84,6 +84,10 @@ export const routes: Routes = [
         path: 'posiciones',
         loadComponent: () => import('./features/posiciones/posiciones').then(m => m.PosicionesComponent),
       },
+      {
+        path: 'estadisticas',
+        loadComponent: () => import('./features/estadisticas/estadisticas').then(m => m.EstadisticasComponent),
+      },
 
       // ─── Admin ───────────────────────────────────────────────────────────
       {

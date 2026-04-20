@@ -184,6 +184,7 @@ export class LayoutComponent implements OnInit {
         { label: 'Fixture', icon: 'calendar_month', route: '/fixture', permiso: { modulo: 'fixture', accion: 'ver' } },
         { label: 'En Vivo', icon: 'live_tv', route: '/partidos/en-vivo', permiso: { modulo: 'partidos', accion: 'ver' }, highlight: true },
         { label: 'Posiciones', icon: 'leaderboard', route: '/posiciones', permiso: { modulo: 'posiciones', accion: 'ver' } },
+        { label: 'Estadisticas', icon: 'bar_chart', route: '/estadisticas', permiso: { modulo: 'posiciones', accion: 'ver' } },
       ],
     },
     {

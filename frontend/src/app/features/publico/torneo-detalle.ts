@@ -7,7 +7,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { environment } from '../../../environments/environment';
 
-type Tab = 'general' | 'categoria' | 'goleadores' | 'fixture';
+type Tab = 'general' | 'categoria' | 'goleadores' | 'tarjetas' | 'fixture';
 
 @Component({
   selector: 'app-torneo-detalle-publico',
@@ -320,6 +320,86 @@ type Tab = 'general' | 'categoria' | 'goleadores' | 'fixture';
             </section>
           }
 
+          <!-- ═══ TAB: TARJETAS ═══ -->
+          @if (tab === 'tarjetas') {
+            <section class="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+              <div class="px-5 py-4 border-b border-gray-100 flex flex-wrap items-center gap-3">
+                <div class="flex-1 min-w-[200px]">
+                  <h2 class="font-bold text-gray-900">Tabla de Tarjetas</h2>
+                  <p class="text-xs text-gray-500">Amarillas y rojas acumuladas, ordenadas por total (rojas valen x3)</p>
+                </div>
+                <select [(ngModel)]="categoriaIdTarjetas" (change)="cargarTarjetas()"
+                  class="px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-purple-500">
+                  <option [ngValue]="null">Todas las categorias</option>
+                  @for (c of categorias; track c.id) {
+                    <option [ngValue]="c.id">{{ c.nombre }}</option>
+                  }
+                </select>
+              </div>
+
+              @if (loadingTab) {
+                <div class="py-12 flex justify-center"><mat-spinner [diameter]="32"></mat-spinner></div>
+              } @else if (!tarjetas.length) {
+                <div class="py-16 text-center text-gray-400">
+                  <mat-icon class="!text-5xl !w-12 !h-12 mb-2">style</mat-icon>
+                  <p class="text-sm">Sin tarjetas registradas todavia</p>
+                </div>
+              } @else {
+                <div class="overflow-x-auto">
+                  <table class="w-full text-sm">
+                    <thead class="bg-gray-50 text-gray-400 text-[10px] uppercase tracking-wider">
+                      <tr>
+                        <th class="px-3 py-2.5 text-center w-10">#</th>
+                        <th class="px-3 py-2.5 text-left">Jugador</th>
+                        <th class="px-3 py-2.5 text-left hidden sm:table-cell">Club</th>
+                        <th class="px-2 py-2.5 text-center">🟡</th>
+                        <th class="px-2 py-2.5 text-center">🔴</th>
+                        <th class="px-3 py-2.5 text-right">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (t of tarjetas; track t.persona_id; let i = $index) {
+                        <tr class="border-t border-gray-100 hover:bg-gray-50">
+                          <td class="px-3 py-2.5 text-center text-gray-400 font-medium">{{ i + 1 }}</td>
+                          <td class="px-3 py-2.5">
+                            <div class="flex items-center gap-2.5 min-w-0">
+                              @if (t.foto_url) {
+                                <img [src]="resolveUrl(t.foto_url)" class="w-8 h-8 rounded-full object-cover flex-shrink-0" alt="">
+                              } @else {
+                                <div class="w-8 h-8 rounded-full bg-purple-700 text-white flex items-center justify-center font-bold text-[11px] flex-shrink-0">
+                                  {{ (t.nombre || '?').charAt(0) }}{{ (t.apellido || '').charAt(0) }}
+                                </div>
+                              }
+                              <div class="min-w-0">
+                                <p class="font-semibold text-gray-900 truncate text-sm">{{ t.apellido }}, {{ t.nombre }}</p>
+                                <p class="sm:hidden text-xs text-gray-500 truncate">{{ t.club?.nombre_corto || t.club?.nombre }}</p>
+                              </div>
+                            </div>
+                          </td>
+                          <td class="px-3 py-2.5 hidden sm:table-cell">
+                            <div class="flex items-center gap-2">
+                              @if (t.club?.escudo_url) {
+                                <img [src]="resolveUrl(t.club.escudo_url)" class="w-5 h-5 object-contain" alt="">
+                              }
+                              <span class="text-xs text-gray-700 truncate">{{ t.club?.nombre_corto || t.club?.nombre }}</span>
+                            </div>
+                          </td>
+                          <td class="px-2 py-2.5 text-center font-bold text-yellow-600">{{ t.amarillas }}</td>
+                          <td class="px-2 py-2.5 text-center font-bold text-red-600">{{ t.rojas }}</td>
+                          <td class="px-3 py-2.5 text-right">
+                            <span class="inline-block min-w-[32px] px-2 py-0.5 rounded text-xs font-bold bg-gray-100 text-gray-700">
+                              {{ t.rojas * 3 + t.amarillas }}
+                            </span>
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              }
+            </section>
+          }
+
           <!-- ═══ TAB: FIXTURE ═══ -->
           @if (tab === 'fixture') {
             <section class="space-y-3">
@@ -413,16 +493,19 @@ export class TorneoDetallePublicoComponent implements OnInit {
     { id: 'general',    label: 'Tabla General', icon: 'leaderboard' },
     { id: 'categoria',  label: 'Por Categoria', icon: 'category' },
     { id: 'goleadores', label: 'Goleadores',    icon: 'sports_soccer' },
+    { id: 'tarjetas',   label: 'Tarjetas',      icon: 'style' },
     { id: 'fixture',    label: 'Fixture',       icon: 'event' },
   ];
 
   // Filtros por tab
   categoriaId: number | null = null;
   categoriaIdGoleadores: number | null = null;
+  categoriaIdTarjetas: number | null = null;
 
   posicionesGenerales: any[] = [];
   posicionesCategoria: any[] = [];
   goleadores: any[] = [];
+  tarjetas: any[] = [];
 
   private torneoId!: number;
 
@@ -459,6 +542,7 @@ export class TorneoDetallePublicoComponent implements OnInit {
     if (t === 'general' && !this.posicionesGenerales.length) this.cargarPosicionesGenerales();
     if (t === 'categoria' && !this.posicionesCategoria.length) this.cargarPosicionesCategoria();
     if (t === 'goleadores' && !this.goleadores.length) this.cargarGoleadores();
+    if (t === 'tarjetas' && !this.tarjetas.length) this.cargarTarjetas();
     if (t === 'fixture' && !this.jornadas.length) this.cargarJornadas();
   }
 
@@ -509,6 +593,20 @@ export class TorneoDetallePublicoComponent implements OnInit {
     this.http.get<any>(`${environment.apiUrl}/publico/torneos/${this.torneoId}/goleadores?${params}`).subscribe({
       next: (res) => {
         this.goleadores = res.data || [];
+        this.loadingTab = false;
+        this.cdr.detectChanges();
+      },
+      error: () => { this.loadingTab = false; this.cdr.detectChanges(); },
+    });
+  }
+
+  cargarTarjetas() {
+    this.loadingTab = true;
+    const params = new URLSearchParams({ limit: '30' });
+    if (this.categoriaIdTarjetas) params.set('categoria_id', String(this.categoriaIdTarjetas));
+    this.http.get<any>(`${environment.apiUrl}/publico/torneos/${this.torneoId}/tarjetas?${params}`).subscribe({
+      next: (res) => {
+        this.tarjetas = res.data || [];
         this.loadingTab = false;
         this.cdr.detectChanges();
       },

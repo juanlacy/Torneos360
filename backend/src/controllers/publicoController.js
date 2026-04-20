@@ -163,6 +163,106 @@ export const goleadores = async (req, res) => {
   }
 };
 
+// GET /publico/torneos/:id/tarjetas?limit=30&categoria_id=X&zona_id=X
+export const tarjetas = async (req, res) => {
+  try {
+    const torneoId = parseInt(req.params.id);
+    const limit = parseInt(req.query.limit) || 30;
+    const { zona_id, categoria_id } = req.query;
+
+    const jornadaIds = (await FixtureJornada.findAll({
+      where: { torneo_id: torneoId }, attributes: ['id'], raw: true,
+    })).map(j => j.id);
+
+    if (!jornadaIds.length) return res.json({ success: true, data: [] });
+
+    const partidoWhere = { jornada_id: jornadaIds, estado: 'finalizado' };
+    if (categoria_id) partidoWhere.categoria_id = categoria_id;
+
+    const partidoIds = (await Partido.findAll({
+      where: partidoWhere, attributes: ['id'], raw: true,
+    })).map(p => p.id);
+
+    if (!partidoIds.length) return res.json({ success: true, data: [] });
+
+    const tarjetasRaw = await PartidoEvento.findAll({
+      where: {
+        partido_id: partidoIds,
+        tipo: { [Op.in]: ['amarilla', 'roja'] },
+        persona_id: { [Op.ne]: null },
+      },
+      attributes: [
+        'persona_id', 'club_id', 'tipo',
+        [fn('COUNT', col('PartidoEvento.id')), 'cantidad'],
+      ],
+      group: ['persona_id', 'club_id', 'tipo'],
+      raw: true,
+    });
+
+    const mapa = new Map();
+    for (const t of tarjetasRaw) {
+      const key = `${t.persona_id}-${t.club_id}`;
+      if (!mapa.has(key)) mapa.set(key, { persona_id: t.persona_id, club_id: t.club_id, amarillas: 0, rojas: 0 });
+      const entry = mapa.get(key);
+      if (t.tipo === 'amarilla') entry.amarillas = parseInt(t.cantidad);
+      if (t.tipo === 'roja') entry.rojas = parseInt(t.cantidad);
+    }
+
+    const ordenado = [...mapa.values()]
+      .map(e => ({ ...e, total: e.rojas * 3 + e.amarillas }))
+      .sort((a, b) => b.total - a.total)
+      .slice(0, limit);
+
+    const rolJugador = await Rol.findOne({ where: { codigo: 'jugador' }, attributes: ['id'] });
+
+    const resultado = [];
+    for (const e of ordenado) {
+      const persona = await Persona.findByPk(e.persona_id, {
+        attributes: ['id', 'nombre', 'apellido', 'foto_url'],
+      });
+      if (!persona) continue;
+
+      let clubData = null;
+      if (e.club_id) {
+        const club = await Club.findByPk(e.club_id, {
+          include: [{ model: Institucion, as: 'institucion' }],
+        });
+        if (club) clubData = { id: club.id, nombre: club.nombre, nombre_corto: club.nombre_corto, escudo_url: club.escudo_url, color_primario: club.color_primario };
+      }
+
+      const pr = rolJugador ? await PersonaRol.findOne({
+        where: { persona_id: e.persona_id, rol_id: rolJugador.id, club_id: e.club_id, activo: true },
+        include: [{ model: Categoria, as: 'categoria', attributes: ['id', 'nombre'] }],
+      }) : null;
+
+      resultado.push({
+        persona_id: persona.id,
+        nombre: persona.nombre,
+        apellido: persona.apellido,
+        foto_url: persona.foto_url,
+        amarillas: e.amarillas,
+        rojas: e.rojas,
+        club: clubData,
+        categoria: pr?.categoria || null,
+      });
+    }
+
+    // Filtro por zona (post-filter)
+    let final = resultado;
+    if (zona_id) {
+      const clubIdsZona = new Set(
+        (await Club.findAll({ where: { torneo_id: torneoId, zona_id }, attributes: ['id'], raw: true }))
+          .map(c => c.id),
+      );
+      final = resultado.filter(r => r.club && clubIdsZona.has(r.club.id));
+    }
+
+    res.json({ success: true, data: final });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 // GET /publico/torneos/:id/fixture?jornada_id=X
 export const fixture = async (req, res) => {
   try {
