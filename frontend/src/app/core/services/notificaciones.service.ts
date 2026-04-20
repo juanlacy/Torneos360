@@ -6,30 +6,32 @@ import { BrandingService } from './branding.service';
 import { AuthService } from './auth.service';
 
 export interface NotifItem {
-  tipo: 'partido_sin_arbitro' | 'partido_sin_veedor' | 'partido_sin_confirmar';
+  tipo: 'partido_sin_arbitro' | 'partido_sin_veedor' | 'partido_sin_confirmar' | 'tribunal_casos_pendientes';
   severidad: 'danger' | 'warning' | 'info';
-  partido_id: number;
-  jornada_id: number;
-  fase: string;
-  numero_jornada: number;
-  zona_id: number;
-  fecha: string | null;
-  dias_hasta: number | null;
-  categoria: string;
-  local: string;
-  visitante: string;
-  estado: string;
+  partido_id?: number;
+  jornada_id?: number;
+  fase?: string;
+  numero_jornada?: number;
+  zona_id?: number;
+  fecha?: string | null;
+  dias_hasta?: number | null;
+  categoria?: string;
+  local?: string;
+  visitante?: string;
+  estado?: string;
+  casos?: number;   // para tribunal_casos_pendientes
+  link?: string;
 }
 
 export interface NotifData {
   total: number;
   items: NotifItem[];
-  por_tipo: { sin_arbitro: number; sin_veedor: number; sin_confirmar: number };
+  por_tipo: { sin_arbitro: number; sin_veedor: number; sin_confirmar: number; tribunal?: number };
 }
 
 @Injectable({ providedIn: 'root' })
 export class NotificacionesService implements OnDestroy {
-  private dataSubject = new BehaviorSubject<NotifData>({ total: 0, items: [], por_tipo: { sin_arbitro: 0, sin_veedor: 0, sin_confirmar: 0 } });
+  private dataSubject = new BehaviorSubject<NotifData>({ total: 0, items: [], por_tipo: { sin_arbitro: 0, sin_veedor: 0, sin_confirmar: 0, tribunal: 0 } });
   data$ = this.dataSubject.asObservable();
   private pollHandle: any = null;
 

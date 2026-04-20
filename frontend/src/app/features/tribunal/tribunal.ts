@@ -227,9 +227,20 @@ type Tab = 'pendientes' | 'historial' | 'reglamento';
                             [class]="estadoClass(s.estado)">{{ s.estado }}</span>
                         </td>
                         <td class="px-3 py-2.5 text-xs text-gray-600 max-w-[240px] truncate">{{ s.detalle }}</td>
-                        <td class="px-3 py-2.5">
-                          <button (click)="abrirHistorial(s.persona_id)"
-                            class="text-[11px] text-[var(--color-primario)] hover:underline">Ver antecedentes</button>
+                        <td class="px-3 py-2.5 whitespace-nowrap">
+                          <div class="flex items-center gap-2">
+                            <button (click)="abrirHistorial(s.persona_id)"
+                              class="text-[11px] text-[var(--color-primario)] hover:underline">Antecedentes</button>
+                            @if (s.estado === 'aplicada' && reglamento.permite_apelacion) {
+                              <button (click)="abrirApelar(s)" class="text-[11px] text-amber-600 hover:underline">Apelar</button>
+                            }
+                            @if (s.estado === 'apelada') {
+                              <button (click)="abrirResolver(s)" class="text-[11px] text-green-700 hover:underline font-semibold">Resolver</button>
+                            }
+                            @if (s.estado === 'aplicada') {
+                              <button (click)="marcarCumplida(s)" class="text-[11px] text-gray-500 hover:underline">Marcar cumplida</button>
+                            }
+                          </div>
                         </td>
                       </tr>
                     }
@@ -322,6 +333,84 @@ type Tab = 'pendientes' | 'historial' | 'reglamento';
                   <mat-icon class="animate-spin !text-base !w-4 !h-4 align-middle">autorenew</mat-icon>
                 }
                 Aplicar
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- ═══ MODAL: apelacion ═══ -->
+      @if (modalApelar) {
+        <div class="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" (click)="modalApelar = null">
+          <div class="bg-white rounded-xl shadow-xl w-full max-w-md" (click)="$event.stopPropagation()">
+            <div class="px-5 py-4 border-b border-gray-100">
+              <h3 class="text-base font-bold text-gray-900">Registrar apelacion</h3>
+              <p class="text-xs text-gray-500 mt-0.5">{{ modalApelar.persona?.apellido }}, {{ modalApelar.persona?.nombre }}</p>
+            </div>
+            <div class="p-5">
+              <label class="block text-xs font-semibold text-gray-700 mb-1">Texto de la apelacion</label>
+              <textarea [(ngModel)]="modalApelar._apelacionTexto" rows="5" placeholder="Argumentos del club/persona..."
+                class="w-full px-2 py-1 border border-gray-300 rounded text-sm"></textarea>
+            </div>
+            <div class="px-5 py-3 border-t border-gray-100 flex justify-end gap-2">
+              <button (click)="modalApelar = null" class="px-3 py-1.5 rounded text-sm text-gray-600 hover:bg-gray-100">Cancelar</button>
+              <button (click)="confirmarApelar()" [disabled]="!modalApelar._apelacionTexto?.trim()"
+                class="px-4 py-1.5 rounded bg-amber-600 text-white text-sm font-medium hover:bg-amber-700 disabled:opacity-50">
+                Registrar apelacion
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- ═══ MODAL: resolver apelacion ═══ -->
+      @if (modalResolver) {
+        <div class="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" (click)="modalResolver = null">
+          <div class="bg-white rounded-xl shadow-xl w-full max-w-md" (click)="$event.stopPropagation()">
+            <div class="px-5 py-4 border-b border-gray-100">
+              <h3 class="text-base font-bold text-gray-900">Resolver apelacion</h3>
+              <p class="text-xs text-gray-500 mt-0.5">{{ modalResolver.persona?.apellido }}, {{ modalResolver.persona?.nombre }}</p>
+            </div>
+            <div class="p-5 space-y-4">
+              @if (modalResolver.apelacion_texto) {
+                <div class="p-3 rounded bg-amber-50 border border-amber-200">
+                  <p class="text-[10px] uppercase font-semibold text-amber-700 mb-1">Argumento de la apelacion</p>
+                  <p class="text-xs text-gray-700 whitespace-pre-wrap">{{ modalResolver.apelacion_texto }}</p>
+                </div>
+              }
+              <div>
+                <label class="block text-xs font-semibold text-gray-700 mb-2">Resolucion</label>
+                <div class="flex gap-2">
+                  <button (click)="modalResolver._resolucion = 'confirmada'"
+                    class="flex-1 px-3 py-2 rounded text-sm font-medium border transition-all"
+                    [class]="modalResolver._resolucion === 'confirmada' ? 'border-red-500 bg-red-50 text-red-700' : 'border-gray-200 text-gray-600 hover:bg-gray-50'">
+                    Confirmar
+                  </button>
+                  <button (click)="modalResolver._resolucion = 'reducida'"
+                    class="flex-1 px-3 py-2 rounded text-sm font-medium border transition-all"
+                    [class]="modalResolver._resolucion === 'reducida' ? 'border-amber-500 bg-amber-50 text-amber-700' : 'border-gray-200 text-gray-600 hover:bg-gray-50'">
+                    Reducir
+                  </button>
+                  <button (click)="modalResolver._resolucion = 'revocada'"
+                    class="flex-1 px-3 py-2 rounded text-sm font-medium border transition-all"
+                    [class]="modalResolver._resolucion === 'revocada' ? 'border-green-500 bg-green-50 text-green-700' : 'border-gray-200 text-gray-600 hover:bg-gray-50'">
+                    Revocar
+                  </button>
+                </div>
+              </div>
+              @if (modalResolver._resolucion === 'reducida') {
+                <div>
+                  <label class="block text-xs font-semibold text-gray-700 mb-1">Nuevas fechas de suspension</label>
+                  <input type="number" min="0" [(ngModel)]="modalResolver._fechasNuevas"
+                    class="w-24 px-2 py-1 border border-gray-300 rounded text-sm">
+                </div>
+              }
+            </div>
+            <div class="px-5 py-3 border-t border-gray-100 flex justify-end gap-2">
+              <button (click)="modalResolver = null" class="px-3 py-1.5 rounded text-sm text-gray-600 hover:bg-gray-100">Cancelar</button>
+              <button (click)="confirmarResolver()" [disabled]="!modalResolver._resolucion"
+                class="px-4 py-1.5 rounded bg-[var(--color-primario)] text-white text-sm font-medium hover:opacity-90 disabled:opacity-50">
+                Resolver
               </button>
             </div>
           </div>
@@ -427,6 +516,8 @@ export class TribunalComponent implements OnInit, OnDestroy {
   modalAplicar: any = null;
   aplicandoSancion = false;
   modalHistorial: any = null;
+  modalApelar: any = null;
+  modalResolver: any = null;
 
   private torneoSub?: Subscription;
 
@@ -565,6 +656,49 @@ export class TribunalComponent implements OnInit, OnDestroy {
   aplicarPropuesta(s: any) {
     this.http.put(`${environment.apiUrl}/tribunal/sanciones/${s.id}`, { estado: 'aplicada' }).subscribe({
       next: () => { this.toastr.success('Sancion aplicada'); this.cargarPendientes(); },
+      error: (e: any) => this.toastr.error(e.error?.message || 'Error'),
+    });
+  }
+
+  // ─── Apelacion ───────────────────────────────────────────────────────
+  abrirApelar(s: any) {
+    this.modalApelar = { ...s, _apelacionTexto: s.apelacion_texto || '' };
+    this.cdr.detectChanges();
+  }
+  confirmarApelar() {
+    if (!this.modalApelar) return;
+    this.http.put(`${environment.apiUrl}/tribunal/sanciones/${this.modalApelar.id}`, {
+      estado: 'apelada',
+      apelacion_texto: this.modalApelar._apelacionTexto,
+    }).subscribe({
+      next: () => { this.toastr.success('Apelacion registrada'); this.modalApelar = null; this.cargarHistorial(); },
+      error: (e: any) => this.toastr.error(e.error?.message || 'Error'),
+    });
+  }
+
+  abrirResolver(s: any) {
+    this.modalResolver = { ...s, _resolucion: null, _fechasNuevas: Math.max(0, (s.fechas_suspension || 1) - 1) };
+    this.cdr.detectChanges();
+  }
+  confirmarResolver() {
+    if (!this.modalResolver?._resolucion) return;
+    const body: any = {
+      resolucion_apelacion: this.modalResolver._resolucion,
+      estado: this.modalResolver._resolucion === 'revocada' ? 'revocada' : 'aplicada',
+    };
+    if (this.modalResolver._resolucion === 'reducida') {
+      body.fechas_suspension = this.modalResolver._fechasNuevas;
+    }
+    this.http.put(`${environment.apiUrl}/tribunal/sanciones/${this.modalResolver.id}`, body).subscribe({
+      next: () => { this.toastr.success('Apelacion resuelta'); this.modalResolver = null; this.cargarHistorial(); },
+      error: (e: any) => this.toastr.error(e.error?.message || 'Error'),
+    });
+  }
+
+  marcarCumplida(s: any) {
+    if (!confirm(`Marcar como cumplida la sancion de ${s.persona?.apellido}?`)) return;
+    this.http.put(`${environment.apiUrl}/tribunal/sanciones/${s.id}`, { estado: 'cumplida' }).subscribe({
+      next: () => { this.toastr.success('Sancion marcada como cumplida'); this.cargarHistorial(); },
       error: (e: any) => this.toastr.error(e.error?.message || 'Error'),
     });
   }

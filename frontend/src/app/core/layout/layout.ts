@@ -162,33 +162,46 @@ interface NavGroup {
                       </div>
                     } @else {
                       <div class="max-h-[420px] overflow-y-auto divide-y divide-gray-100">
-                        @for (n of notif.items; track n.partido_id + '-' + n.tipo) {
-                          <a routerLink="/fixture" [queryParams]="{ jornada: n.jornada_id, partido: n.partido_id }" (click)="notifOpen = false"
-                            class="flex items-start gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors cursor-pointer">
-                            <mat-icon class="!text-lg shrink-0 mt-0.5"
-                              [class.text-red-500]="n.severidad === 'danger'"
-                              [class.text-amber-500]="n.severidad === 'warning'"
-                              [class.text-blue-500]="n.severidad === 'info'">
-                              {{ n.tipo === 'partido_sin_confirmar' ? 'pending_actions' : n.tipo === 'partido_sin_arbitro' ? 'sports' : 'visibility_off' }}
-                            </mat-icon>
-                            <div class="flex-1 min-w-0">
-                              <p class="text-xs font-semibold text-gray-900">
-                                {{ n.tipo === 'partido_sin_arbitro' ? 'Sin arbitro asignado' : n.tipo === 'partido_sin_veedor' ? 'Sin veedor asignado' : 'Sin confirmar por arbitro' }}
-                              </p>
-                              <p class="text-xs text-gray-600 truncate">
-                                {{ n.categoria }} · {{ n.local }} vs {{ n.visitante }}
-                              </p>
-                              <p class="text-[10px] text-gray-400 mt-0.5">
-                                Fecha {{ n.numero_jornada }} ({{ n.fase }})
-                                @if (n.dias_hasta !== null) {
-                                  @if (n.dias_hasta < 0) { · hace {{ -n.dias_hasta }}d }
-                                  @else if (n.dias_hasta === 0) { · HOY }
-                                  @else if (n.dias_hasta === 1) { · manana }
-                                  @else { · en {{ n.dias_hasta }}d }
-                                }
-                              </p>
-                            </div>
-                          </a>
+                        @for (n of notif.items; track n.tipo + '-' + (n.partido_id || 'global')) {
+                          @if (n.tipo === 'tribunal_casos_pendientes') {
+                            <a routerLink="/tribunal" (click)="notifOpen = false"
+                              class="flex items-start gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors cursor-pointer bg-red-50/40">
+                              <mat-icon class="!text-lg shrink-0 mt-0.5 text-red-700">gavel</mat-icon>
+                              <div class="flex-1 min-w-0">
+                                <p class="text-xs font-semibold text-gray-900">Tribunal de Disciplina</p>
+                                <p class="text-xs text-gray-600">
+                                  {{ n.casos }} {{ n.casos === 1 ? 'caso pendiente' : 'casos pendientes' }} de revision
+                                </p>
+                              </div>
+                            </a>
+                          } @else {
+                            <a routerLink="/fixture" [queryParams]="{ jornada: n.jornada_id, partido: n.partido_id }" (click)="notifOpen = false"
+                              class="flex items-start gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors cursor-pointer">
+                              <mat-icon class="!text-lg shrink-0 mt-0.5"
+                                [class.text-red-500]="n.severidad === 'danger'"
+                                [class.text-amber-500]="n.severidad === 'warning'"
+                                [class.text-blue-500]="n.severidad === 'info'">
+                                {{ n.tipo === 'partido_sin_confirmar' ? 'pending_actions' : n.tipo === 'partido_sin_arbitro' ? 'sports' : 'visibility_off' }}
+                              </mat-icon>
+                              <div class="flex-1 min-w-0">
+                                <p class="text-xs font-semibold text-gray-900">
+                                  {{ n.tipo === 'partido_sin_arbitro' ? 'Sin arbitro asignado' : n.tipo === 'partido_sin_veedor' ? 'Sin veedor asignado' : 'Sin confirmar por arbitro' }}
+                                </p>
+                                <p class="text-xs text-gray-600 truncate">
+                                  {{ n.categoria }} · {{ n.local }} vs {{ n.visitante }}
+                                </p>
+                                <p class="text-[10px] text-gray-400 mt-0.5">
+                                  Fecha {{ n.numero_jornada }} ({{ n.fase }})
+                                  @if (n.dias_hasta != null) {
+                                    @if (n.dias_hasta < 0) { · hace {{ -n.dias_hasta }}d }
+                                    @else if (n.dias_hasta === 0) { · HOY }
+                                    @else if (n.dias_hasta === 1) { · manana }
+                                    @else { · en {{ n.dias_hasta }}d }
+                                  }
+                                </p>
+                              </div>
+                            </a>
+                          }
                         }
                       </div>
                     }

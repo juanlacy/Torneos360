@@ -6,7 +6,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { environment } from '../../../environments/environment';
 
-type Tab = 'general' | 'categoria' | 'goleadores' | 'tarjetas' | 'fixture';
+type Tab = 'general' | 'categoria' | 'goleadores' | 'tarjetas' | 'fixture' | 'sanciones';
 
 @Component({
   selector: 'app-torneo-detalle-publico',
@@ -553,6 +553,56 @@ type Tab = 'general' | 'categoria' | 'goleadores' | 'tarjetas' | 'fixture';
               }
             </section>
           }
+
+          <!-- ═══ TAB: SANCIONES ═══ -->
+          @if (tab === 'sanciones') {
+            <section class="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+              <div class="px-5 py-4 border-b border-gray-100">
+                <h2 class="font-bold text-gray-900">Sanciones disciplinarias</h2>
+                <p class="text-xs text-gray-500">Sanciones publicadas del tribunal de disciplina</p>
+              </div>
+
+              @if (loadingTab) {
+                <div class="py-12 flex justify-center"><mat-spinner [diameter]="32"></mat-spinner></div>
+              } @else if (!sanciones.length) {
+                <div class="py-16 text-center text-gray-400">
+                  <mat-icon class="!text-5xl !w-12 !h-12 mb-2">gavel</mat-icon>
+                  <p class="text-sm">Sin sanciones publicadas</p>
+                </div>
+              } @else {
+                <ul class="divide-y divide-gray-100">
+                  @for (s of sanciones; track s.id) {
+                    <li class="px-4 py-3 flex items-center gap-3 hover:bg-gray-50">
+                      @if (s.persona?.foto_url) {
+                        <img [src]="resolveUrl(s.persona.foto_url)" class="w-10 h-10 rounded-full object-cover flex-shrink-0" alt="">
+                      } @else {
+                        <div class="w-10 h-10 rounded-full bg-red-700 text-white flex items-center justify-center font-bold text-sm flex-shrink-0">
+                          {{ (s.persona?.nombre || '?').charAt(0) }}{{ (s.persona?.apellido || '').charAt(0) }}
+                        </div>
+                      }
+                      <div class="flex-1 min-w-0">
+                        <p class="font-semibold text-gray-900 truncate">{{ s.persona?.apellido }}, {{ s.persona?.nombre }}</p>
+                        <p class="text-xs text-gray-600 capitalize truncate">
+                          {{ s.motivo?.replaceAll('_', ' ') }}
+                          @if (s.partido?.categoria?.nombre) { · {{ s.partido.categoria.nombre }} }
+                        </p>
+                        @if (s.detalle) {
+                          <p class="text-[11px] text-gray-500 italic mt-0.5 line-clamp-2">{{ s.detalle }}</p>
+                        }
+                      </div>
+                      <div class="text-right shrink-0">
+                        <span class="inline-block px-2.5 py-1 rounded-lg text-white font-bold text-sm"
+                          [style.background-color]="torneo.color_primario || '#b91c1c'">
+                          {{ s.fechas_suspension }}f
+                        </span>
+                        <p class="text-[10px] text-gray-400 mt-1 capitalize">{{ s.estado }}</p>
+                      </div>
+                    </li>
+                  }
+                </ul>
+              }
+            </section>
+          }
         </main>
       </div>
     }
@@ -573,6 +623,7 @@ export class TorneoDetallePublicoComponent implements OnInit, OnDestroy {
     { id: 'goleadores', label: 'Goleadores',    icon: 'sports_soccer' },
     { id: 'tarjetas',   label: 'Tarjetas',      icon: 'style' },
     { id: 'fixture',    label: 'Fixture',       icon: 'event' },
+    { id: 'sanciones',  label: 'Sanciones',     icon: 'gavel' },
   ];
 
   // Filtros por tab
@@ -584,6 +635,7 @@ export class TorneoDetallePublicoComponent implements OnInit, OnDestroy {
   posicionesCategoria: any[] = [];
   goleadores: any[] = [];
   tarjetas: any[] = [];
+  sanciones: any[] = [];
   partidosEnVivo: any[] = [];
   private vivoSub: any = null;
 
@@ -641,6 +693,7 @@ export class TorneoDetallePublicoComponent implements OnInit, OnDestroy {
     if (t === 'goleadores' && !this.goleadores.length) this.cargarGoleadores();
     if (t === 'tarjetas' && !this.tarjetas.length) this.cargarTarjetas();
     if (t === 'fixture' && !this.jornadas.length) this.cargarJornadas();
+    if (t === 'sanciones' && !this.sanciones.length) this.cargarSanciones();
   }
 
   cargarPosicionesGenerales() {
@@ -700,6 +753,18 @@ export class TorneoDetallePublicoComponent implements OnInit, OnDestroy {
     this.http.get<any>(`${environment.apiUrl}/publico/torneos/${this.torneoId}/goleadores?${params}`).subscribe({
       next: (res) => {
         this.goleadores = res.data || [];
+        this.loadingTab = false;
+        this.cdr.detectChanges();
+      },
+      error: () => { this.loadingTab = false; this.cdr.detectChanges(); },
+    });
+  }
+
+  cargarSanciones() {
+    this.loadingTab = true;
+    this.http.get<any>(`${environment.apiUrl}/publico/torneos/${this.torneoId}/sanciones`).subscribe({
+      next: (res) => {
+        this.sanciones = res.data || [];
         this.loadingTab = false;
         this.cdr.detectChanges();
       },

@@ -1,6 +1,7 @@
-import { Op } from 'sequelize';
+import { Op, fn, col } from 'sequelize';
 import {
   Partido, FixtureJornada, Categoria, Club, Institucion,
+  PartidoEvento, SancionDisciplinaria, Torneo, Persona, Rol, PersonaRol,
 } from '../models/index.js';
 
 /**
@@ -103,10 +104,75 @@ export const listar = async (req, res) => {
       return (a.dias_hasta ?? 9999) - (b.dias_hasta ?? 9999);
     });
 
+    // ─── Tribunal: casos pendientes ──────────────────────────────────────
+    // 1. Acumulaciones no-sancionadas aun
+    // 2. Rojas directas sin sancion creada
+    // 3. Apelaciones en estado 'apelada' pendientes de resolver
+    const torneo = await Torneo.findByPk(torneoId, { attributes: ['config'] });
+    const limiteAmarillas = torneo?.config?.amarillas_para_suspension ?? 5;
+
+    const partidosFinIds = (await Partido.findAll({
+      where: { jornada_id: jornadaIds, estado: 'finalizado' },
+      attributes: ['id'], raw: true,
+    })).map(p => p.id);
+
+    let casosTribunal = 0;
+    if (partidosFinIds.length) {
+      // Sanciones ya creadas (no revocadas, no cumplidas)
+      const sanciones = await SancionDisciplinaria.findAll({
+        where: { torneo_id: torneoId, estado: { [Op.notIn]: ['revocada', 'cumplida'] } },
+        raw: true,
+      });
+      const porPersonaMotivo = new Map();
+      const porPartidoRoja = new Set();
+      for (const s of sanciones) {
+        const k = `${s.persona_id}-${s.motivo}`;
+        porPersonaMotivo.set(k, (porPersonaMotivo.get(k) || 0) + 1);
+        if (s.motivo === 'roja_directa' && s.partido_id) porPartidoRoja.add(`${s.partido_id}-${s.persona_id}`);
+      }
+
+      // Acumulaciones sin sancionar
+      const amarillas = await PartidoEvento.findAll({
+        where: { partido_id: partidosFinIds, tipo: 'amarilla', persona_id: { [Op.ne]: null } },
+        attributes: ['persona_id', [fn('COUNT', col('PartidoEvento.id')), 'cantidad']],
+        group: ['persona_id'], raw: true,
+      });
+      for (const a of amarillas) {
+        const c = parseInt(a.cantidad);
+        if (c < limiteAmarillas) continue;
+        const saltos = Math.floor(c / limiteAmarillas);
+        const ya = porPersonaMotivo.get(`${a.persona_id}-acumulacion_amarillas`) || 0;
+        if (saltos > ya) casosTribunal += (saltos - ya);
+      }
+
+      // Rojas directas sin sancion
+      const rojas = await PartidoEvento.findAll({
+        where: { partido_id: partidosFinIds, tipo: 'roja', persona_id: { [Op.ne]: null } },
+        attributes: ['persona_id', 'partido_id'], raw: true,
+      });
+      for (const r of rojas) {
+        if (!porPartidoRoja.has(`${r.partido_id}-${r.persona_id}`)) casosTribunal++;
+      }
+
+      // Apelaciones pendientes
+      const apeladas = await SancionDisciplinaria.count({ where: { torneo_id: torneoId, estado: 'apelada' } });
+      casosTribunal += apeladas;
+    }
+
+    if (casosTribunal > 0) {
+      items.push({
+        tipo: 'tribunal_casos_pendientes',
+        severidad: 'warning',
+        casos: casosTribunal,
+        link: '/tribunal',
+      });
+    }
+
     const por_tipo = {
       sin_arbitro:   items.filter(i => i.tipo === 'partido_sin_arbitro').length,
       sin_veedor:    items.filter(i => i.tipo === 'partido_sin_veedor').length,
       sin_confirmar: items.filter(i => i.tipo === 'partido_sin_confirmar').length,
+      tribunal:      casosTribunal,
     };
 
     res.json({ success: true, total: items.length, items, por_tipo });
