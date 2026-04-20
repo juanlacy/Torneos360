@@ -64,22 +64,6 @@ type Tab = 'goleadores' | 'tarjetas';
               {{ c.nombre }}
             </button>
           }
-          @if (zonas.length > 1) {
-            <span class="shrink-0 w-px self-stretch bg-gray-200 mx-1"></span>
-            <button (click)="selectZona(null)"
-              class="shrink-0 px-3 py-1 rounded-full text-[11px] font-semibold transition-all"
-              [class]="zonaId === null ? 'bg-gray-700 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'">
-              Todas las zonas
-            </button>
-            @for (z of zonas; track z.id) {
-              <button (click)="selectZona(z.id)"
-                class="shrink-0 px-3 py-1 rounded-full text-[11px] font-semibold transition-all"
-                [class]="zonaId === z.id ? 'text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
-                [style.background-color]="zonaId === z.id ? (z.color || '#374151') : ''">
-                {{ z.nombre }}
-              </button>
-            }
-          }
           <span class="ml-auto shrink-0 text-xs text-gray-400 self-center">
             @if (!loading) { {{ currentRows().length }} resultados }
           </span>
@@ -215,7 +199,6 @@ export class EstadisticasComponent implements OnInit {
   categorias: any[] = [];
   zonas: any[] = [];
   categoriaId: number | null = null;
-  zonaId: number | null = null;
 
   branding: any = {};
   torneoNombre = '';
@@ -259,11 +242,6 @@ export class EstadisticasComponent implements OnInit {
     this.cargar();
   }
 
-  selectZona(id: number | null) {
-    this.zonaId = id;
-    this.cargar();
-  }
-
   cargar() {
     const torneoId = this.brandingSvc.torneoActivoId;
     if (!torneoId) return;
@@ -271,7 +249,6 @@ export class EstadisticasComponent implements OnInit {
 
     const params: string[] = [];
     if (this.categoriaId) params.push(`categoria_id=${this.categoriaId}`);
-    if (this.zonaId) params.push(`zona_id=${this.zonaId}`);
     const qs = params.length ? `?${params.join('&')}` : '';
 
     const endpoint = this.tab === 'goleadores' ? 'goleadores' : 'tarjetas';
@@ -326,10 +303,6 @@ export class EstadisticasComponent implements OnInit {
     if (this.categoriaId) {
       const c = this.categorias.find(c => c.id === this.categoriaId);
       if (c) filtros.push(`Categoria: ${c.nombre}`);
-    }
-    if (this.zonaId) {
-      const z = this.zonas.find(z => z.id === this.zonaId);
-      if (z) filtros.push(`Zona: ${z.nombre}`);
     }
     doc.setTextColor(100);
     doc.setFontSize(9);
