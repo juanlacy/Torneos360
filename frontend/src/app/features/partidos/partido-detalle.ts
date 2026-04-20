@@ -25,32 +25,118 @@ import { SocketService } from '../../core/services/socket.service';
     @if (partido) {
       <div class="space-y-4">
         <!-- Header con resultado -->
-        <mat-card class="bg-white rounded-xl border border-gray-200">
+        <mat-card class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          @if (partido.estado === 'finalizado') {
+            <!-- Barra superior con degrade de colores de los equipos -->
+            <div class="h-1.5 grid grid-cols-2">
+              <div [style.background-color]="partido.clubLocal?.color_primario || '#762c7e'"></div>
+              <div [style.background-color]="partido.clubVisitante?.color_primario || '#4f2f7d'"></div>
+            </div>
+          }
           <mat-card-content class="p-6">
-            <div class="text-center mb-2">
-              <span class="text-sm text-gray-500">
-                Fecha {{ partido.jornada?.numero_jornada }} — {{ partido.jornada?.fase | uppercase }}
-                · {{ partido.categoria?.nombre }}
+            <div class="text-center mb-3 flex items-center justify-center gap-2 flex-wrap">
+              <span class="text-xs text-gray-500 font-medium">
+                Fecha {{ partido.jornada?.numero_jornada }} · {{ partido.jornada?.fase | uppercase }}
               </span>
+              @if (partido.categoria?.nombre) {
+                <span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-700">{{ partido.categoria.nombre }}</span>
+              }
+              <span class="badge" [class]="'badge-' + partido.estado">{{ partido.estado }}</span>
+              @if (partido.confirmado_arbitro) {
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-green-100 text-green-700">
+                  <mat-icon class="!text-xs !w-3 !h-3">verified</mat-icon> Confirmado
+                </span>
+              }
             </div>
-            <div class="flex items-center justify-center gap-8">
-              <div class="text-center flex-1">
-                <div class="text-xl font-bold text-gray-900">{{ partido.clubLocal?.nombre }}</div>
-                <div class="text-sm text-gray-500">Local</div>
-              </div>
-              <div class="text-center">
-                <div class="text-4xl font-bold px-6 py-3 rounded-lg"
-                  [class]="partido.estado === 'finalizado' ? 'bg-green-50 text-green-700' : partido.estado === 'en_curso' ? 'bg-yellow-50 text-yellow-700' : 'bg-gray-100 text-gray-700'">
-                  {{ partido.goles_local }} - {{ partido.goles_visitante }}
+            <div class="flex items-center justify-center gap-4 sm:gap-8">
+              <!-- Local -->
+              <div class="text-center flex-1 min-w-0">
+                @if (partido.clubLocal?.escudo_url) {
+                  <img [src]="resolveUrl(partido.clubLocal.escudo_url)" class="w-14 h-14 sm:w-16 sm:h-16 mx-auto mb-2 object-contain" alt="">
+                } @else {
+                  <div class="w-14 h-14 sm:w-16 sm:h-16 mx-auto mb-2 rounded-xl flex items-center justify-center text-white text-xl font-bold"
+                    [style.background-color]="partido.clubLocal?.color_primario || '#762c7e'">
+                    {{ initials(partido.clubLocal?.nombre_corto || partido.clubLocal?.nombre) }}
+                  </div>
+                }
+                <div class="text-sm sm:text-lg font-bold text-gray-900 truncate"
+                  [class.text-green-700]="esGanadorPartido('local')">
+                  {{ partido.clubLocal?.nombre }}
+                  @if (esGanadorPartido('local')) {
+                    <mat-icon class="!text-base !w-4 !h-4 align-middle text-yellow-500">emoji_events</mat-icon>
+                  }
                 </div>
-                <span class="px-3 py-1 rounded text-xs font-medium mt-2 inline-block"
-                  [class]="getEstadoClass(partido.estado)">{{ partido.estado }}</span>
+                <div class="text-xs text-gray-400">Local</div>
               </div>
-              <div class="text-center flex-1">
-                <div class="text-xl font-bold text-gray-900">{{ partido.clubVisitante?.nombre }}</div>
-                <div class="text-sm text-gray-500">Visitante</div>
+
+              <!-- Score -->
+              <div class="text-center shrink-0">
+                <div class="text-4xl sm:text-5xl font-black px-5 py-3 rounded-xl tabular-nums shadow-sm"
+                  [class]="partido.estado === 'finalizado' ? 'bg-gradient-to-br from-gray-900 to-gray-700 text-white' : partido.estado === 'en_curso' ? 'bg-red-600 text-white animate-pulse' : 'bg-gray-100 text-gray-700'">
+                  {{ partido.goles_local }} <span class="text-gray-400 mx-1">-</span> {{ partido.goles_visitante }}
+                </div>
+                @if (partido.estado === 'finalizado' && partido.goles_local === partido.goles_visitante) {
+                  <div class="text-[10px] text-gray-500 uppercase font-semibold mt-1">Empate</div>
+                }
+              </div>
+
+              <!-- Visitante -->
+              <div class="text-center flex-1 min-w-0">
+                @if (partido.clubVisitante?.escudo_url) {
+                  <img [src]="resolveUrl(partido.clubVisitante.escudo_url)" class="w-14 h-14 sm:w-16 sm:h-16 mx-auto mb-2 object-contain" alt="">
+                } @else {
+                  <div class="w-14 h-14 sm:w-16 sm:h-16 mx-auto mb-2 rounded-xl flex items-center justify-center text-white text-xl font-bold"
+                    [style.background-color]="partido.clubVisitante?.color_primario || '#4f2f7d'">
+                    {{ initials(partido.clubVisitante?.nombre_corto || partido.clubVisitante?.nombre) }}
+                  </div>
+                }
+                <div class="text-sm sm:text-lg font-bold text-gray-900 truncate"
+                  [class.text-green-700]="esGanadorPartido('visitante')">
+                  @if (esGanadorPartido('visitante')) {
+                    <mat-icon class="!text-base !w-4 !h-4 align-middle text-yellow-500">emoji_events</mat-icon>
+                  }
+                  {{ partido.clubVisitante?.nombre }}
+                </div>
+                <div class="text-xs text-gray-400">Visitante</div>
               </div>
             </div>
+
+            <!-- MVP + Calificacion arbitro (solo si finalizado) -->
+            @if (partido.estado === 'finalizado' && (partido.mejorJugador || partido.calificacion_arbitro || partido.arbitro)) {
+              <div class="mt-5 pt-4 border-t border-gray-100 grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
+                @if (partido.arbitro) {
+                  <div class="flex items-center gap-2">
+                    <mat-icon class="!text-gray-400">sports</mat-icon>
+                    <div>
+                      <p class="text-[10px] text-gray-400 uppercase font-semibold">Arbitro</p>
+                      <p class="font-medium text-gray-800">{{ partido.arbitro.apellido }}, {{ partido.arbitro.nombre }}</p>
+                    </div>
+                  </div>
+                }
+                @if (partido.mejorJugador) {
+                  <div class="flex items-center gap-2">
+                    <mat-icon class="!text-yellow-500">star</mat-icon>
+                    <div>
+                      <p class="text-[10px] text-gray-400 uppercase font-semibold">MVP del partido</p>
+                      <p class="font-medium text-gray-800">{{ partido.mejorJugador.apellido }}, {{ partido.mejorJugador.nombre }}</p>
+                    </div>
+                  </div>
+                }
+                @if (partido.calificacion_arbitro) {
+                  <div class="flex items-center gap-2">
+                    <mat-icon class="!text-amber-400">grade</mat-icon>
+                    <div>
+                      <p class="text-[10px] text-gray-400 uppercase font-semibold">Calificacion arbitro</p>
+                      <p class="font-medium text-gray-800">
+                        @for (i of [1,2,3,4,5]; track i) {
+                          <span [class.text-amber-500]="i <= partido.calificacion_arbitro" [class.text-gray-300]="i > partido.calificacion_arbitro">★</span>
+                        }
+                      </p>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
 
             <!-- Acciones segun estado -->
             <div class="flex justify-center gap-3 mt-6 flex-wrap">
@@ -159,6 +245,81 @@ import { SocketService } from '../../core/services/socket.service';
                 <button mat-flat-button color="primary" (click)="registrarEvento()">
                   <mat-icon>add</mat-icon> Registrar
                 </button>
+              </div>
+            </mat-card-content>
+          </mat-card>
+        }
+
+        <!-- Resumen del partido (solo finalizado) -->
+        @if (partido.estado === 'finalizado' && resumen.goleadores.length + resumen.amarillas.length + resumen.rojas.length > 0) {
+          <mat-card class="bg-white rounded-xl border border-gray-200">
+            <mat-card-content class="p-5">
+              <h3 class="text-sm font-bold text-gray-700 uppercase tracking-wider mb-3">Resumen del partido</h3>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Local -->
+                <div>
+                  <div class="flex items-center gap-2 mb-2">
+                    @if (partido.clubLocal?.escudo_url) {
+                      <img [src]="resolveUrl(partido.clubLocal.escudo_url)" class="w-6 h-6 object-contain" alt="">
+                    }
+                    <span class="text-sm font-semibold text-gray-800">{{ partido.clubLocal?.nombre_corto || partido.clubLocal?.nombre }}</span>
+                  </div>
+                  @for (g of filtrarPorClub(resumen.goleadores, partido.club_local_id); track g.persona_id) {
+                    <div class="flex items-center gap-2 py-1 text-sm text-gray-700">
+                      <span class="text-green-600">⚽</span>
+                      <span class="flex-1 truncate">{{ g.nombre }}</span>
+                      @if (g.cantidad > 1) { <span class="font-bold text-gray-800">x{{ g.cantidad }}</span> }
+                    </div>
+                  }
+                  @for (a of filtrarPorClub(resumen.amarillas, partido.club_local_id); track a.persona_id) {
+                    <div class="flex items-center gap-2 py-1 text-sm text-gray-700">
+                      <span>🟨</span>
+                      <span class="flex-1 truncate">{{ a.nombre }}</span>
+                      @if (a.cantidad > 1) { <span class="font-bold text-gray-800">x{{ a.cantidad }}</span> }
+                    </div>
+                  }
+                  @for (r of filtrarPorClub(resumen.rojas, partido.club_local_id); track r.persona_id) {
+                    <div class="flex items-center gap-2 py-1 text-sm text-gray-700">
+                      <span>🟥</span>
+                      <span class="flex-1 truncate">{{ r.nombre }}</span>
+                    </div>
+                  }
+                  @if (filtrarPorClub(resumen.goleadores, partido.club_local_id).length + filtrarPorClub(resumen.amarillas, partido.club_local_id).length + filtrarPorClub(resumen.rojas, partido.club_local_id).length === 0) {
+                    <p class="text-xs text-gray-400 italic py-1">Sin eventos registrados</p>
+                  }
+                </div>
+                <!-- Visitante -->
+                <div>
+                  <div class="flex items-center gap-2 mb-2">
+                    @if (partido.clubVisitante?.escudo_url) {
+                      <img [src]="resolveUrl(partido.clubVisitante.escudo_url)" class="w-6 h-6 object-contain" alt="">
+                    }
+                    <span class="text-sm font-semibold text-gray-800">{{ partido.clubVisitante?.nombre_corto || partido.clubVisitante?.nombre }}</span>
+                  </div>
+                  @for (g of filtrarPorClub(resumen.goleadores, partido.club_visitante_id); track g.persona_id) {
+                    <div class="flex items-center gap-2 py-1 text-sm text-gray-700">
+                      <span class="text-green-600">⚽</span>
+                      <span class="flex-1 truncate">{{ g.nombre }}</span>
+                      @if (g.cantidad > 1) { <span class="font-bold text-gray-800">x{{ g.cantidad }}</span> }
+                    </div>
+                  }
+                  @for (a of filtrarPorClub(resumen.amarillas, partido.club_visitante_id); track a.persona_id) {
+                    <div class="flex items-center gap-2 py-1 text-sm text-gray-700">
+                      <span>🟨</span>
+                      <span class="flex-1 truncate">{{ a.nombre }}</span>
+                      @if (a.cantidad > 1) { <span class="font-bold text-gray-800">x{{ a.cantidad }}</span> }
+                    </div>
+                  }
+                  @for (r of filtrarPorClub(resumen.rojas, partido.club_visitante_id); track r.persona_id) {
+                    <div class="flex items-center gap-2 py-1 text-sm text-gray-700">
+                      <span>🟥</span>
+                      <span class="flex-1 truncate">{{ r.nombre }}</span>
+                    </div>
+                  }
+                  @if (filtrarPorClub(resumen.goleadores, partido.club_visitante_id).length + filtrarPorClub(resumen.amarillas, partido.club_visitante_id).length + filtrarPorClub(resumen.rojas, partido.club_visitante_id).length === 0) {
+                    <p class="text-xs text-gray-400 italic py-1">Sin eventos registrados</p>
+                  }
+                </div>
               </div>
             </mat-card-content>
           </mat-card>
@@ -293,6 +454,13 @@ export class PartidoDetalleComponent implements OnInit, OnDestroy {
   resultadoForm = { goles_local: 0, goles_visitante: 0 };
   guardandoResultado = false;
 
+  // Resumen agregado (goleadores, amarillas, rojas por jugador)
+  resumen: {
+    goleadores: { persona_id: number; nombre: string; club_id: number; cantidad: number }[];
+    amarillas:  { persona_id: number; nombre: string; club_id: number; cantidad: number }[];
+    rojas:      { persona_id: number; nombre: string; club_id: number; cantidad: number }[];
+  } = { goleadores: [], amarillas: [], rojas: [] };
+
   // Grabacion de audio
   grabando = false;
   audioBlob: Blob | null = null;
@@ -373,6 +541,7 @@ export class PartidoDetalleComponent implements OnInit, OnDestroy {
     this.http.get<any>(`${environment.apiUrl}/partidos/${id}`).subscribe({
       next: res => {
         this.partido = res.data;
+        this.calcularResumen();
         this.cargarInformes();
         if (!this.partidoId) this.setupSocketListeners();
         this.cdr.detectChanges();
@@ -385,6 +554,50 @@ export class PartidoDetalleComponent implements OnInit, OnDestroy {
     this.http.get<any>(`${environment.apiUrl}/informes`, { params: { partido_id: this.partido.id } }).subscribe({
       next: res => { this.informes = res.data; this.cdr.detectChanges(); },
     });
+  }
+
+  esGanadorPartido(lado: 'local' | 'visitante'): boolean {
+    if (this.partido?.estado !== 'finalizado') return false;
+    const gl = this.partido.goles_local ?? 0;
+    const gv = this.partido.goles_visitante ?? 0;
+    return lado === 'local' ? gl > gv : gv > gl;
+  }
+
+  initials(name: string | null | undefined): string {
+    if (!name) return '?';
+    return name.substring(0, 2).toUpperCase();
+  }
+
+  resolveUrl(url: string | null | undefined): string {
+    if (!url) return '';
+    if (url.startsWith('http')) return url;
+    if (url.startsWith('/uploads/')) return url;
+    return `${environment.apiUrl}${url}`;
+  }
+
+  filtrarPorClub<T extends { club_id: number }>(items: T[], clubId: number): T[] {
+    return items.filter(i => i.club_id === clubId);
+  }
+
+  private calcularResumen() {
+    const agrupar = (tipos: string[]) => {
+      const map = new Map<string, { persona_id: number; nombre: string; club_id: number; cantidad: number }>();
+      for (const ev of this.partido?.eventos || []) {
+        if (!tipos.includes(ev.tipo) || !ev.persona_id) continue;
+        const key = `${ev.persona_id}-${ev.club_id}`;
+        if (!map.has(key)) {
+          const nombre = ev.jugador ? `${ev.jugador.apellido || ''}, ${ev.jugador.nombre || ''}`.replace(/^, |, $/g, '') : '(desconocido)';
+          map.set(key, { persona_id: ev.persona_id, nombre, club_id: ev.club_id, cantidad: 0 });
+        }
+        map.get(key)!.cantidad++;
+      }
+      return [...map.values()].sort((a, b) => b.cantidad - a.cantidad);
+    };
+    this.resumen = {
+      goleadores: agrupar(['gol']),
+      amarillas:  agrupar(['amarilla']),
+      rojas:      agrupar(['roja']),
+    };
   }
 
   abrirResultadoRapido() {
