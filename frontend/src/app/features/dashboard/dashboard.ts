@@ -302,14 +302,21 @@ const DEFAULT_WIDGETS = ['kpis', 'posiciones_zona', 'goleadores', 'resultados_fe
               <a routerLink="/fixture" class="text-xs text-[var(--color-primario)] hover:underline font-medium">Ver fixture →</a>
             </div>
 
-            <!-- Chips de jornadas -->
-            <div class="px-5 py-2.5 border-b border-gray-100 flex gap-1.5 overflow-x-auto">
-              @for (j of jornadas; track j.id) {
-                <button (click)="selectJornada(j)"
-                  class="shrink-0 w-8 h-8 rounded-lg text-xs font-bold transition-all flex items-center justify-center"
-                  [class]="selectedJornadaId === j.id ? 'bg-green-600 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'">
-                  {{ j.numero_jornada }}
-                </button>
+            <!-- Chips de jornadas (separados por fase IDA / VUELTA) -->
+            <div class="px-5 py-2.5 border-b border-gray-100 space-y-2">
+              @for (fase of jornadasPorFase; track fase.fase) {
+                <div class="flex items-center gap-2">
+                  <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wider w-14 shrink-0">{{ fase.label }}</span>
+                  <div class="flex gap-1.5 overflow-x-auto">
+                    @for (j of fase.jornadas; track j.id) {
+                      <button (click)="selectJornada(j)"
+                        class="shrink-0 w-8 h-8 rounded-lg text-xs font-bold transition-all flex items-center justify-center"
+                        [class]="selectedJornadaId === j.id ? 'bg-green-600 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'">
+                        {{ j.numero_jornada }}
+                      </button>
+                    }
+                  </div>
+                </div>
               }
             </div>
 
@@ -487,6 +494,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   // Resultados
   jornadas: any[] = [];
+  jornadasPorFase: { fase: string; label: string; jornadas: any[] }[] = [];
   selectedJornadaId: number | null = null;
   partidosFecha: any[] = [];
   partidosAgrupados: { categoria: string; partidos: any[] }[] = [];
@@ -705,7 +713,16 @@ export class DashboardComponent implements OnInit, OnDestroy {
   private loadJornadas(torneoId: number) {
     this.http.get<any>(`${environment.apiUrl}/fixture/${torneoId}/jornadas`).subscribe({
       next: res => {
-        this.jornadas = (res.data || []).sort((a: any, b: any) => a.numero_jornada - b.numero_jornada);
+        this.jornadas = (res.data || []).sort((a: any, b: any) =>
+          (a.fase === b.fase ? a.numero_jornada - b.numero_jornada : (a.fase === 'ida' ? -1 : 1)),
+        );
+        // Agrupar por fase para la UI
+        const ida    = this.jornadas.filter((j: any) => j.fase === 'ida');
+        const vuelta = this.jornadas.filter((j: any) => j.fase === 'vuelta');
+        this.jornadasPorFase = [];
+        if (ida.length)    this.jornadasPorFase.push({ fase: 'ida',    label: 'Ida',    jornadas: ida });
+        if (vuelta.length) this.jornadasPorFase.push({ fase: 'vuelta', label: 'Vuelta', jornadas: vuelta });
+
         // Auto-select last jornada with finalizados, or the last one
         const finalizadas = this.jornadas.filter((j: any) => j.estado === 'finalizada' || j.estado === 'finalizado');
         const selected = finalizadas.length ? finalizadas[finalizadas.length - 1] : (this.jornadas.length ? this.jornadas[this.jornadas.length - 1] : null);
@@ -714,6 +731,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
       },
       error: () => {
         this.jornadas = [];
+        this.jornadasPorFase = [];
         this.cdr.detectChanges();
       },
     });

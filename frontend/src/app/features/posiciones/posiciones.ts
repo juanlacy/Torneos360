@@ -251,11 +251,17 @@ export class PosicionesComponent implements OnInit, OnDestroy {
 
   cargar() {
     if (!this.torneoId) return;
-    const torneo = this.torneos.find(t => t.id === this.torneoId);
-    if (torneo) {
-      this.categorias = torneo.categorias || [];
-      this.zonas = torneo.zonas || [];
-    }
+
+    // Cargar torneo fresco (categorias + zonas) — evita race condition
+    // cuando torneoActivoId$ emite antes que termine el fetch de /torneos.
+    this.http.get<any>(`${environment.apiUrl}/torneos/${this.torneoId}`).subscribe({
+      next: res => {
+        const t = res.data || {};
+        this.categorias = (t.categorias || []).sort((a: any, b: any) => (a.orden || 0) - (b.orden || 0));
+        this.zonas = t.zonas || [];
+        this.cdr.detectChanges();
+      },
+    });
 
     this.http.get<any>(`${environment.apiUrl}/posiciones/${this.torneoId}/general`).subscribe({
       next: res => { this.posicionesClub = res.data; this.cdr.detectChanges(); },
