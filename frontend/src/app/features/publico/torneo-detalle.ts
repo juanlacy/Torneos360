@@ -299,22 +299,22 @@ type Tab = 'general' | 'categoria' | 'goleadores' | 'tarjetas' | 'fixture';
 
           <!-- ═══ TAB: GOLEADORES ═══ -->
           @if (tab === 'goleadores') {
-            <section class="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-              <div class="px-5 py-4 border-b border-gray-100">
+            <section>
+              <div class="mb-4 px-1">
                 <h2 class="font-bold text-gray-900">Tabla de Goleadores</h2>
-                <p class="text-xs text-gray-500">Top {{ goleadores.length || '20' }} maximos goleadores</p>
+                <p class="text-xs text-gray-500">Maximos goleadores por zona</p>
               </div>
-              <div class="px-5 py-2.5 border-b border-gray-100 flex gap-2 overflow-x-auto bg-gray-50">
+              <div class="mb-4 flex gap-2 overflow-x-auto">
                 <button (click)="selectCategoriaGol(null)"
-                  class="shrink-0 px-3 py-1 rounded-full text-[11px] font-semibold transition-all"
-                  [class]="categoriaIdGoleadores === null ? 'text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
+                  class="shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-all"
+                  [class]="categoriaIdGoleadores === null ? 'text-white shadow-sm' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'"
                   [style.background-color]="categoriaIdGoleadores === null ? (torneo.color_primario || '#762c7e') : ''">
                   Todas
                 </button>
                 @for (c of categorias; track c.id) {
                   <button (click)="selectCategoriaGol(c.id)"
-                    class="shrink-0 px-3 py-1 rounded-full text-[11px] font-semibold transition-all"
-                    [class]="categoriaIdGoleadores === c.id ? 'text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
+                    class="shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-all"
+                    [class]="categoriaIdGoleadores === c.id ? 'text-white shadow-sm' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'"
                     [style.background-color]="categoriaIdGoleadores === c.id ? (torneo.color_primario || '#762c7e') : ''">
                     {{ c.nombre }}
                   </button>
@@ -322,68 +322,81 @@ type Tab = 'general' | 'categoria' | 'goleadores' | 'tarjetas' | 'fixture';
               </div>
 
               @if (loadingTab) {
-                <div class="py-12 flex justify-center"><mat-spinner [diameter]="32"></mat-spinner></div>
+                <div class="bg-white rounded-2xl border border-gray-200 py-12 flex justify-center"><mat-spinner [diameter]="32"></mat-spinner></div>
               } @else if (!goleadores.length) {
-                <div class="py-16 text-center text-gray-400">
+                <div class="bg-white rounded-2xl border border-gray-200 py-16 text-center text-gray-400">
                   <mat-icon class="!text-5xl !w-12 !h-12 mb-2">sports_soccer</mat-icon>
                   <p class="text-sm">Sin goles registrados todavia</p>
                 </div>
               } @else {
-                <ul class="divide-y divide-gray-100">
-                  @for (g of goleadores; track g.persona_id; let i = $index) {
-                    <li class="px-4 py-3 flex items-center gap-3 hover:bg-gray-50 transition-colors">
-                      <span class="inline-flex w-7 h-7 items-center justify-center rounded-full text-xs font-bold flex-shrink-0"
-                        [class]="i === 0 ? 'bg-yellow-100 text-yellow-700' : i === 1 ? 'bg-gray-200 text-gray-700' : i === 2 ? 'bg-amber-100 text-amber-700' : 'text-gray-400'">
-                        {{ i + 1 }}
-                      </span>
-                      @if (g.foto_url) {
-                        <img [src]="resolveUrl(g.foto_url)" class="w-10 h-10 rounded-full object-cover flex-shrink-0" alt="">
-                      } @else {
-                        <div class="w-10 h-10 rounded-full bg-purple-700 text-white flex items-center justify-center font-bold text-sm flex-shrink-0">
-                          {{ (g.nombre || '?').charAt(0) }}{{ (g.apellido || '').charAt(0) }}
-                        </div>
-                      }
-                      <div class="flex-1 min-w-0">
-                        <p class="font-bold text-gray-900 truncate">{{ g.apellido }}, {{ g.nombre }}</p>
-                        <div class="flex items-center gap-2 mt-0.5">
-                          @if (g.club?.escudo_url) {
-                            <img [src]="resolveUrl(g.club.escudo_url)" class="w-4 h-4 object-contain" alt="">
-                          }
-                          <span class="text-xs text-gray-500 truncate">{{ g.club?.nombre_corto || g.club?.nombre }}</span>
-                          @if (g.categoria) {
-                            <span class="text-[10px] text-gray-400">· {{ g.categoria.nombre }}</span>
-                          }
-                        </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  @for (g of gruposPorZona(goleadores); track g.zona.id) {
+                    <div class="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+                      <div class="h-1.5" [style.background-color]="g.zona.color || torneo.color_primario || '#762c7e'"></div>
+                      <div class="px-4 py-2.5 bg-gray-50 border-b border-gray-200 flex items-center gap-2">
+                        <span class="w-3 h-3 rounded-full" [style.background-color]="g.zona.color || '#6b7280'"></span>
+                        <span class="text-xs font-bold text-gray-700 uppercase tracking-wide">{{ g.zona.nombre }}</span>
+                        <span class="ml-auto text-[10px] text-gray-400">{{ g.rows.length }} jugadores</span>
                       </div>
-                      <span class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-white font-bold text-sm flex-shrink-0"
-                        [style.background-color]="torneo.color_primario || '#762c7e'">
-                        ⚽ {{ g.goles }}
-                      </span>
-                    </li>
+                      <ul class="divide-y divide-gray-100">
+                        @for (j of g.rows; track j.persona_id; let i = $index) {
+                          <li class="px-4 py-2.5 flex items-center gap-3 hover:bg-gray-50">
+                            <span class="inline-flex w-6 h-6 items-center justify-center rounded-full text-[10px] font-bold flex-shrink-0"
+                              [class]="i === 0 ? 'bg-yellow-100 text-yellow-700' : i === 1 ? 'bg-gray-200 text-gray-700' : i === 2 ? 'bg-amber-100 text-amber-700' : 'text-gray-400'">
+                              {{ i + 1 }}
+                            </span>
+                            @if (j.foto_url) {
+                              <img [src]="resolveUrl(j.foto_url)" class="w-9 h-9 rounded-full object-cover flex-shrink-0" alt="">
+                            } @else {
+                              <div class="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-xs flex-shrink-0"
+                                [style.background-color]="j.club?.color_primario || '#762c7e'">
+                                {{ (j.nombre || '?').charAt(0) }}{{ (j.apellido || '').charAt(0) }}
+                              </div>
+                            }
+                            <div class="flex-1 min-w-0">
+                              <p class="font-semibold text-gray-900 text-sm truncate">{{ j.apellido }}, {{ j.nombre }}</p>
+                              <div class="flex items-center gap-1.5 mt-0.5">
+                                @if (j.club?.escudo_url) {
+                                  <img [src]="resolveUrl(j.club.escudo_url)" class="w-4 h-4 object-contain" alt="">
+                                }
+                                <span class="text-[11px] text-gray-500 truncate">{{ j.club?.nombre_corto || j.club?.nombre }}</span>
+                                @if (j.categoria?.nombre) {
+                                  <span class="inline-flex px-1.5 py-0 rounded text-[9px] font-medium bg-blue-50 text-blue-600">{{ j.categoria.nombre }}</span>
+                                }
+                              </div>
+                            </div>
+                            <span class="shrink-0 text-right">
+                              <span class="text-base font-extrabold text-gray-900">{{ j.goles }}</span>
+                              <p class="text-[9px] text-gray-400 uppercase leading-none">goles</p>
+                            </span>
+                          </li>
+                        }
+                      </ul>
+                    </div>
                   }
-                </ul>
+                </div>
               }
             </section>
           }
 
           <!-- ═══ TAB: TARJETAS ═══ -->
           @if (tab === 'tarjetas') {
-            <section class="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-              <div class="px-5 py-4 border-b border-gray-100">
+            <section>
+              <div class="mb-4 px-1">
                 <h2 class="font-bold text-gray-900">Tabla de Tarjetas</h2>
                 <p class="text-xs text-gray-500">Amarillas y rojas acumuladas, ordenadas por total (rojas valen x3)</p>
               </div>
-              <div class="px-5 py-2.5 border-b border-gray-100 flex gap-2 overflow-x-auto bg-gray-50">
+              <div class="mb-4 flex gap-2 overflow-x-auto">
                 <button (click)="selectCategoriaTarj(null)"
-                  class="shrink-0 px-3 py-1 rounded-full text-[11px] font-semibold transition-all"
-                  [class]="categoriaIdTarjetas === null ? 'text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
+                  class="shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-all"
+                  [class]="categoriaIdTarjetas === null ? 'text-white shadow-sm' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'"
                   [style.background-color]="categoriaIdTarjetas === null ? (torneo.color_primario || '#762c7e') : ''">
                   Todas
                 </button>
                 @for (c of categorias; track c.id) {
                   <button (click)="selectCategoriaTarj(c.id)"
-                    class="shrink-0 px-3 py-1 rounded-full text-[11px] font-semibold transition-all"
-                    [class]="categoriaIdTarjetas === c.id ? 'text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
+                    class="shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-all"
+                    [class]="categoriaIdTarjetas === c.id ? 'text-white shadow-sm' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'"
                     [style.background-color]="categoriaIdTarjetas === c.id ? (torneo.color_primario || '#762c7e') : ''">
                     {{ c.nombre }}
                   </button>
@@ -391,63 +404,67 @@ type Tab = 'general' | 'categoria' | 'goleadores' | 'tarjetas' | 'fixture';
               </div>
 
               @if (loadingTab) {
-                <div class="py-12 flex justify-center"><mat-spinner [diameter]="32"></mat-spinner></div>
+                <div class="bg-white rounded-2xl border border-gray-200 py-12 flex justify-center"><mat-spinner [diameter]="32"></mat-spinner></div>
               } @else if (!tarjetas.length) {
-                <div class="py-16 text-center text-gray-400">
+                <div class="bg-white rounded-2xl border border-gray-200 py-16 text-center text-gray-400">
                   <mat-icon class="!text-5xl !w-12 !h-12 mb-2">style</mat-icon>
                   <p class="text-sm">Sin tarjetas registradas todavia</p>
                 </div>
               } @else {
-                <div class="overflow-x-auto">
-                  <table class="w-full text-sm">
-                    <thead class="bg-gray-50 text-gray-400 text-[10px] uppercase tracking-wider">
-                      <tr>
-                        <th class="px-3 py-2.5 text-center w-10">#</th>
-                        <th class="px-3 py-2.5 text-left">Jugador</th>
-                        <th class="px-3 py-2.5 text-left hidden sm:table-cell">Club</th>
-                        <th class="px-2 py-2.5 text-center">🟡</th>
-                        <th class="px-2 py-2.5 text-center">🔴</th>
-                        <th class="px-3 py-2.5 text-right">Total</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      @for (t of tarjetas; track t.persona_id; let i = $index) {
-                        <tr class="border-t border-gray-100 hover:bg-gray-50">
-                          <td class="px-3 py-2.5 text-center text-gray-400 font-medium">{{ i + 1 }}</td>
-                          <td class="px-3 py-2.5">
-                            <div class="flex items-center gap-2.5 min-w-0">
-                              @if (t.foto_url) {
-                                <img [src]="resolveUrl(t.foto_url)" class="w-8 h-8 rounded-full object-cover flex-shrink-0" alt="">
-                              } @else {
-                                <div class="w-8 h-8 rounded-full bg-purple-700 text-white flex items-center justify-center font-bold text-[11px] flex-shrink-0">
-                                  {{ (t.nombre || '?').charAt(0) }}{{ (t.apellido || '').charAt(0) }}
-                                </div>
-                              }
-                              <div class="min-w-0">
-                                <p class="font-semibold text-gray-900 truncate text-sm">{{ t.apellido }}, {{ t.nombre }}</p>
-                                <p class="sm:hidden text-xs text-gray-500 truncate">{{ t.club?.nombre_corto || t.club?.nombre }}</p>
-                              </div>
-                            </div>
-                          </td>
-                          <td class="px-3 py-2.5 hidden sm:table-cell">
-                            <div class="flex items-center gap-2">
-                              @if (t.club?.escudo_url) {
-                                <img [src]="resolveUrl(t.club.escudo_url)" class="w-5 h-5 object-contain" alt="">
-                              }
-                              <span class="text-xs text-gray-700 truncate">{{ t.club?.nombre_corto || t.club?.nombre }}</span>
-                            </div>
-                          </td>
-                          <td class="px-2 py-2.5 text-center font-bold text-yellow-600">{{ t.amarillas }}</td>
-                          <td class="px-2 py-2.5 text-center font-bold text-red-600">{{ t.rojas }}</td>
-                          <td class="px-3 py-2.5 text-right">
-                            <span class="inline-block min-w-[32px] px-2 py-0.5 rounded text-xs font-bold bg-gray-100 text-gray-700">
-                              {{ t.rojas * 3 + t.amarillas }}
-                            </span>
-                          </td>
-                        </tr>
-                      }
-                    </tbody>
-                  </table>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  @for (g of gruposPorZona(tarjetas); track g.zona.id) {
+                    <div class="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+                      <div class="h-1.5" [style.background-color]="g.zona.color || torneo.color_primario || '#762c7e'"></div>
+                      <div class="px-4 py-2.5 bg-gray-50 border-b border-gray-200 flex items-center gap-2">
+                        <span class="w-3 h-3 rounded-full" [style.background-color]="g.zona.color || '#6b7280'"></span>
+                        <span class="text-xs font-bold text-gray-700 uppercase tracking-wide">{{ g.zona.nombre }}</span>
+                        <span class="ml-auto text-[10px] text-gray-400">{{ g.rows.length }} jugadores</span>
+                      </div>
+                      <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                          <thead class="bg-gray-50/50 text-gray-400 text-[10px] uppercase tracking-wider">
+                            <tr>
+                              <th class="px-3 py-2 text-center w-10">#</th>
+                              <th class="px-3 py-2 text-left">Jugador</th>
+                              <th class="px-2 py-2 text-center">🟡</th>
+                              <th class="px-2 py-2 text-center">🔴</th>
+                              <th class="px-3 py-2 text-right">Total</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            @for (t of g.rows; track t.persona_id; let i = $index) {
+                              <tr class="border-t border-gray-100 hover:bg-gray-50">
+                                <td class="px-3 py-2 text-center text-gray-400 text-xs font-medium">{{ i + 1 }}</td>
+                                <td class="px-3 py-2">
+                                  <div class="flex items-center gap-2 min-w-0">
+                                    @if (t.foto_url) {
+                                      <img [src]="resolveUrl(t.foto_url)" class="w-7 h-7 rounded-full object-cover flex-shrink-0" alt="">
+                                    } @else {
+                                      <div class="w-7 h-7 rounded-full flex items-center justify-center text-white font-bold text-[10px] flex-shrink-0"
+                                        [style.background-color]="t.club?.color_primario || '#762c7e'">
+                                        {{ (t.nombre || '?').charAt(0) }}{{ (t.apellido || '').charAt(0) }}
+                                      </div>
+                                    }
+                                    <div class="min-w-0">
+                                      <p class="font-semibold text-gray-900 truncate text-xs">{{ t.apellido }}, {{ t.nombre }}</p>
+                                      <p class="text-[10px] text-gray-500 truncate">{{ t.club?.nombre_corto || t.club?.nombre }}</p>
+                                    </div>
+                                  </div>
+                                </td>
+                                <td class="px-2 py-2 text-center font-bold text-yellow-600 text-xs">{{ t.amarillas }}</td>
+                                <td class="px-2 py-2 text-center font-bold text-red-600 text-xs">{{ t.rojas }}</td>
+                                <td class="px-3 py-2 text-right">
+                                  <span class="inline-block min-w-[28px] px-1.5 py-0.5 rounded text-[11px] font-bold bg-gray-100 text-gray-700">
+                                    {{ t.rojas * 3 + t.amarillas }}
+                                  </span>
+                                </td>
+                              </tr>
+                            }
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  }
                 </div>
               }
             </section>
@@ -464,67 +481,75 @@ type Tab = 'general' | 'categoria' | 'goleadores' | 'tarjetas' | 'fixture';
                   <p class="text-sm">Fixture todavia no publicado</p>
                 </div>
               } @else {
-                @for (j of jornadas; track j.id) {
-                  <div class="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-                    <button (click)="toggleJornada(j)"
-                      class="w-full px-5 py-3.5 flex items-center justify-between hover:bg-gray-50 transition-colors">
-                      <div class="flex items-center gap-3 text-left">
-                        <div class="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold"
-                          [style.background-color]="torneo.color_primario || '#762c7e'">
-                          {{ j.numero_jornada }}
-                        </div>
-                        <div>
-                          <p class="font-bold text-gray-900 text-sm">Jornada {{ j.numero_jornada }}<span class="text-gray-400 font-normal text-xs ml-1">{{ j.fase ? '(' + j.fase + ')' : '' }}</span></p>
-                          <p class="text-xs text-gray-500">{{ j.fecha ? formatFecha(j.fecha) : 'Sin fecha' }}</p>
-                        </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  @for (col of gruposPorZona(jornadas); track col.zona.id) {
+                    <div class="space-y-2">
+                      <div class="flex items-center gap-2 px-2">
+                        <span class="w-3 h-3 rounded-full" [style.background-color]="col.zona.color || '#6b7280'"></span>
+                        <span class="text-sm font-bold text-gray-700 uppercase tracking-wide">Zona {{ col.zona.nombre }}</span>
+                        <span class="text-[10px] text-gray-400">{{ col.rows.length }} fechas</span>
                       </div>
-                      <mat-icon class="text-gray-400 transition-transform" [class.rotate-180]="j._expanded">expand_more</mat-icon>
-                    </button>
-
-                    @if (j._expanded) {
-                      @if (j._loading) {
-                        <div class="py-6 flex justify-center"><mat-spinner [diameter]="24"></mat-spinner></div>
-                      } @else if (!j._partidos?.length) {
-                        <div class="px-5 py-6 text-center text-gray-400 text-sm border-t border-gray-100">Sin partidos en esta jornada</div>
-                      } @else {
-                        <div class="border-t border-gray-100 divide-y divide-gray-100">
-                          @for (p of j._partidos; track p.id) {
-                            <div class="px-4 py-3 flex items-center gap-3">
-                              @if (p.categoria) {
-                                <span class="text-[10px] font-bold uppercase text-gray-400 w-12 flex-shrink-0">{{ p.categoria.nombre }}</span>
-                              }
-                              <!-- Local -->
-                              <div class="flex-1 flex items-center justify-end gap-2 min-w-0">
-                                <span class="font-semibold text-gray-800 text-sm truncate text-right">{{ p.clubLocal?.nombre_corto || p.clubLocal?.nombre }}</span>
-                                @if (p.clubLocal?.escudo_url) {
-                                  <img [src]="resolveUrl(p.clubLocal.escudo_url)" class="w-6 h-6 object-contain" alt="">
-                                }
+                      @for (j of col.rows; track j.id) {
+                        <div class="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+                          <button (click)="toggleJornada(j)"
+                            class="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors">
+                            <div class="flex items-center gap-3 text-left min-w-0">
+                              <div class="w-9 h-9 rounded-lg flex items-center justify-center text-white font-bold text-sm shrink-0"
+                                [style.background-color]="col.zona.color || torneo.color_primario || '#762c7e'">
+                                {{ j.numero_jornada }}
                               </div>
-                              <!-- Marcador / hora -->
-                              <div class="flex-shrink-0 min-w-[64px] text-center">
-                                @if (p.estado === 'finalizado') {
-                                  <span class="inline-block px-2.5 py-1 rounded-md bg-gray-900 text-white text-sm font-bold">{{ p.goles_local }} - {{ p.goles_visitante }}</span>
-                                } @else if (p.estado === 'en_curso') {
-                                  <span class="inline-block px-2 py-1 rounded-md bg-red-500 text-white text-xs font-bold animate-pulse">EN VIVO</span>
-                                  <p class="text-xs font-bold text-gray-700 mt-0.5">{{ p.goles_local }} - {{ p.goles_visitante }}</p>
-                                } @else {
-                                  <span class="text-xs text-gray-400 font-medium">vs</span>
-                                }
-                              </div>
-                              <!-- Visitante -->
-                              <div class="flex-1 flex items-center gap-2 min-w-0">
-                                @if (p.clubVisitante?.escudo_url) {
-                                  <img [src]="resolveUrl(p.clubVisitante.escudo_url)" class="w-6 h-6 object-contain" alt="">
-                                }
-                                <span class="font-semibold text-gray-800 text-sm truncate">{{ p.clubVisitante?.nombre_corto || p.clubVisitante?.nombre }}</span>
+                              <div class="min-w-0">
+                                <p class="font-bold text-gray-900 text-sm truncate">Fecha {{ j.numero_jornada }}<span class="text-gray-400 font-normal text-xs ml-1">{{ j.fase ? '(' + j.fase + ')' : '' }}</span></p>
+                                <p class="text-xs text-gray-500">{{ j.fecha ? formatFecha(j.fecha) : 'Sin fecha' }}</p>
                               </div>
                             </div>
+                            <mat-icon class="text-gray-400 transition-transform shrink-0" [class.rotate-180]="j._expanded">expand_more</mat-icon>
+                          </button>
+
+                          @if (j._expanded) {
+                            @if (j._loading) {
+                              <div class="py-6 flex justify-center"><mat-spinner [diameter]="24"></mat-spinner></div>
+                            } @else if (!j._partidos?.length) {
+                              <div class="px-4 py-5 text-center text-gray-400 text-sm border-t border-gray-100">Sin partidos en esta jornada</div>
+                            } @else {
+                              <div class="border-t border-gray-100 divide-y divide-gray-100">
+                                @for (p of j._partidos; track p.id) {
+                                  <div class="px-3 py-2 flex items-center gap-2">
+                                    @if (p.categoria) {
+                                      <span class="text-[10px] font-bold uppercase text-gray-400 w-10 flex-shrink-0">{{ p.categoria.nombre }}</span>
+                                    }
+                                    <div class="flex-1 flex items-center justify-end gap-1.5 min-w-0">
+                                      <span class="font-semibold text-gray-800 text-xs truncate text-right">{{ p.clubLocal?.nombre_corto || p.clubLocal?.nombre }}</span>
+                                      @if (p.clubLocal?.escudo_url) {
+                                        <img [src]="resolveUrl(p.clubLocal.escudo_url)" class="w-5 h-5 object-contain shrink-0" alt="">
+                                      }
+                                    </div>
+                                    <div class="flex-shrink-0 min-w-[52px] text-center">
+                                      @if (p.estado === 'finalizado') {
+                                        <span class="inline-block px-2 py-0.5 rounded bg-gray-900 text-white text-xs font-bold">{{ p.goles_local }} - {{ p.goles_visitante }}</span>
+                                      } @else if (p.estado === 'en_curso') {
+                                        <span class="inline-block px-1.5 py-0.5 rounded bg-red-500 text-white text-[10px] font-bold animate-pulse">VIVO</span>
+                                        <p class="text-[10px] font-bold text-gray-700 mt-0.5">{{ p.goles_local }} - {{ p.goles_visitante }}</p>
+                                      } @else {
+                                        <span class="text-[10px] text-gray-400 font-medium">vs</span>
+                                      }
+                                    </div>
+                                    <div class="flex-1 flex items-center gap-1.5 min-w-0">
+                                      @if (p.clubVisitante?.escudo_url) {
+                                        <img [src]="resolveUrl(p.clubVisitante.escudo_url)" class="w-5 h-5 object-contain shrink-0" alt="">
+                                      }
+                                      <span class="font-semibold text-gray-800 text-xs truncate">{{ p.clubVisitante?.nombre_corto || p.clubVisitante?.nombre }}</span>
+                                    </div>
+                                  </div>
+                                }
+                              </div>
+                            }
                           }
                         </div>
                       }
-                    }
-                  </div>
-                }
+                    </div>
+                  }
+                </div>
               }
             </section>
           }
@@ -647,13 +672,19 @@ export class TorneoDetallePublicoComponent implements OnInit, OnDestroy {
     });
   }
 
-  /** Agrupa filas de posiciones por zona, respetando el orden de this.zonas. */
+  /**
+   * Agrupa filas por zona respetando el orden de this.zonas.
+   * Soporta 3 shapes:
+   *   - posiciones:  r.zona.id
+   *   - goleadores/tarjetas: r.club.zona_id
+   *   - jornadas: r.zona_id
+   */
   gruposPorZona(rows: any[]): { zona: any; rows: any[] }[] {
     const map = new Map<number, { zona: any; rows: any[] }>();
     for (const z of this.zonas) map.set(z.id, { zona: z, rows: [] });
     const sinZona: any[] = [];
     for (const r of rows) {
-      const zid = r.zona?.id;
+      const zid = r.zona?.id ?? r.club?.zona_id ?? r.zona_id;
       if (zid && map.has(zid)) map.get(zid)!.rows.push(r);
       else sinZona.push(r);
     }

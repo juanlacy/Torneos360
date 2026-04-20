@@ -311,11 +311,12 @@ export const fixture = async (req, res) => {
       return res.json({ success: true, data: partidos });
     }
 
-    // Lista de jornadas
+    // Lista de jornadas (incluye zona para agrupar en frontend)
     const jornadas = await FixtureJornada.findAll({
       where: { torneo_id: torneoId },
-      attributes: ['id', 'numero_jornada', 'fase', 'fecha', 'estado'],
-      order: [['numero_jornada', 'ASC'], ['fase', 'ASC']],
+      attributes: ['id', 'zona_id', 'numero_jornada', 'fase', 'fecha', 'estado'],
+      include: [{ model: Zona, as: 'zona', attributes: ['id', 'nombre', 'color'] }],
+      order: [['fase', 'ASC'], ['numero_jornada', 'ASC']],
     });
     res.json({ success: true, data: jornadas });
   } catch (error) {
