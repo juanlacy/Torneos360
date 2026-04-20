@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { AsyncPipe } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -14,6 +15,7 @@ import { filter, switchMap } from 'rxjs/operators';
 import { ToastrService } from 'ngx-toastr';
 import { AuthService } from '../../core/services/auth.service';
 import { BrandingService } from '../../core/services/branding.service';
+import { NotificacionesService } from '../../core/services/notificaciones.service';
 import { environment } from '../../../environments/environment';
 
 interface WidgetConfig {
@@ -28,7 +30,7 @@ const DEFAULT_WIDGETS = ['kpis', 'posiciones_zona', 'goleadores', 'resultados_fe
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [FormsModule, RouterLink, MatButtonModule, MatIconModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatSlideToggleModule],
+  imports: [FormsModule, RouterLink, AsyncPipe, MatButtonModule, MatIconModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatSlideToggleModule],
   template: `
     <div class="space-y-6 animate-fade-in">
 
@@ -70,6 +72,99 @@ const DEFAULT_WIDGETS = ['kpis', 'posiciones_zona', 'goleadores', 'resultados_fe
             }
           </div>
         </div>
+      }
+
+      <!-- ═══ TABS: General / Mi Club ═══ -->
+      <div class="bg-white rounded-xl border border-gray-200 p-1 inline-flex gap-1 shadow-sm">
+        <button (click)="activeTab = 'general'"
+          class="px-4 py-1.5 rounded-lg text-sm font-semibold transition-all flex items-center gap-2"
+          [class]="activeTab === 'general' ? 'text-white shadow-sm' : 'text-gray-600 hover:bg-gray-100'"
+          [style.background-color]="activeTab === 'general' ? 'var(--color-primario)' : ''">
+          <mat-icon class="!text-base !w-5 !h-5">dashboard</mat-icon>
+          General
+        </button>
+        @if (userClubId) {
+          <button (click)="activeTab = 'mi-club'"
+            class="px-4 py-1.5 rounded-lg text-sm font-semibold transition-all flex items-center gap-2"
+            [class]="activeTab === 'mi-club' ? 'text-white shadow-sm' : 'text-gray-600 hover:bg-gray-100'"
+            [style.background-color]="activeTab === 'mi-club' ? 'var(--color-primario)' : ''">
+            <mat-icon class="!text-base !w-5 !h-5">shield</mat-icon>
+            Mi Club
+          </button>
+        }
+      </div>
+
+      @if (activeTab === 'general') {
+
+      <!-- ═══ Pendientes (admin/coordinador) ═══ -->
+      @if (puedeVerPendientes() && (notifs.data$ | async); as notif) {
+        @if (notif.total > 0) {
+          <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden animate-fade-in-up">
+            <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between gap-3 flex-wrap">
+              <div>
+                <h2 class="text-base font-semibold text-gray-900 flex items-center gap-2">
+                  <mat-icon class="!text-lg text-red-500">notifications_active</mat-icon>
+                  Pendientes
+                </h2>
+                <p class="text-[10px] text-gray-400 uppercase tracking-wide mt-0.5">Accion requerida</p>
+              </div>
+              <div class="flex items-center gap-2 flex-wrap">
+                @if (notif.por_tipo.sin_arbitro > 0) {
+                  <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-700">
+                    <mat-icon class="!text-xs !w-3.5 !h-3.5">sports</mat-icon>
+                    {{ notif.por_tipo.sin_arbitro }} sin arbitro
+                  </span>
+                }
+                @if (notif.por_tipo.sin_veedor > 0) {
+                  <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700">
+                    <mat-icon class="!text-xs !w-3.5 !h-3.5">visibility_off</mat-icon>
+                    {{ notif.por_tipo.sin_veedor }} sin veedor
+                  </span>
+                }
+                @if (notif.por_tipo.sin_confirmar > 0) {
+                  <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700">
+                    <mat-icon class="!text-xs !w-3.5 !h-3.5">pending_actions</mat-icon>
+                    {{ notif.por_tipo.sin_confirmar }} sin confirmar
+                  </span>
+                }
+              </div>
+            </div>
+            <div class="max-h-[280px] overflow-y-auto divide-y divide-gray-100">
+              @for (n of notif.items.slice(0, 20); track n.partido_id + '-' + n.tipo) {
+                <a routerLink="/fixture" [queryParams]="{ jornada: n.jornada_id, partido: n.partido_id }"
+                  class="flex items-center gap-3 px-5 py-2.5 hover:bg-gray-50 transition-colors">
+                  <mat-icon class="!text-lg shrink-0"
+                    [class.text-red-500]="n.severidad === 'danger'"
+                    [class.text-amber-500]="n.severidad === 'warning'"
+                    [class.text-blue-500]="n.severidad === 'info'">
+                    {{ n.tipo === 'partido_sin_confirmar' ? 'pending_actions' : n.tipo === 'partido_sin_arbitro' ? 'sports' : 'visibility_off' }}
+                  </mat-icon>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-xs font-semibold text-gray-900 truncate">
+                      {{ n.tipo === 'partido_sin_arbitro' ? 'Sin arbitro' : n.tipo === 'partido_sin_veedor' ? 'Sin veedor' : 'Sin confirmar' }}
+                      · {{ n.categoria }} · {{ n.local }} vs {{ n.visitante }}
+                    </p>
+                    <p class="text-[10px] text-gray-500">
+                      Fecha {{ n.numero_jornada }} ({{ n.fase }})
+                      @if (n.dias_hasta !== null) {
+                        @if (n.dias_hasta < 0) { · hace {{ -n.dias_hasta }}d }
+                        @else if (n.dias_hasta === 0) { · HOY }
+                        @else if (n.dias_hasta === 1) { · manana }
+                        @else { · en {{ n.dias_hasta }}d }
+                      }
+                    </p>
+                  </div>
+                  <mat-icon class="text-gray-400 shrink-0">chevron_right</mat-icon>
+                </a>
+              }
+              @if (notif.total > 20) {
+                <div class="px-5 py-2 text-center text-[11px] text-gray-500">
+                  + {{ notif.total - 20 }} mas
+                </div>
+              }
+            </div>
+          </div>
+        }
       }
 
       <!-- ═══ B) KPIs ═══ -->
@@ -404,8 +499,20 @@ const DEFAULT_WIDGETS = ['kpis', 'posiciones_zona', 'goleadores', 'resultados_fe
         }
       </div>
 
+      }
+      <!-- fin de solapa General -->
+
+      @if (activeTab === 'mi-club' && userClubId) {
+        @if (!miClubData) {
+          <div class="bg-white rounded-xl border border-gray-200 py-12 text-center">
+            <mat-icon class="!text-5xl text-gray-300 mb-2">shield</mat-icon>
+            <p class="text-sm text-gray-500">Cargando datos del club...</p>
+          </div>
+        }
+      }
+
       <!-- ═══ F) MI CLUB ═══ -->
-      @if (isWidgetActive('mi_club') && userClubId && miClubData) {
+      @if (activeTab === 'mi-club' && userClubId && miClubData) {
         <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden animate-fade-in-up">
           <div class="h-1" [style.background-color]="miClubData.color_primario || 'var(--color-primario)'"></div>
           <div class="p-5">
@@ -476,6 +583,7 @@ const DEFAULT_WIDGETS = ['kpis', 'posiciones_zona', 'goleadores', 'resultados_fe
 })
 export class DashboardComponent implements OnInit, OnDestroy {
   // ─── State ──────────────────────────────────────────────────────────
+  activeTab: 'general' | 'mi-club' = 'general';
   brandingNombre = '';
   brandingAnio: number | null = null;
   brandingLogo: string | null = null;
@@ -487,7 +595,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
     { id: 'posiciones_zona', label: 'Posiciones', active: true },
     { id: 'goleadores', label: 'Goleadores', active: true },
     { id: 'resultados_fecha', label: 'Resultados', active: true },
-    { id: 'mi_club', label: 'Mi Club', active: false },
   ];
 
   // KPIs
@@ -528,10 +635,16 @@ export class DashboardComponent implements OnInit, OnDestroy {
   constructor(
     public auth: AuthService,
     public branding: BrandingService,
+    public notifs: NotificacionesService,
     private http: HttpClient,
     private cdr: ChangeDetectorRef,
     private toastr: ToastrService,
   ) {}
+
+  puedeVerPendientes(): boolean {
+    if (this.auth.isAdmin()) return true;
+    return (this.auth.rolesActivos || []).includes('coordinador');
+  }
 
   ngOnInit() {
     this.userClubId = this.auth.getUser()?.club_id || null;
