@@ -26,23 +26,23 @@ import { BrandingService } from '../../core/services/branding.service';
       <div class="flex items-center justify-between flex-wrap gap-2">
         <h1 class="text-2xl font-bold text-gray-900">Fixture</h1>
         <div class="flex gap-2 items-center flex-wrap">
-          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-40">
-            <mat-label>Zona</mat-label>
-            <mat-select [(ngModel)]="filtroZona" (selectionChange)="filtrar()">
-              <mat-option value="">Todas</mat-option>
-              @for (z of zonas; track z.id) {
-                <mat-option [value]="z.id">{{ z.nombre }}</mat-option>
-              }
-            </mat-select>
-          </mat-form-field>
-          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-32">
-            <mat-label>Fase</mat-label>
-            <mat-select [(ngModel)]="filtroFase" (selectionChange)="filtrar()">
-              <mat-option value="">Todas</mat-option>
-              <mat-option value="ida">Ida</mat-option>
-              <mat-option value="vuelta">Vuelta</mat-option>
-            </mat-select>
-          </mat-form-field>
+          <div class="flex gap-1">
+            <button (click)="setFase('')"
+              class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
+              [class]="filtroFase === '' ? 'bg-[var(--color-primario)] text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'">
+              Todas
+            </button>
+            <button (click)="setFase('ida')"
+              class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
+              [class]="filtroFase === 'ida' ? 'bg-[var(--color-primario)] text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'">
+              Ida
+            </button>
+            <button (click)="setFase('vuelta')"
+              class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
+              [class]="filtroFase === 'vuelta' ? 'bg-[var(--color-primario)] text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'">
+              Vuelta
+            </button>
+          </div>
           @if (auth.isAdmin()) {
             <button mat-flat-button color="primary" (click)="mostrarFormJornada = !mostrarFormJornada">
               <mat-icon>add</mat-icon> Nueva Fecha
@@ -89,9 +89,17 @@ import { BrandingService } from '../../core/services/branding.service';
         </mat-card>
       }
 
-      <!-- ═══ Jornadas ═══ -->
-      @for (jornada of jornadasFiltradas; track jornada.id) {
-        <mat-expansion-panel class="bg-white rounded-xl border !shadow-none overflow-hidden jornada-panel"
+      <!-- ═══ Jornadas por zona (2 columnas) ═══ -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        @for (col of jornadasPorZona; track col.zona.id) {
+          <div class="space-y-3">
+            <div class="flex items-center gap-2 px-2">
+              <span class="w-3 h-3 rounded-full" [style.background-color]="col.zona.color || '#6b7280'"></span>
+              <span class="text-sm font-bold text-gray-700 uppercase tracking-wide">Zona {{ col.zona.nombre }}</span>
+              <span class="text-[10px] text-gray-400">{{ col.jornadas.length }} fechas</span>
+            </div>
+            @for (jornada of col.jornadas; track jornada.id) {
+              <mat-expansion-panel class="bg-white rounded-xl border !shadow-none overflow-hidden jornada-panel"
           [class.border-gray-200]="(jornada._estadoVisual || jornada.estado) === 'programada'"
           [class.border-red-300]="(jornada._estadoVisual || jornada.estado) === 'en_curso'"
           [class.border-green-300]="(jornada._estadoVisual || jornada.estado) === 'finalizada'"
@@ -125,7 +133,10 @@ import { BrandingService } from '../../core/services/branding.service';
               }
               <span class="badge" [class]="'badge-' + (jornada._estadoVisual || jornada.estado)">{{ jornada._estadoVisual || jornada.estado }}</span>
               @if (jornada.fecha) {
-                <span>{{ jornada.fecha }}</span>
+                <span class="inline-flex items-center gap-1 text-[11px]">
+                  <mat-icon class="!text-xs !w-3.5 !h-3.5 text-gray-400">calendar_today</mat-icon>
+                  {{ formatFecha(jornada.fecha) }}
+                </span>
               }
             </mat-panel-description>
           </mat-expansion-panel-header>
@@ -319,18 +330,25 @@ import { BrandingService } from '../../core/services/branding.service';
               </div>
             }
           </div>
-        </mat-expansion-panel>
-      } @empty {
-        <mat-card class="bg-white rounded-xl border border-gray-200">
-          <mat-card-content class="p-8 text-center text-gray-500">
-            <mat-icon class="!text-5xl text-gray-300 mb-2">calendar_month</mat-icon>
-            <p>No hay fechas creadas</p>
-            @if (auth.isAdmin()) {
-              <p class="text-sm mt-1">Usa "Nueva Fecha" para crear las jornadas manualmente</p>
+            </mat-expansion-panel>
+            } @empty {
+              <p class="text-xs text-gray-400 italic px-2 py-3">Sin fechas en esta zona</p>
             }
-          </mat-card-content>
-        </mat-card>
-      }
+          </div>
+        } @empty {
+          <div class="col-span-full">
+            <mat-card class="bg-white rounded-xl border border-gray-200">
+              <mat-card-content class="p-8 text-center text-gray-500">
+                <mat-icon class="!text-5xl text-gray-300 mb-2">calendar_month</mat-icon>
+                <p>No hay fechas creadas</p>
+                @if (auth.isAdmin()) {
+                  <p class="text-sm mt-1">Usa "Nueva Fecha" para crear las jornadas manualmente</p>
+                }
+              </mat-card-content>
+            </mat-card>
+          </div>
+        }
+      </div>
 
       <!-- Horarios de referencia -->
       <mat-card class="bg-white rounded-xl border border-gray-200">
@@ -358,8 +376,8 @@ export class FixtureComponent implements OnInit {
   arbitros: any[] = [];
   jornadas: any[] = [];
   jornadasFiltradas: any[] = [];
-  filtroZona = '';
-  filtroFase = '';
+  jornadasPorZona: { zona: any; jornadas: any[] }[] = [];
+  filtroFase: 'ida' | 'vuelta' | '' = '';
   mostrarFormJornada = false;
   formJornada: any = { numero_jornada: 1, zona_id: null, fase: 'ida', fecha: '' };
   cruceForm: any = { club_local_id: null, club_visitante_id: null, arbitro_id: null };
@@ -408,10 +426,36 @@ export class FixtureComponent implements OnInit {
 
   filtrar() {
     this.jornadasFiltradas = this.jornadas.filter(j => {
-      if (this.filtroZona && j.zona_id !== parseInt(this.filtroZona as any)) return false;
       if (this.filtroFase && j.fase !== this.filtroFase) return false;
       return true;
     });
+
+    // Agrupar por zona, respetando orden de this.zonas
+    const map = new Map<number, { zona: any; jornadas: any[] }>();
+    for (const z of this.zonas) map.set(z.id, { zona: z, jornadas: [] });
+    const sinZona: any[] = [];
+    for (const j of this.jornadasFiltradas) {
+      if (j.zona_id && map.has(j.zona_id)) map.get(j.zona_id)!.jornadas.push(j);
+      else sinZona.push(j);
+    }
+    this.jornadasPorZona = [...map.values()].filter(g => g.jornadas.length);
+    if (sinZona.length) this.jornadasPorZona.push({ zona: { id: 0, nombre: 'Sin zona', color: '#94a3b8' }, jornadas: sinZona });
+    this.cdr.detectChanges();
+  }
+
+  setFase(f: 'ida' | 'vuelta' | '') {
+    this.filtroFase = f;
+    this.filtrar();
+  }
+
+  formatFecha(iso: string): string {
+    if (!iso) return '';
+    try {
+      const d = new Date(iso + 'T12:00:00');  // forzar mediodia para evitar TZ
+      const dia = d.toLocaleDateString('es-AR', { weekday: 'short' });
+      const fecha = d.toLocaleDateString('es-AR', { day: '2-digit', month: 'short' });
+      return `${dia.replace('.', '')} ${fecha.replace('.', '')}`;
+    } catch { return iso; }
   }
 
   cargarPartidos(jornada: any) {
