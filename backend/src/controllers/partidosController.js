@@ -216,6 +216,58 @@ export const registrarEvento = async (req, res) => {
   }
 };
 
+// POST /partidos/:id/resultado-rapido
+// Carga el resultado final sin pasar por Panel de Control.
+// Acepta partidos en cualquier estado (programado/en_curso/finalizado).
+// Solo setea goles + estado=finalizado + hora_fin; no toca eventos de alineacion.
+export const resultadoRapido = async (req, res) => {
+  try {
+    const partido = await Partido.findByPk(req.params.id);
+    if (!partido) return res.status(404).json({ success: false, message: 'Partido no encontrado' });
+
+    const { goles_local, goles_visitante } = req.body;
+    if (goles_local === undefined || goles_visitante === undefined) {
+      return res.status(400).json({ success: false, message: 'goles_local y goles_visitante son requeridos' });
+    }
+    const gl = parseInt(goles_local);
+    const gv = parseInt(goles_visitante);
+    if (isNaN(gl) || isNaN(gv) || gl < 0 || gv < 0) {
+      return res.status(400).json({ success: false, message: 'goles invalidos' });
+    }
+
+    const wasOtherState = partido.estado !== 'finalizado';
+    const updates = { goles_local: gl, goles_visitante: gv, actualizado_en: new Date() };
+    if (wasOtherState) {
+      updates.estado = 'finalizado';
+      updates.hora_inicio = partido.hora_inicio || new Date();
+      updates.hora_fin = new Date();
+    }
+    await partido.update(updates);
+
+    // Evento final (si antes no era finalizado)
+    if (wasOtherState) {
+      await PartidoEvento.create({
+        partido_id: partido.id, tipo: 'fin',
+        detalle: `Resultado rapido: ${gl} - ${gv}`,
+        registrado_por: req.user.id,
+      });
+    }
+
+    try { await recalcularDespuesDePartido(partido.id); }
+    catch (e) { console.error('Error al recalcular posiciones:', e.message); }
+
+    registrarAudit({ req, accion: 'RESULTADO_RAPIDO', entidad: 'partidos', entidad_id: partido.id, despues: { goles_local: gl, goles_visitante: gv } });
+    if (wasOtherState) emitMatchEnd(partido);
+
+    const jornada = await FixtureJornada.findByPk(partido.jornada_id, { attributes: ['torneo_id'] });
+    if (jornada) emitStandingsUpdate(jornada.torneo_id);
+
+    res.json({ success: true, data: partido, message: 'Resultado guardado' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 // POST /partidos/:id/finalizar
 export const finalizar = async (req, res) => {
   try {

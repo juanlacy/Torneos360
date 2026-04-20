@@ -59,6 +59,12 @@ import { SocketService } from '../../core/services/socket.service';
                   <mat-icon>settings_remote</mat-icon> Panel de Control
                 </a>
               }
+              @if (auth.puede('partidos', 'editar')) {
+                <button mat-stroked-button (click)="abrirResultadoRapido()">
+                  <mat-icon>edit</mat-icon>
+                  {{ partido.estado === 'finalizado' ? 'Editar resultado' : 'Cargar resultado' }}
+                </button>
+              }
               @if (partido.estado === 'programado' && auth.puede('partidos', 'editar')) {
                 <button mat-stroked-button (click)="iniciarPartido()">
                   <mat-icon>play_arrow</mat-icon> Iniciar Partido
@@ -80,6 +86,42 @@ import { SocketService } from '../../core/services/socket.service';
                 </span>
               }
             </div>
+
+            <!-- Form inline: carga/edicion rapida de resultado -->
+            @if (mostrarResultadoRapido) {
+              <div class="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200 animate-fade-in">
+                <div class="flex items-center gap-2 mb-3">
+                  <mat-icon class="!text-lg text-[var(--color-primario)]">edit</mat-icon>
+                  <h3 class="text-sm font-bold text-gray-800">{{ partido.estado === 'finalizado' ? 'Editar resultado' : 'Cargar resultado final' }}</h3>
+                  @if (partido.estado !== 'finalizado') {
+                    <span class="ml-auto text-[10px] text-gray-500 italic">El partido se marcara como finalizado</span>
+                  }
+                </div>
+                <div class="flex items-center justify-center gap-3 flex-wrap">
+                  <div class="text-center flex-1 min-w-[160px]">
+                    <p class="text-xs text-gray-500 mb-1 font-medium">{{ partido.clubLocal?.nombre_corto || partido.clubLocal?.nombre }}</p>
+                    <input type="number" min="0" [(ngModel)]="resultadoForm.goles_local"
+                      class="w-20 text-center text-2xl font-bold px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primario)]">
+                  </div>
+                  <span class="text-xl font-bold text-gray-400 mt-4">-</span>
+                  <div class="text-center flex-1 min-w-[160px]">
+                    <p class="text-xs text-gray-500 mb-1 font-medium">{{ partido.clubVisitante?.nombre_corto || partido.clubVisitante?.nombre }}</p>
+                    <input type="number" min="0" [(ngModel)]="resultadoForm.goles_visitante"
+                      class="w-20 text-center text-2xl font-bold px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primario)]">
+                  </div>
+                </div>
+                <div class="flex justify-end gap-2 mt-4">
+                  <button mat-button (click)="mostrarResultadoRapido = false">Cancelar</button>
+                  <button mat-flat-button color="primary" class="!bg-[var(--color-primario)]"
+                    (click)="guardarResultadoRapido()" [disabled]="guardandoResultado">
+                    @if (guardandoResultado) {
+                      <mat-icon class="animate-spin">autorenew</mat-icon>
+                    }
+                    Guardar
+                  </button>
+                </div>
+              </div>
+            }
           </mat-card-content>
         </mat-card>
 
@@ -246,6 +288,11 @@ export class PartidoDetalleComponent implements OnInit, OnDestroy {
   evento: any = { tipo: 'gol', club_id: null, minuto: null, detalle: '' };
   informes: any[] = [];
 
+  // Carga rapida de resultado
+  mostrarResultadoRapido = false;
+  resultadoForm = { goles_local: 0, goles_visitante: 0 };
+  guardandoResultado = false;
+
   // Grabacion de audio
   grabando = false;
   audioBlob: Blob | null = null;
@@ -337,6 +384,36 @@ export class PartidoDetalleComponent implements OnInit, OnDestroy {
   cargarInformes() {
     this.http.get<any>(`${environment.apiUrl}/informes`, { params: { partido_id: this.partido.id } }).subscribe({
       next: res => { this.informes = res.data; this.cdr.detectChanges(); },
+    });
+  }
+
+  abrirResultadoRapido() {
+    this.resultadoForm = {
+      goles_local: this.partido?.goles_local ?? 0,
+      goles_visitante: this.partido?.goles_visitante ?? 0,
+    };
+    this.mostrarResultadoRapido = true;
+    this.cdr.detectChanges();
+  }
+
+  guardarResultadoRapido() {
+    if (!this.partidoId) return;
+    this.guardandoResultado = true;
+    this.http.post<any>(`${environment.apiUrl}/partidos/${this.partidoId}/resultado-rapido`, {
+      goles_local: this.resultadoForm.goles_local,
+      goles_visitante: this.resultadoForm.goles_visitante,
+    }).subscribe({
+      next: (res) => {
+        this.guardandoResultado = false;
+        this.toastr.success(res.message || 'Resultado guardado');
+        this.mostrarResultadoRapido = false;
+        this.cargar();
+      },
+      error: (e: any) => {
+        this.guardandoResultado = false;
+        this.toastr.error(e.error?.message || 'Error al guardar');
+        this.cdr.detectChanges();
+      },
     });
   }
 

@@ -5,7 +5,7 @@ import {
   iniciar, registrarEvento, finalizar, confirmar, suspender,
   getAlineacion, upsertAlineacion, eliminarAlineacion,
   confirmarAlineacion, cerrarPartido,
-  iniciarPeriodo, finalizarPeriodo,
+  iniciarPeriodo, finalizarPeriodo, resultadoRapido,
 } from '../controllers/partidosController.js';
 
 const router = Router();
@@ -29,6 +29,7 @@ router.post('/:id/confirmar-alineacion', requireDelegado, confirmarAlineacion);
 router.post('/:id/iniciar', requireDelegado, iniciar);
 router.post('/:id/evento', requireDelegado, registrarEvento);
 router.post('/:id/finalizar', requireDelegado, finalizar);
+router.post('/:id/resultado-rapido', requirePermiso('partidos', 'editar'), resultadoRapido);
 router.post('/:id/confirmar', requireArbitro, confirmar);
 router.post('/:id/suspender', requireAdminTorneo, suspender);
 
