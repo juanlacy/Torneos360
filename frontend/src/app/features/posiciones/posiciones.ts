@@ -37,61 +37,69 @@ import { BrandingService } from '../../core/services/branding.service';
       <mat-tab-group class="posiciones-tabs" (selectedTabChange)="onTabChange($event)">
         <!-- Tab General -->
         <mat-tab label="General Club">
-          <div class="bg-white rounded-xl border border-gray-200 overflow-hidden mt-4">
-            @if (posicionesClub.length) {
-              <table class="w-full">
-                <thead class="bg-gray-50 border-b border-gray-200">
-                  <tr>
-                    <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wide w-14">#</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Club</th>
-                    <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wide w-24">Puntos</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (p of posicionesClub; track p.club?.id; let i = $index) {
-                    <tr class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                      <!-- Position -->
-                      <td class="px-4 py-3 text-center">
-                        @if (i === 0) {
-                          <span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-yellow-100 text-yellow-700 text-xs font-bold">1</span>
-                        } @else if (i === 1) {
-                          <span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-gray-200 text-gray-600 text-xs font-bold">2</span>
-                        } @else if (i === 2) {
-                          <span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-amber-100 text-amber-700 text-xs font-bold">3</span>
-                        } @else {
-                          <span class="text-sm text-gray-500 font-medium">{{ i + 1 }}</span>
-                        }
-                      </td>
-                      <!-- Club -->
-                      <td class="px-4 py-3">
-                        <div class="flex items-center gap-3">
-                          @if (p.club?.escudo_url) {
-                            <img [src]="resolveUrl(p.club.escudo_url)" class="escudo-md shrink-0" alt="Escudo">
-                          } @else {
-                            <div class="escudo-md escudo-placeholder text-xs shrink-0"
-                              [style.background-color]="p.club?.color_primario || '#762c7e'">
-                              {{ (p.club?.nombre_corto || p.club?.nombre || '--').substring(0, 2).toUpperCase() }}
+          @if (!posicionesClub.length) {
+            <div class="bg-white rounded-xl border border-gray-200 py-12 text-center mt-4">
+              <mat-icon class="!text-5xl text-gray-300 mb-3">leaderboard</mat-icon>
+              <p class="text-sm text-gray-500">Sin datos de posiciones</p>
+              <p class="text-[10px] text-gray-400 mt-1">Los puntos se calculan al finalizar partidos</p>
+            </div>
+          } @else {
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
+              @for (g of gruposPorZona(posicionesClub); track g.zona.id) {
+                <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                  <div class="h-1.5" [style.background-color]="g.zona.color || 'var(--color-primario)'"></div>
+                  <div class="px-4 py-2.5 bg-gray-50 border-b border-gray-200 flex items-center gap-2">
+                    <span class="w-3 h-3 rounded-full" [style.background-color]="g.zona.color || '#6b7280'"></span>
+                    <span class="text-xs font-bold text-gray-700 uppercase tracking-wide">{{ g.zona.nombre }}</span>
+                    <span class="ml-auto text-[10px] text-gray-400">{{ g.rows.length }} clubes</span>
+                  </div>
+                  <table class="w-full">
+                    <thead class="bg-gray-50/50 border-b border-gray-100">
+                      <tr>
+                        <th class="px-3 py-2 text-center text-[10px] font-medium text-gray-400 uppercase w-10">#</th>
+                        <th class="px-3 py-2 text-left text-[10px] font-medium text-gray-400 uppercase">Club</th>
+                        <th class="px-3 py-2 text-center text-[10px] font-medium text-gray-400 uppercase w-20">Puntos</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (p of g.rows; track p.club?.id; let i = $index) {
+                        <tr class="border-t border-gray-100 hover:bg-gray-50/50 transition-colors">
+                          <td class="px-3 py-2 text-center">
+                            @if (i < 3) {
+                              <span class="inline-flex w-6 h-6 items-center justify-center rounded-full text-xs font-bold"
+                                [class]="i === 0 ? 'bg-yellow-100 text-yellow-700' : i === 1 ? 'bg-gray-200 text-gray-600' : 'bg-amber-100 text-amber-700'">
+                                {{ i + 1 }}
+                              </span>
+                            } @else {
+                              <span class="text-xs text-gray-500">{{ i + 1 }}</span>
+                            }
+                          </td>
+                          <td class="px-3 py-2">
+                            <div class="flex items-center gap-2">
+                              @if (p.club?.escudo_url) {
+                                <img [src]="resolveUrl(p.club.escudo_url)" class="w-6 h-6 object-contain shrink-0" alt="Escudo">
+                              } @else {
+                                <div class="w-6 h-6 rounded-full flex items-center justify-center text-white text-[8px] font-bold shrink-0"
+                                  [style.background-color]="p.club?.color_primario || '#762c7e'">
+                                  {{ (p.club?.nombre_corto || p.club?.nombre || '--').substring(0, 2).toUpperCase() }}
+                                </div>
+                              }
+                              <span class="text-sm font-medium text-gray-900 truncate">{{ p.club?.nombre }}</span>
                             </div>
-                          }
-                          <span class="font-medium text-gray-900">{{ p.club?.nombre }}</span>
-                        </div>
-                      </td>
-                      <!-- Points -->
-                      <td class="px-4 py-3 text-center">
-                        <span class="text-xl font-bold text-[var(--color-primario)]">{{ p.puntos_totales }}</span>
-                      </td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
-            } @else {
-              <div class="py-12 text-center">
-                <mat-icon class="!text-5xl text-gray-300 mb-3">leaderboard</mat-icon>
-                <p class="text-sm text-gray-500">Sin datos de posiciones</p>
-                <p class="text-[10px] text-gray-400 mt-1">Los puntos se calculan al finalizar partidos</p>
-              </div>
-            }
-          </div>
+                          </td>
+                          <td class="px-3 py-2 text-center">
+                            <span class="inline-block min-w-[32px] px-2 py-0.5 rounded text-xs font-bold bg-[var(--color-primario)]/10 text-[var(--color-primario)]">
+                              {{ p.puntos_totales }}
+                            </span>
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              }
+            </div>
+          }
         </mat-tab>
 
         <!-- Tab por Categoria -->
@@ -107,80 +115,87 @@ import { BrandingService } from '../../core/services/branding.service';
             </mat-form-field>
           </div>
 
-          <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
-            @if (posicionesCategoria.length) {
-              <div class="overflow-x-auto">
-                <table class="w-full">
-                  <thead class="bg-gray-50 border-b border-gray-200">
-                    <tr>
-                      <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wide w-14">#</th>
-                      <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Club</th>
-                      <th class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wide">PJ</th>
-                      <th class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wide">PG</th>
-                      <th class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wide">PE</th>
-                      <th class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wide">PP</th>
-                      <th class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wide">GF</th>
-                      <th class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wide">GC</th>
-                      <th class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wide">DG</th>
-                      <th class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wide font-bold">Pts</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    @for (p of posicionesCategoria; track p.club?.id; let i = $index) {
-                      <tr class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                        <!-- Position -->
-                        <td class="px-4 py-3 text-center">
-                          @if (i === 0) {
-                            <span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-yellow-100 text-yellow-700 text-xs font-bold">1</span>
-                          } @else if (i === 1) {
-                            <span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-gray-200 text-gray-600 text-xs font-bold">2</span>
-                          } @else if (i === 2) {
-                            <span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-amber-100 text-amber-700 text-xs font-bold">3</span>
-                          } @else {
-                            <span class="text-sm text-gray-500 font-medium">{{ i + 1 }}</span>
-                          }
-                        </td>
-                        <!-- Club -->
-                        <td class="px-4 py-3">
-                          <div class="flex items-center gap-3">
-                            @if (p.club?.escudo_url) {
-                              <img [src]="resolveUrl(p.club.escudo_url)" class="escudo-sm shrink-0" alt="Escudo">
-                            } @else {
-                              <div class="escudo-sm escudo-placeholder text-[9px] shrink-0"
-                                [style.background-color]="p.club?.color_primario || '#762c7e'">
-                                {{ (p.club?.nombre_corto || p.club?.nombre || '--').substring(0, 2).toUpperCase() }}
+          @if (!posicionesCategoria.length) {
+            <div class="bg-white rounded-xl border border-gray-200 py-12 text-center">
+              <mat-icon class="!text-5xl text-gray-300 mb-3">format_list_numbered</mat-icon>
+              <p class="text-sm text-gray-500">Selecciona una categoria para ver las posiciones</p>
+            </div>
+          } @else {
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              @for (g of gruposPorZona(posicionesCategoria); track g.zona.id) {
+                <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                  <div class="h-1.5" [style.background-color]="g.zona.color || 'var(--color-primario)'"></div>
+                  <div class="px-4 py-2.5 bg-gray-50 border-b border-gray-200 flex items-center gap-2">
+                    <span class="w-3 h-3 rounded-full" [style.background-color]="g.zona.color || '#6b7280'"></span>
+                    <span class="text-xs font-bold text-gray-700 uppercase tracking-wide">{{ g.zona.nombre }}</span>
+                    <span class="ml-auto text-[10px] text-gray-400">{{ g.rows.length }} clubes</span>
+                  </div>
+                  <div class="overflow-x-auto">
+                    <table class="w-full">
+                      <thead class="bg-gray-50/50 border-b border-gray-100">
+                        <tr>
+                          <th class="px-3 py-2 text-center text-[10px] font-medium text-gray-400 uppercase w-10">#</th>
+                          <th class="px-3 py-2 text-left text-[10px] font-medium text-gray-400 uppercase">Club</th>
+                          <th class="px-2 py-2 text-center text-[10px] font-medium text-gray-400 uppercase">PJ</th>
+                          <th class="px-2 py-2 text-center text-[10px] font-medium text-gray-400 uppercase hidden md:table-cell">PG</th>
+                          <th class="px-2 py-2 text-center text-[10px] font-medium text-gray-400 uppercase hidden md:table-cell">PE</th>
+                          <th class="px-2 py-2 text-center text-[10px] font-medium text-gray-400 uppercase hidden md:table-cell">PP</th>
+                          <th class="px-2 py-2 text-center text-[10px] font-medium text-gray-400 uppercase hidden sm:table-cell">GF</th>
+                          <th class="px-2 py-2 text-center text-[10px] font-medium text-gray-400 uppercase hidden sm:table-cell">GC</th>
+                          <th class="px-2 py-2 text-center text-[10px] font-medium text-gray-400 uppercase">DG</th>
+                          <th class="px-3 py-2 text-center text-[10px] font-bold text-gray-500 uppercase">Pts</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (p of g.rows; track p.club?.id; let i = $index) {
+                          <tr class="border-t border-gray-100 hover:bg-gray-50/50 transition-colors">
+                            <td class="px-3 py-2 text-center">
+                              @if (i < 3) {
+                                <span class="inline-flex w-6 h-6 items-center justify-center rounded-full text-xs font-bold"
+                                  [class]="i === 0 ? 'bg-yellow-100 text-yellow-700' : i === 1 ? 'bg-gray-200 text-gray-600' : 'bg-amber-100 text-amber-700'">
+                                  {{ i + 1 }}
+                                </span>
+                              } @else {
+                                <span class="text-xs text-gray-500">{{ i + 1 }}</span>
+                              }
+                            </td>
+                            <td class="px-3 py-2">
+                              <div class="flex items-center gap-2">
+                                @if (p.club?.escudo_url) {
+                                  <img [src]="resolveUrl(p.club.escudo_url)" class="w-6 h-6 object-contain shrink-0" alt="Escudo">
+                                } @else {
+                                  <div class="w-6 h-6 rounded-full flex items-center justify-center text-white text-[8px] font-bold shrink-0"
+                                    [style.background-color]="p.club?.color_primario || '#762c7e'">
+                                    {{ (p.club?.nombre_corto || p.club?.nombre || '--').substring(0, 2).toUpperCase() }}
+                                  </div>
+                                }
+                                <span class="text-sm font-medium text-gray-900 truncate">{{ p.club?.nombre_corto || p.club?.nombre }}</span>
                               </div>
-                            }
-                            <span class="font-medium text-gray-900 text-sm">{{ p.club?.nombre_corto || p.club?.nombre }}</span>
-                          </div>
-                        </td>
-                        <!-- Stats -->
-                        <td class="px-3 py-3 text-center text-sm text-gray-600">{{ p.pj }}</td>
-                        <td class="px-3 py-3 text-center text-sm text-gray-600">{{ p.pg }}</td>
-                        <td class="px-3 py-3 text-center text-sm text-gray-600">{{ p.pe }}</td>
-                        <td class="px-3 py-3 text-center text-sm text-gray-600">{{ p.pp }}</td>
-                        <td class="px-3 py-3 text-center text-sm text-gray-600">{{ p.gf }}</td>
-                        <td class="px-3 py-3 text-center text-sm text-gray-600">{{ p.gc }}</td>
-                        <td class="px-3 py-3 text-center text-sm font-medium"
-                          [class]="(p.dg > 0 ? 'text-green-600' : p.dg < 0 ? 'text-red-600' : 'text-gray-500')">
-                          {{ p.dg > 0 ? '+' : '' }}{{ p.dg }}
-                        </td>
-                        <!-- Points -->
-                        <td class="px-3 py-3 text-center">
-                          <span class="text-lg font-bold text-[var(--color-primario)]">{{ p.puntos }}</span>
-                        </td>
-                      </tr>
-                    }
-                  </tbody>
-                </table>
-              </div>
-            } @else {
-              <div class="py-12 text-center">
-                <mat-icon class="!text-5xl text-gray-300 mb-3">format_list_numbered</mat-icon>
-                <p class="text-sm text-gray-500">Selecciona una categoria para ver las posiciones</p>
-              </div>
-            }
-          </div>
+                            </td>
+                            <td class="px-2 py-2 text-center text-xs text-gray-600">{{ p.pj }}</td>
+                            <td class="px-2 py-2 text-center text-xs text-gray-600 hidden md:table-cell">{{ p.pg }}</td>
+                            <td class="px-2 py-2 text-center text-xs text-gray-600 hidden md:table-cell">{{ p.pe }}</td>
+                            <td class="px-2 py-2 text-center text-xs text-gray-600 hidden md:table-cell">{{ p.pp }}</td>
+                            <td class="px-2 py-2 text-center text-xs text-gray-600 hidden sm:table-cell">{{ p.gf }}</td>
+                            <td class="px-2 py-2 text-center text-xs text-gray-600 hidden sm:table-cell">{{ p.gc }}</td>
+                            <td class="px-2 py-2 text-center text-xs font-medium"
+                              [class]="(p.dg > 0 ? 'text-green-600' : p.dg < 0 ? 'text-red-600' : 'text-gray-500')">
+                              {{ p.dg > 0 ? '+' : '' }}{{ p.dg }}
+                            </td>
+                            <td class="px-3 py-2 text-center">
+                              <span class="inline-block min-w-[32px] px-2 py-0.5 rounded text-xs font-bold bg-[var(--color-primario)]/10 text-[var(--color-primario)]">
+                                {{ p.puntos }}
+                              </span>
+                            </td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              }
+            </div>
+          }
         </mat-tab>
       </mat-tab-group>
     </div>
@@ -194,6 +209,7 @@ import { BrandingService } from '../../core/services/branding.service';
 export class PosicionesComponent implements OnInit, OnDestroy {
   torneos: any[] = [];
   categorias: any[] = [];
+  zonas: any[] = [];
   torneoId: number | null = null;
   torneoActivoId: number | null = null;
   posicionesClub: any[] = [];
@@ -236,13 +252,31 @@ export class PosicionesComponent implements OnInit, OnDestroy {
   cargar() {
     if (!this.torneoId) return;
     const torneo = this.torneos.find(t => t.id === this.torneoId);
-    if (torneo) this.categorias = torneo.categorias || [];
+    if (torneo) {
+      this.categorias = torneo.categorias || [];
+      this.zonas = torneo.zonas || [];
+    }
 
     this.http.get<any>(`${environment.apiUrl}/posiciones/${this.torneoId}/general`).subscribe({
       next: res => { this.posicionesClub = res.data; this.cdr.detectChanges(); },
     });
 
     if (this.filtroCategoria) this.cargarPorCategoria();
+  }
+
+  /** Agrupa filas por zona, respetando el orden de this.zonas. */
+  gruposPorZona(rows: any[]): { zona: any; rows: any[] }[] {
+    const map = new Map<number, { zona: any; rows: any[] }>();
+    for (const z of this.zonas) map.set(z.id, { zona: z, rows: [] });
+    const sinZona: any[] = [];
+    for (const r of rows) {
+      const zid = r.zona?.id;
+      if (zid && map.has(zid)) map.get(zid)!.rows.push(r);
+      else sinZona.push(r);
+    }
+    const result = [...map.values()].filter(g => g.rows.length);
+    if (sinZona.length) result.push({ zona: { id: 0, nombre: 'Sin zona', color: '#94a3b8' }, rows: sinZona });
+    return result;
   }
 
   cargarPorCategoria() {
