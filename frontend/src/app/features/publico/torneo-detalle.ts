@@ -749,8 +749,10 @@ export class TorneoDetallePublicoComponent implements OnInit, OnDestroy {
   }
 
   formatFecha(iso: string): string {
+    if (!iso) return '';
     try {
-      const d = new Date(iso);
+      // Forzar mediodia UTC para evitar que el timezone local reste un dia
+      const d = new Date(iso.length <= 10 ? iso + 'T12:00:00Z' : iso);
       return d.toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: 'numeric' });
     } catch { return iso; }
   }
