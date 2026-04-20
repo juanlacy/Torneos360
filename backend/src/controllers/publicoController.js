@@ -67,7 +67,7 @@ export const posiciones = async (req, res) => {
       const data = await TablaPosiciones.findAll({
         where,
         include: [
-          { model: Club, as: 'club', attributes: ['id', 'sufijo', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'], include: [{ model: Institucion, as: 'institucion' }] },
+          { model: Club, as: 'club', attributes: ['id', 'sufijo', 'zona_id', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'], include: [{ model: Institucion, as: 'institucion' }] },
           { model: Zona, as: 'zona', attributes: ['id', 'nombre', 'color'] },
         ],
         order: [['puntos', 'DESC'], ['dg', 'DESC'], ['gf', 'DESC']],
@@ -82,7 +82,7 @@ export const posiciones = async (req, res) => {
     const data = await TablaPosicionesClub.findAll({
       where,
       include: [
-        { model: Club, as: 'club', attributes: ['id', 'sufijo', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'], include: [{ model: Institucion, as: 'institucion' }] },
+        { model: Club, as: 'club', attributes: ['id', 'sufijo', 'zona_id', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'], include: [{ model: Institucion, as: 'institucion' }] },
         { model: Zona, as: 'zona', attributes: ['id', 'nombre', 'color'] },
       ],
       order: [['puntos_totales', 'DESC'], ['dg', 'DESC'], ['gf', 'DESC']],
@@ -274,8 +274,8 @@ export const fixture = async (req, res) => {
       const partidos = await Partido.findAll({
         where: { jornada_id },
         include: [
-          { model: Club, as: 'clubLocal', attributes: ['id', 'sufijo', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'], include: [{ model: Institucion, as: 'institucion' }] },
-          { model: Club, as: 'clubVisitante', attributes: ['id', 'sufijo', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'], include: [{ model: Institucion, as: 'institucion' }] },
+          { model: Club, as: 'clubLocal', attributes: ['id', 'sufijo', 'zona_id', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'], include: [{ model: Institucion, as: 'institucion' }] },
+          { model: Club, as: 'clubVisitante', attributes: ['id', 'sufijo', 'zona_id', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'], include: [{ model: Institucion, as: 'institucion' }] },
           { model: Categoria, as: 'categoria', attributes: ['id', 'nombre'] },
         ],
         order: [['categoria_id', 'ASC'], ['id', 'ASC']],

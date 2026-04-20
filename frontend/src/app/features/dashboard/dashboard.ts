@@ -235,46 +235,52 @@ const DEFAULT_WIDGETS = ['kpis', 'posiciones_zona', 'goleadores', 'resultados_fe
             </div>
 
             @if (goleadores.length) {
-              <div class="divide-y divide-gray-100">
-                @for (g of goleadores; track g.persona_id; let i = $index) {
-                  <div class="flex items-center gap-3 px-5 py-2.5 hover:bg-gray-50/50 transition-colors">
-                    <!-- Posicion -->
-                    <div class="w-6 text-center shrink-0">
-                      @if (i < 3) {
-                        <span class="inline-flex items-center justify-center w-6 h-6 rounded-full text-[10px] font-bold"
-                          [class]="i === 0 ? 'bg-yellow-100 text-yellow-700' : i === 1 ? 'bg-gray-200 text-gray-600' : 'bg-amber-100 text-amber-700'">
-                          {{ i + 1 }}
-                        </span>
-                      } @else {
-                        <span class="text-xs text-gray-400 font-medium">{{ i + 1 }}</span>
+              <div class="grid grid-cols-1 lg:grid-cols-2 gap-0 lg:divide-x divide-gray-200">
+                @for (g of gruposPorZonaGol(goleadores); track g.zona.id) {
+                  <div>
+                    <div class="h-1" [style.background-color]="g.zona.color || 'var(--color-primario)'"></div>
+                    <div class="px-4 py-2 bg-gray-50 border-b border-gray-200 flex items-center gap-2">
+                      <span class="w-2.5 h-2.5 rounded-full" [style.background-color]="g.zona.color || '#6b7280'"></span>
+                      <span class="text-[10px] font-bold text-gray-700 uppercase tracking-wide">{{ g.zona.nombre }}</span>
+                    </div>
+                    <div class="divide-y divide-gray-100">
+                      @for (j of g.rows; track j.persona_id; let i = $index) {
+                        <div class="flex items-center gap-2 px-4 py-2 hover:bg-gray-50/50 transition-colors">
+                          <div class="w-5 text-center shrink-0">
+                            @if (i < 3) {
+                              <span class="inline-flex items-center justify-center w-5 h-5 rounded-full text-[9px] font-bold"
+                                [class]="i === 0 ? 'bg-yellow-100 text-yellow-700' : i === 1 ? 'bg-gray-200 text-gray-600' : 'bg-amber-100 text-amber-700'">
+                                {{ i + 1 }}
+                              </span>
+                            } @else {
+                              <span class="text-[10px] text-gray-400 font-medium">{{ i + 1 }}</span>
+                            }
+                          </div>
+                          @if (j.foto_url) {
+                            <img [src]="resolveUrl(j.foto_url)" class="w-7 h-7 rounded-full object-cover shrink-0 border border-gray-200" alt="">
+                          } @else {
+                            <div class="w-7 h-7 rounded-full flex items-center justify-center text-white text-[9px] font-bold shrink-0"
+                              [style.background-color]="j.club?.color_primario || 'var(--color-primario)'">
+                              {{ initials(j.apellido || j.nombre) }}
+                            </div>
+                          }
+                          <div class="flex-1 min-w-0">
+                            <p class="text-xs font-medium text-gray-900 truncate">{{ j.apellido }}, {{ j.nombre }}</p>
+                            <div class="flex items-center gap-1 mt-0.5">
+                              @if (j.club?.escudo_url) {
+                                <img [src]="resolveUrl(j.club.escudo_url)" class="w-3 h-3 object-contain" alt="">
+                              }
+                              <span class="text-[10px] text-gray-500 truncate">{{ j.club?.nombre_corto || j.club?.nombre }}</span>
+                              @if (j.categoria?.nombre) {
+                                <span class="inline-flex px-1 py-0 rounded text-[9px] font-medium bg-blue-50 text-blue-600">{{ j.categoria.nombre }}</span>
+                              }
+                            </div>
+                          </div>
+                          <div class="shrink-0 text-right">
+                            <span class="text-base font-extrabold text-gray-900">{{ j.goles }}</span>
+                          </div>
+                        </div>
                       }
-                    </div>
-                    <!-- Foto -->
-                    @if (g.foto_url) {
-                      <img [src]="resolveUrl(g.foto_url)" class="w-8 h-8 rounded-full object-cover shrink-0 border border-gray-200" alt="">
-                    } @else {
-                      <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0"
-                        [style.background-color]="g.club?.color_primario || 'var(--color-primario)'">
-                        {{ initials(g.apellido || g.nombre) }}
-                      </div>
-                    }
-                    <!-- Nombre + Club -->
-                    <div class="flex-1 min-w-0">
-                      <p class="text-sm font-medium text-gray-900 truncate">{{ g.apellido }}, {{ g.nombre }}</p>
-                      <div class="flex items-center gap-1.5 mt-0.5">
-                        @if (g.club?.escudo_url) {
-                          <img [src]="resolveUrl(g.club.escudo_url)" class="w-4 h-4 object-contain" alt="">
-                        }
-                        <span class="text-[10px] text-gray-500">{{ g.club?.nombre_corto || g.club?.nombre }}</span>
-                        @if (g.categoria?.nombre) {
-                          <span class="inline-flex px-1.5 py-0 rounded text-[9px] font-medium bg-blue-50 text-blue-600">{{ g.categoria.nombre }}</span>
-                        }
-                      </div>
-                    </div>
-                    <!-- Goles -->
-                    <div class="shrink-0 text-right">
-                      <span class="text-lg font-extrabold text-gray-900">{{ g.goles }}</span>
-                      <p class="text-[9px] text-gray-400 uppercase">goles</p>
                     </div>
                   </div>
                 }
@@ -302,17 +308,17 @@ const DEFAULT_WIDGETS = ['kpis', 'posiciones_zona', 'goleadores', 'resultados_fe
               <a routerLink="/fixture" class="text-xs text-[var(--color-primario)] hover:underline font-medium">Ver fixture →</a>
             </div>
 
-            <!-- Chips de jornadas (separados por fase IDA / VUELTA) -->
+            <!-- Chips de fechas (una por fase+numero, une las 2 zonas) -->
             <div class="px-5 py-2.5 border-b border-gray-100 space-y-2">
-              @for (fase of jornadasPorFase; track fase.fase) {
+              @for (fase of fechasPorFase; track fase.fase) {
                 <div class="flex items-center gap-2">
                   <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wider w-14 shrink-0">{{ fase.label }}</span>
                   <div class="flex gap-1.5 overflow-x-auto">
-                    @for (j of fase.jornadas; track j.id) {
-                      <button (click)="selectJornada(j)"
+                    @for (f of fase.fechas; track f.key) {
+                      <button (click)="selectFecha(f)"
                         class="shrink-0 w-8 h-8 rounded-lg text-xs font-bold transition-all flex items-center justify-center"
-                        [class]="selectedJornadaId === j.id ? 'bg-green-600 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'">
-                        {{ j.numero_jornada }}
+                        [class]="selectedFechaKey === f.key ? 'bg-green-600 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'">
+                        {{ f.numero }}
                       </button>
                     }
                   </div>
@@ -321,67 +327,77 @@ const DEFAULT_WIDGETS = ['kpis', 'posiciones_zona', 'goleadores', 'resultados_fe
             </div>
 
             @if (partidosFecha.length) {
-              <div class="divide-y divide-gray-100 max-h-[500px] overflow-y-auto">
-                @for (grupo of partidosAgrupados; track grupo.categoria) {
-                  <!-- Separator categoria -->
-                  <div class="px-5 py-1.5 bg-gray-50 border-b border-gray-100">
-                    <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">{{ grupo.categoria }}</span>
-                  </div>
-                  @for (p of grupo.partidos; track p.id) {
-                    <a [routerLink]="['/partidos', p.id]"
-                      class="flex items-center gap-2 px-5 py-2.5 hover:bg-gray-50 transition-colors cursor-pointer">
-                      <!-- Local -->
-                      <div class="flex items-center gap-1.5 flex-1 min-w-0 justify-end">
-                        <span class="text-xs truncate text-right"
-                          [class]="esGanador(p, 'local') ? 'font-bold text-gray-900' : 'font-medium text-gray-600'">
-                          {{ p.clubLocal?.nombre_corto || p.clubLocal?.nombre }}
-                        </span>
-                        @if (p.clubLocal?.escudo_url) {
-                          <img [src]="resolveUrl(p.clubLocal.escudo_url)" class="w-5 h-5 object-contain shrink-0" alt="">
-                        } @else {
-                          <div class="w-5 h-5 rounded-full flex items-center justify-center text-white text-[7px] font-bold shrink-0"
-                            [style.background-color]="p.clubLocal?.color_primario || '#762c7e'">
-                            {{ initials(p.clubLocal?.nombre_corto || p.clubLocal?.nombre) }}
-                          </div>
+              <div class="grid grid-cols-1 lg:grid-cols-2 gap-0 lg:divide-x divide-gray-200 max-h-[520px] overflow-y-auto">
+                @for (z of partidosPorZona; track z.zona.id) {
+                  <div>
+                    <div class="h-1 sticky top-0 z-10" [style.background-color]="z.zona.color || 'var(--color-primario)'"></div>
+                    <div class="px-4 py-2 bg-gray-50 border-b border-gray-200 flex items-center gap-2 sticky top-1 z-10">
+                      <span class="w-2.5 h-2.5 rounded-full" [style.background-color]="z.zona.color || '#6b7280'"></span>
+                      <span class="text-[10px] font-bold text-gray-700 uppercase tracking-wide">{{ z.zona.nombre }}</span>
+                      <span class="ml-auto text-[10px] text-gray-400">{{ z.totalPartidos }} partidos</span>
+                    </div>
+                    <div class="divide-y divide-gray-100">
+                      @for (grupo of z.categorias; track grupo.categoria) {
+                        <div class="px-4 py-1 bg-gray-50/70 border-b border-gray-100">
+                          <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">{{ grupo.categoria }}</span>
+                        </div>
+                        @for (p of grupo.partidos; track p.id) {
+                          <a [routerLink]="['/partidos', p.id]"
+                            class="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 transition-colors cursor-pointer">
+                            <div class="flex items-center gap-1.5 flex-1 min-w-0 justify-end">
+                              <span class="text-xs truncate text-right"
+                                [class]="esGanador(p, 'local') ? 'font-bold text-gray-900' : 'font-medium text-gray-600'">
+                                {{ p.clubLocal?.nombre_corto || p.clubLocal?.nombre }}
+                              </span>
+                              @if (p.clubLocal?.escudo_url) {
+                                <img [src]="resolveUrl(p.clubLocal.escudo_url)" class="w-5 h-5 object-contain shrink-0" alt="">
+                              } @else {
+                                <div class="w-5 h-5 rounded-full flex items-center justify-center text-white text-[7px] font-bold shrink-0"
+                                  [style.background-color]="p.clubLocal?.color_primario || '#762c7e'">
+                                  {{ initials(p.clubLocal?.nombre_corto || p.clubLocal?.nombre) }}
+                                </div>
+                              }
+                            </div>
+                            <div class="shrink-0 w-12 text-center">
+                              @if (p.estado === 'finalizado' || p.estado === 'en_curso') {
+                                <span class="text-sm font-extrabold text-gray-900">{{ p.goles_local ?? 0 }} - {{ p.goles_visitante ?? 0 }}</span>
+                              } @else {
+                                <span class="text-[10px] font-medium text-gray-400">vs</span>
+                              }
+                            </div>
+                            <div class="flex items-center gap-1.5 flex-1 min-w-0">
+                              @if (p.clubVisitante?.escudo_url) {
+                                <img [src]="resolveUrl(p.clubVisitante.escudo_url)" class="w-5 h-5 object-contain shrink-0" alt="">
+                              } @else {
+                                <div class="w-5 h-5 rounded-full flex items-center justify-center text-white text-[7px] font-bold shrink-0"
+                                  [style.background-color]="p.clubVisitante?.color_primario || '#762c7e'">
+                                  {{ initials(p.clubVisitante?.nombre_corto || p.clubVisitante?.nombre) }}
+                                </div>
+                              }
+                              <span class="text-xs truncate"
+                                [class]="esGanador(p, 'visitante') ? 'font-bold text-gray-900' : 'font-medium text-gray-600'">
+                                {{ p.clubVisitante?.nombre_corto || p.clubVisitante?.nombre }}
+                              </span>
+                            </div>
+                            @if (p.estado === 'en_curso') {
+                              <span class="shrink-0 w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+                            }
+                          </a>
                         }
-                      </div>
-
-                      <!-- Marcador -->
-                      <div class="shrink-0 w-14 text-center">
-                        @if (p.estado === 'finalizado' || p.estado === 'en_curso') {
-                          <span class="text-sm font-extrabold text-gray-900">{{ p.goles_local ?? 0 }} - {{ p.goles_visitante ?? 0 }}</span>
-                        } @else {
-                          <span class="text-xs font-medium text-gray-400">vs</span>
-                        }
-                      </div>
-
-                      <!-- Visitante -->
-                      <div class="flex items-center gap-1.5 flex-1 min-w-0">
-                        @if (p.clubVisitante?.escudo_url) {
-                          <img [src]="resolveUrl(p.clubVisitante.escudo_url)" class="w-5 h-5 object-contain shrink-0" alt="">
-                        } @else {
-                          <div class="w-5 h-5 rounded-full flex items-center justify-center text-white text-[7px] font-bold shrink-0"
-                            [style.background-color]="p.clubVisitante?.color_primario || '#762c7e'">
-                            {{ initials(p.clubVisitante?.nombre_corto || p.clubVisitante?.nombre) }}
-                          </div>
-                        }
-                        <span class="text-xs truncate"
-                          [class]="esGanador(p, 'visitante') ? 'font-bold text-gray-900' : 'font-medium text-gray-600'">
-                          {{ p.clubVisitante?.nombre_corto || p.clubVisitante?.nombre }}
-                        </span>
-                      </div>
-
-                      @if (p.estado === 'en_curso') {
-                        <span class="shrink-0 w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
                       }
-                    </a>
-                  }
+                      @if (!z.categorias.length) {
+                        <div class="px-4 py-6 text-center">
+                          <p class="text-xs text-gray-400">Sin partidos</p>
+                        </div>
+                      }
+                    </div>
+                  </div>
                 }
               </div>
             } @else {
               <div class="py-12 text-center">
                 <mat-icon class="!text-5xl text-gray-200 mb-3">event_busy</mat-icon>
-                <p class="text-sm text-gray-500">{{ jornadas.length ? 'No hay partidos en esta fecha' : 'Sin jornadas aun' }}</p>
+                <p class="text-sm text-gray-500">{{ fechas.length ? 'No hay partidos en esta fecha' : 'Sin jornadas aun' }}</p>
               </div>
             }
           </div>
@@ -494,10 +510,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   // Resultados
   jornadas: any[] = [];
-  jornadasPorFase: { fase: string; label: string; jornadas: any[] }[] = [];
-  selectedJornadaId: number | null = null;
+  fechas: { key: string; fase: string; numero: number; jornadaIds: number[]; hasFinalizada?: boolean }[] = [];
+  fechasPorFase: { fase: string; label: string; fechas: any[] }[] = [];
+  selectedFechaKey: string | null = null;
   partidosFecha: any[] = [];
-  partidosAgrupados: { categoria: string; partidos: any[] }[] = [];
+  partidosPorZona: { zona: any; categorias: { categoria: string; partidos: any[] }[]; totalPartidos: number }[] = [];
 
   // Mi Club
   miClubData: any = null;
@@ -716,54 +733,93 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.jornadas = (res.data || []).sort((a: any, b: any) =>
           (a.fase === b.fase ? a.numero_jornada - b.numero_jornada : (a.fase === 'ida' ? -1 : 1)),
         );
-        // Agrupar por fase para la UI
-        const ida    = this.jornadas.filter((j: any) => j.fase === 'ida');
-        const vuelta = this.jornadas.filter((j: any) => j.fase === 'vuelta');
-        this.jornadasPorFase = [];
-        if (ida.length)    this.jornadasPorFase.push({ fase: 'ida',    label: 'Ida',    jornadas: ida });
-        if (vuelta.length) this.jornadasPorFase.push({ fase: 'vuelta', label: 'Vuelta', jornadas: vuelta });
 
-        // Auto-select last jornada with finalizados, or the last one
-        const finalizadas = this.jornadas.filter((j: any) => j.estado === 'finalizada' || j.estado === 'finalizado');
-        const selected = finalizadas.length ? finalizadas[finalizadas.length - 1] : (this.jornadas.length ? this.jornadas[this.jornadas.length - 1] : null);
-        if (selected) this.selectJornada(selected);
+        // Consolidar jornadas en "fechas" (una fecha = misma fase+numero, junta ambas zonas)
+        const fechasMap = new Map<string, { key: string; fase: string; numero: number; jornadaIds: number[]; hasFinalizada: boolean }>();
+        for (const j of this.jornadas) {
+          const key = `${j.fase}-${j.numero_jornada}`;
+          if (!fechasMap.has(key)) {
+            fechasMap.set(key, { key, fase: j.fase, numero: j.numero_jornada, jornadaIds: [], hasFinalizada: false });
+          }
+          const f = fechasMap.get(key)!;
+          f.jornadaIds.push(j.id);
+          if (j.estado === 'finalizada' || j.estado === 'finalizado') f.hasFinalizada = true;
+        }
+        this.fechas = [...fechasMap.values()].sort((a, b) =>
+          a.fase === b.fase ? a.numero - b.numero : (a.fase === 'ida' ? -1 : 1),
+        );
+
+        // Agrupar por fase para la UI
+        const ida    = this.fechas.filter(f => f.fase === 'ida');
+        const vuelta = this.fechas.filter(f => f.fase === 'vuelta');
+        this.fechasPorFase = [];
+        if (ida.length)    this.fechasPorFase.push({ fase: 'ida',    label: 'Ida',    fechas: ida });
+        if (vuelta.length) this.fechasPorFase.push({ fase: 'vuelta', label: 'Vuelta', fechas: vuelta });
+
+        // Auto-select ultima fecha con al menos una jornada finalizada, o la ultima
+        const conFinalizada = this.fechas.filter(f => f.hasFinalizada);
+        const selected = conFinalizada.length ? conFinalizada[conFinalizada.length - 1] : (this.fechas.length ? this.fechas[this.fechas.length - 1] : null);
+        if (selected) this.selectFecha(selected);
         this.cdr.detectChanges();
       },
       error: () => {
         this.jornadas = [];
-        this.jornadasPorFase = [];
+        this.fechas = [];
+        this.fechasPorFase = [];
         this.cdr.detectChanges();
       },
     });
   }
 
-  selectJornada(j: any) {
-    this.selectedJornadaId = j.id;
-    if (!this.torneoId) return;
-    this.http.get<any>(`${environment.apiUrl}/fixture/${this.torneoId}/partidos`, {
-      params: { jornada_id: j.id },
-    }).subscribe({
-      next: res => {
-        this.partidosFecha = res.data || [];
+  selectFecha(f: { key: string; jornadaIds: number[] }) {
+    this.selectedFechaKey = f.key;
+    if (!this.torneoId || !f.jornadaIds.length) return;
+
+    // Fetch partidos de cada jornada y mergear
+    const calls = f.jornadaIds.map(jid =>
+      this.http.get<any>(`${environment.apiUrl}/fixture/${this.torneoId}/partidos`, { params: { jornada_id: jid } }),
+    );
+    forkJoin(calls).subscribe({
+      next: (results: any[]) => {
+        this.partidosFecha = results.flatMap(r => r?.data || []);
         this.agruparPartidos();
         this.cdr.detectChanges();
       },
       error: () => {
         this.partidosFecha = [];
-        this.partidosAgrupados = [];
+        this.partidosPorZona = [];
         this.cdr.detectChanges();
       },
     });
   }
 
   private agruparPartidos() {
-    const map = new Map<string, any[]>();
+    // Agrupar por zona (via clubLocal.zona_id) y dentro por categoria
+    const zonaMap = new Map<number, { zona: any; categorias: { categoria: string; partidos: any[] }[]; totalPartidos: number }>();
+    for (const z of this.zonas) zonaMap.set(z.id, { zona: z, categorias: [], totalPartidos: 0 });
+
+    const porZonaPartidos = new Map<number, any[]>();
     for (const p of this.partidosFecha) {
-      const cat = p.categoria?.nombre || 'Sin categoria';
-      if (!map.has(cat)) map.set(cat, []);
-      map.get(cat)!.push(p);
+      const zid = p.clubLocal?.zona_id ?? p.clubVisitante?.zona_id ?? 0;
+      if (!porZonaPartidos.has(zid)) porZonaPartidos.set(zid, []);
+      porZonaPartidos.get(zid)!.push(p);
     }
-    this.partidosAgrupados = Array.from(map.entries()).map(([categoria, partidos]) => ({ categoria, partidos }));
+
+    for (const [zid, partidos] of porZonaPartidos.entries()) {
+      const entry = zonaMap.get(zid) || { zona: { id: zid, nombre: 'Sin zona', color: '#94a3b8' }, categorias: [], totalPartidos: 0 };
+      // Ordenar por orden de categoria (si existe) o nombre
+      const catMap = new Map<string, any[]>();
+      for (const p of partidos) {
+        const cat = p.categoria?.nombre || 'Sin categoria';
+        if (!catMap.has(cat)) catMap.set(cat, []);
+        catMap.get(cat)!.push(p);
+      }
+      entry.categorias = [...catMap.entries()].map(([categoria, ps]) => ({ categoria, partidos: ps }));
+      entry.totalPartidos = partidos.length;
+      zonaMap.set(zid, entry);
+    }
+
+    this.partidosPorZona = [...zonaMap.values()].filter(z => z.totalPartidos > 0);
   }
 
   esGanador(p: any, side: 'local' | 'visitante'): boolean {
@@ -873,6 +929,21 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   // ─── Helpers ────────────────────────────────────────────────────────
+
+  /** Agrupa goleadores por zona via g.club.zona_id respetando orden de this.zonas. */
+  gruposPorZonaGol(rows: any[]): { zona: any; rows: any[] }[] {
+    const map = new Map<number, { zona: any; rows: any[] }>();
+    for (const z of this.zonas) map.set(z.id, { zona: z, rows: [] });
+    const sinZona: any[] = [];
+    for (const r of rows) {
+      const zid = r.club?.zona_id;
+      if (zid && map.has(zid)) map.get(zid)!.rows.push(r);
+      else sinZona.push(r);
+    }
+    const result = [...map.values()].filter(g => g.rows.length);
+    if (sinZona.length) result.push({ zona: { id: 0, nombre: 'Sin zona', color: '#94a3b8' }, rows: sinZona });
+    return result;
+  }
 
   resolveUrl(url: string | null | undefined): string {
     if (!url) return '';
