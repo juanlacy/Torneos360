@@ -2,7 +2,7 @@ import { Op, fn, col, literal } from 'sequelize';
 import {
   sequelize,
   SancionDisciplinaria, Partido, PartidoEvento, FixtureJornada,
-  Persona, PersonaRol, Club, Institucion, Categoria, Torneo, Rol,
+  Persona, PersonaRol, Club, Institucion, Categoria, Torneo, Rol, Usuario,
 } from '../models/index.js';
 import { registrarAudit } from '../services/auditService.js';
 
@@ -262,13 +262,20 @@ export const crearSancion = async (req, res) => {
       return res.status(400).json({ success: false, message: 'torneo_id, persona_id, motivo y fechas_suspension son requeridos' });
     }
 
+    // Verificar que req.user.id exista en usuarios (puede ser stale token de un user borrado)
+    let creada_por = null;
+    if (req.user?.id) {
+      const u = await Usuario.findByPk(req.user.id, { attributes: ['id'] });
+      if (u) creada_por = u.id;
+    }
+
     const sancion = await SancionDisciplinaria.create({
       torneo_id, persona_id, tipo_persona, motivo, partido_id: partido_id || null,
       fechas_suspension: parseInt(fechas_suspension),
       multa: multa ? parseFloat(multa) : null,
       detalle: detalle || null,
       estado,
-      creada_por: req.user?.id || null,
+      creada_por,
     });
 
     registrarAudit({ req, accion: 'CREAR_SANCION', entidad: 'sanciones_disciplinarias', entidad_id: sancion.id, despues: sancion.toJSON() });
@@ -293,7 +300,12 @@ export const actualizarSancion = async (req, res) => {
     // Si resuelve apelacion, sellar
     if (req.body.resolucion_apelacion) {
       updates.resuelta_en = new Date();
-      updates.resuelta_por = req.user?.id || null;
+      let resuelta_por = null;
+      if (req.user?.id) {
+        const u = await Usuario.findByPk(req.user.id, { attributes: ['id'] });
+        if (u) resuelta_por = u.id;
+      }
+      updates.resuelta_por = resuelta_por;
     }
 
     await s.update(updates);
