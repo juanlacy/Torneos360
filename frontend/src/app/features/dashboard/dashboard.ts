@@ -146,11 +146,12 @@ const DEFAULT_WIDGETS = ['kpis', 'posiciones_zona', 'goleadores', 'resultados_fe
                     </p>
                     <p class="text-[10px] text-gray-500">
                       Fecha {{ n.numero_jornada }} ({{ n.fase }})
-                      @if (n.dias_hasta !== null) {
-                        @if (n.dias_hasta < 0) { · hace {{ -n.dias_hasta }}d }
-                        @else if (n.dias_hasta === 0) { · HOY }
-                        @else if (n.dias_hasta === 1) { · manana }
-                        @else { · en {{ n.dias_hasta }}d }
+                      @if (n.dias_hasta != null) {
+                        @let dh = n.dias_hasta;
+                        @if (dh < 0) { · hace {{ -dh }}d }
+                        @else if (dh === 0) { · HOY }
+                        @else if (dh === 1) { · manana }
+                        @else { · en {{ dh }}d }
                       }
                     </p>
                   </div>

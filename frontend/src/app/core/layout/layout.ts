@@ -193,10 +193,11 @@ interface NavGroup {
                                 <p class="text-[10px] text-gray-400 mt-0.5">
                                   Fecha {{ n.numero_jornada }} ({{ n.fase }})
                                   @if (n.dias_hasta != null) {
-                                    @if (n.dias_hasta < 0) { · hace {{ -n.dias_hasta }}d }
-                                    @else if (n.dias_hasta === 0) { · HOY }
-                                    @else if (n.dias_hasta === 1) { · manana }
-                                    @else { · en {{ n.dias_hasta }}d }
+                                    @let dh = n.dias_hasta;
+                                    @if (dh < 0) { · hace {{ -dh }}d }
+                                    @else if (dh === 0) { · HOY }
+                                    @else if (dh === 1) { · manana }
+                                    @else { · en {{ dh }}d }
                                   }
                                 </p>
                               </div>
