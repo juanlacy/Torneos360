@@ -286,6 +286,34 @@ import { BrandingService } from '../../core/services/branding.service';
                           <mat-icon class="!text-sm !w-4 !h-4">open_in_new</mat-icon>
                         </a>
                       </div>
+
+                      <!-- Fila de asignacion: arbitro + veedor -->
+                      <div class="flex items-center gap-2 pl-12 pb-1 text-[11px] text-gray-500">
+                        <mat-icon class="!text-xs !w-3 !h-3 text-gray-400">sports</mat-icon>
+                        @if (puedeCargarResultados()) {
+                          <select [(ngModel)]="r._editArbitroId" (ngModelChange)="r._modificadoAsignacion = true"
+                            class="h-6 px-1.5 text-[11px] border border-gray-200 rounded bg-white focus:outline-none focus:border-blue-500">
+                            <option [ngValue]="null">Sin árbitro</option>
+                            @for (a of arbitros; track a.id) {
+                              <option [ngValue]="a.persona_id || a.id">{{ a.apellido || a.persona?.apellido }}, {{ a.nombre || a.persona?.nombre }}</option>
+                            }
+                          </select>
+                        } @else {
+                          <span class="truncate">{{ arbitroNombre(r.arbitro_id) || 'sin árbitro' }}</span>
+                        }
+                        <mat-icon class="!text-xs !w-3 !h-3 text-gray-400 ml-3">visibility</mat-icon>
+                        @if (puedeCargarResultados()) {
+                          <select [(ngModel)]="r._editVeedorId" (ngModelChange)="r._modificadoAsignacion = true"
+                            class="h-6 px-1.5 text-[11px] border border-gray-200 rounded bg-white focus:outline-none focus:border-blue-500">
+                            <option [ngValue]="null">Sin veedor</option>
+                            @for (v of veedores; track v.id) {
+                              <option [ngValue]="v.persona_id || v.id">{{ v.apellido || v.persona?.apellido }}, {{ v.nombre || v.persona?.nombre }}</option>
+                            }
+                          </select>
+                        } @else {
+                          <span class="truncate">{{ veedorNombre(r.veedor_id) || 'sin veedor' }}</span>
+                        }
+                      </div>
                     }
                     @if (puedeCargarResultados() && tieneCambios(cruce)) {
                       <div class="flex justify-end pt-2 gap-2">
@@ -402,6 +430,7 @@ export class FixtureComponent implements OnInit {
   ptsVictoria = 2;
   ptsEmpate = 1;
   arbitros: any[] = [];
+  veedores: any[] = [];
   jornadas: any[] = [];
   jornadasFiltradas: any[] = [];
   jornadasPorZona: { zona: any; jornadas: any[] }[] = [];
@@ -441,6 +470,10 @@ export class FixtureComponent implements OnInit {
     // Cargar arbitros del torneo
     this.http.get<any>(`${environment.apiUrl}/arbitros`, { params: { torneo_id: this.torneoId } }).subscribe({
       next: res => { this.arbitros = res.data || []; this.cdr.detectChanges(); },
+    });
+    // Cargar veedores del torneo
+    this.http.get<any>(`${environment.apiUrl}/veedores`, { params: { torneo_id: this.torneoId } }).subscribe({
+      next: res => { this.veedores = res.data || []; this.cdr.detectChanges(); },
     });
   }
 
@@ -569,9 +602,14 @@ export class FixtureComponent implements OnInit {
             estado: p.estado,
             goles_local: p.goles_local ?? 0,
             goles_visitante: p.goles_visitante ?? 0,
+            arbitro_id: p.arbitro_id || null,
+            veedor_id: p.veedor_id || null,
             _editLocal: p.goles_local ?? 0,
             _editVisitante: p.goles_visitante ?? 0,
+            _editArbitroId: p.arbitro_id || null,
+            _editVeedorId: p.veedor_id || null,
             _modificado: false,
+            _modificadoAsignacion: false,
             hora: this.getHora(p),
           });
         }
@@ -634,35 +672,46 @@ export class FixtureComponent implements OnInit {
   }
 
   tieneCambios(cruce: any): boolean {
-    return (cruce.resultados || []).some((r: any) => r._modificado);
+    return (cruce.resultados || []).some((r: any) => r._modificado || r._modificadoAsignacion);
   }
 
   descartarCambios(cruce: any) {
     for (const r of cruce.resultados || []) {
       r._editLocal = r.goles_local;
       r._editVisitante = r.goles_visitante;
+      r._editArbitroId = r.arbitro_id;
+      r._editVeedorId = r.veedor_id;
       r._modificado = false;
+      r._modificadoAsignacion = false;
     }
     this.cdr.detectChanges();
   }
 
   guardarResultadosCruce(jornada: any, cruce: any) {
-    const modificados = (cruce.resultados || []).filter((r: any) => r._modificado);
-    if (!modificados.length) return;
+    const conCambios = (cruce.resultados || []).filter((r: any) => r._modificado || r._modificadoAsignacion);
+    if (!conCambios.length) return;
     cruce._guardando = true;
     this.cdr.detectChanges();
 
-    const calls = modificados.map((r: any) =>
-      this.http.post(`${environment.apiUrl}/partidos/${r.partido_id}/resultado-rapido`, {
-        goles_local: parseInt(r._editLocal) || 0,
-        goles_visitante: parseInt(r._editVisitante) || 0,
-      }).toPromise(),
-    );
+    const calls: Promise<any>[] = [];
+    for (const r of conCambios) {
+      if (r._modificado) {
+        calls.push(this.http.post(`${environment.apiUrl}/partidos/${r.partido_id}/resultado-rapido`, {
+          goles_local: parseInt(r._editLocal) || 0,
+          goles_visitante: parseInt(r._editVisitante) || 0,
+        }).toPromise());
+      }
+      if (r._modificadoAsignacion) {
+        calls.push(this.http.put(`${environment.apiUrl}/partidos/${r.partido_id}`, {
+          arbitro_id: r._editArbitroId,
+          veedor_id: r._editVeedorId,
+        }).toPromise());
+      }
+    }
 
     Promise.all(calls).then(() => {
-      this.toastr.success(`${modificados.length} resultado${modificados.length > 1 ? 's' : ''} guardado${modificados.length > 1 ? 's' : ''}`);
+      this.toastr.success(`${conCambios.length} partido${conCambios.length > 1 ? 's' : ''} actualizado${conCambios.length > 1 ? 's' : ''}`);
       cruce._guardando = false;
-      // Recargar partidos de la jornada — limpia _cruces + se rearma con datos frescos
       jornada._cruces = null;
       jornada._partidos = null;
       this.cargarPartidos(jornada);
@@ -671,6 +720,20 @@ export class FixtureComponent implements OnInit {
       this.toastr.error(e?.error?.message || 'Error al guardar');
       this.cdr.detectChanges();
     });
+  }
+
+  arbitroNombre(personaId: number | null | undefined): string {
+    if (!personaId) return '';
+    const a = this.arbitros.find((x: any) => (x.persona_id || x.id) === personaId);
+    if (!a) return '';
+    return `${a.apellido || a.persona?.apellido || ''}, ${a.nombre || a.persona?.nombre || ''}`.replace(/^, |, $/g, '');
+  }
+
+  veedorNombre(personaId: number | null | undefined): string {
+    if (!personaId) return '';
+    const v = this.veedores.find((x: any) => (x.persona_id || x.id) === personaId);
+    if (!v) return '';
+    return `${v.apellido || v.persona?.apellido || ''}, ${v.nombre || v.persona?.nombre || ''}`.replace(/^, |, $/g, '');
   }
 
   getHora(partido: any): string {

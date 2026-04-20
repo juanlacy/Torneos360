@@ -143,8 +143,13 @@ cd backend && node scripts/generate-icons.js
 node src/seeders/reset-datos.js --apply --i-know-what-im-doing
 node src/seeders/import-torneo-backup.js --rename="CAFI 2026"
 node src/seeders/cafi-2026-personas.js --torneo-id=2
-node src/seeders/simular-fechas-demo.js --torneo-id=2 --cantidad=7
+node src/seeders/simular-fechas-demo.js --torneo-id=2 --fase=ida --hasta-fecha=6
 node src/seeders/export-torneo-backup.js
+
+# Setup completo de ambiente en 1 comando (CAFI 2026 + CAFI 2026 DEMO)
+#   - CAFI 2026: fixture + fechas calendario, sin personas
+#   - CAFI 2026 DEMO: mismo fixture + personas + 6 IDA simuladas
+node src/seeders/setup-entorno-demo.js --start=2026-04-25 --apply
 ```
 
 ## Config del torneo (JSONB en torneo.config)
@@ -164,22 +169,93 @@ node src/seeders/export-torneo-backup.js
 - **Azure redirect URI (SPA)**: `https://torneos360.huelemu.com.ar/auth/login`
 
 ## Pendientes para proxima sesion
-- Consolidar 12 de Octubre A/B (correr script en VPS)
-- Pulir UI: responsive mobile, loading states, empty states
-- Probar flujo MVP + calificacion arbitro con config habilitada
-- Estadisticas avanzadas: exportar PDF, tabla de tarjetas
-- Vista publica de datos: /torneo/:id con posiciones completas
-- Probar en server los fixes de la sesion 2 (ver abajo)
+- **Notificaciones** — sistema de alertas (partidos sin arbitro/veedor proximos,
+  informes pendientes, confirmaciones faltantes). Widget en dashboard + badge
+  en header. Paso 2 del plan de asignacion de arbitros/veedores.
+- **Polish responsive mobile** — pase especifico en pantallas admin (tablets
+  del partido funcionan bien, pero listados podrian mejorar)
+- **Probar flujo MVP + calificacion arbitro** — test manual en /partidos/:id/control
+  con `elegir_mejor_jugador` y `calificar_arbitro` en config del torneo
+- **Estadisticas avanzadas**: agregar exportar CSV ademas de PDF
 
-## Verificaciones completadas (2026-04-19 sesion 2)
-- **Mi Perfil**: backend `/auth/me` ahora incluye `telefono` + `torneo` en roles asignados.
-  Email editable solo para cuentas locales (OAuth retorna 400). Valida unicidad.
-- **`/admin/permisos` con ver_sensibles**: `GET /jugadores/:id` ahora aplica
-  `ocultarSensibles` (antes leakeaba DNI/tel/email en el detalle singular).
-- **Panel de Control**: acumuladores por jugador (goles/amarillas/azules/roja)
-  matcheaban por `jugador_id` inexistente → fixed a `persona_id`. `calcEventosJugador`
-  tambien se llama al cargar el partido (antes solo al cargar alineacion, que podia
-  correr antes que partido y dejar los contadores vacios).
+## Cambios recientes importantes (sesion 3 — 2026-04-20)
+
+### Estructura / Datos
+- **Consolidacion 12 de Octubre A/B**: institucion base unica (id=29), clubes con
+  sufijo 'A'/'B' correctamente asignados. Clubes A juegan en Blanca, B en Celeste.
+  Hubo un proceso de diagnostico: 1) consolidar-instituciones-sufijo, 2) ajustar
+  zona_id del Club, 3) swap de sufijos para que matchee la zona donde realmente
+  juegan sus partidos.
+- **Virtual `sufijo`**: Club.nombre virtual concatena el sufijo ("12 de Octubre A"),
+  pero el virtual necesita que el atributo `sufijo` este en el SELECT. Agregado
+  `'sufijo'` a los `attributes: ['id', 'sufijo', 'nombre', ...]` en todos los
+  includes de Club de los controllers (fixture, jugadores, partidos, personas,
+  posiciones, publico, staff, torneos).
+- **Filtrado por torneo en Staff**: staffController.listar agrega filtro por
+  torneo_id (antes aparecia el mismo staff en ambos torneos).
+
+### Seeders / Entorno
+- **setup-entorno-demo.js**: script orquestador que deja la DB con:
+  CAFI 2026 (fixture + fechas calendario) + CAFI 2026 DEMO (+ personas + 6 IDA
+  simuladas). Crea admin si no existe, pipeline de 7 pasos. Flag --apply.
+- **simular-fechas-demo.js** acepta `--fase=ida|vuelta` y `--hasta-fecha=N`.
+- **export-torneo-backup.js** tambien copia a `torneo-backup-latest.json`.
+
+### UI — Unificacion por zonas (patron dashboard)
+Todas las tablas/listas principales se dividen por zona en 2 columnas:
+- **/posiciones**: chips (General + categorias) + tablas por zona
+- **/estadisticas**: Goleadores y Tarjetas 2 columnas por zona + export PDF con
+  subheader coloreado por zona
+- **/torneo/:id publico**: las 5 tabs (General, Por Categoria, Goleadores,
+  Tarjetas, Fixture) dividen por zona. Chips en vez de dropdowns.
+- **/fixture admin**: 2 columnas por zona, chips Ida/Vuelta, ya no dropdown zona
+- **Dashboard Goleadores + Resultados**: 2 columnas por zona. Chips de fechas
+  consolidados (1 por fase+numero, carga ambas jornadas en paralelo)
+
+### Fixture
+- Estados visuales precomputados en backend: `_estadoVisual` + `_partidosCount`.
+  Icono (check/pulso rojo/pause/reloj) + borde de color en cada jornada sin
+  necesidad de expandir. badges femeninos y masculinos en CSS.
+- Edicion de fecha calendario por jornada con checkbox "Aplicar a la otra zona"
+- **Cargar resultados + asignar arbitro/veedor desde el cruce**: dentro del
+  detalle del cruce, fila por partido con input de goles + dropdown arbitro +
+  dropdown veedor (solo coordinador/admin). Boton Guardar guarda todo en
+  paralelo. Usa resultado-rapido para goles y PUT /partidos/:id para asignacion.
+- Fecha calendario formateada ("Sab 3 may") con fix timezone `T12:00:00Z`
+
+### Partidos
+- **POST /partidos/:id/resultado-rapido**: nuevo endpoint que acepta partido en
+  cualquier estado, setea goles + finaliza + recalcula posiciones.
+- **Vista partido finalizado mejorada**: barra con colores de ambos clubes,
+  escudos grandes, trofeo al ganador, MVP + arbitro + estrellas de calificacion.
+  Card "Resumen del partido" con goleadores/amarillas/rojas agrupados x cantidad.
+- **Panel de Control — contador de faltas**: rediseniado con color por cantidad
+  (gris/amarillo/naranja/rojo pulsante), mensaje central dinamico
+  (acumuladas / alerta 5ta / tiro libre directo).
+- Bugfixes: calcEventosJugador matcheaba por `jugador_id` inexistente — fixed
+  a `persona_id`. Se llama tambien al cargar partido (antes solo al cargar
+  alineacion, provocando contadores vacios por race condition).
+
+### Publico
+- **Banner "En Vivo"** en /torneo/:id cuando hay partidos en curso (polling 30s)
+- **PDF con jspdf-autotable** en /estadisticas — tabla por zona + subheader
+  coloreado con branding del torneo
+- Nueva ruta top-level `/torneo/:id` (accesible con o sin auth)
+- Endpoint publico GET /publico/torneos/:id/en-vivo (sin auth)
+- Tabs + chips en vez de dropdowns
+
+### Auth / Perfiles
+- `/auth/me` ahora incluye `telefono` + `torneo` en roles asignados
+- Email editable solo para cuentas locales (OAuth retorna 400) + validacion de
+  unicidad
+- `GET /jugadores/:id` aplica ocultarSensibles (antes leakeaba DNI/tel/email)
+
+### Rendering / UX
+- **Iconos PWA + favicon**: script en backend/scripts/generate-icons.js que
+  genera desde el logo Torneos360. Tamanos chicos usan solo el isotipo
+  (pelota+orbita) sobre purpura; grandes usan el logo completo.
+- Widgets del dashboard con max-h + overflow-y-auto (scroll interno, simetria
+  visual)
 
 ## Git
 - Rama principal: `main`
