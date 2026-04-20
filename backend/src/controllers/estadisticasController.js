@@ -77,6 +77,7 @@ export const goleadores = async (req, res) => {
         if (club) {
           clubData = {
             id: club.id,
+            zona_id: club.zona_id,
             nombre: club.nombre,
             nombre_corto: club.nombre_corto,
             escudo_url: club.escudo_url,
@@ -188,7 +189,7 @@ export const tarjetas = async (req, res) => {
         const club = await Club.findByPk(e.club_id, {
           include: [{ model: Institucion, as: 'institucion' }],
         });
-        if (club) clubData = { id: club.id, nombre: club.nombre, nombre_corto: club.nombre_corto, escudo_url: club.escudo_url };
+        if (club) clubData = { id: club.id, zona_id: club.zona_id, nombre: club.nombre, nombre_corto: club.nombre_corto, escudo_url: club.escudo_url, color_primario: club.color_primario };
       }
 
       resultado.push({

@@ -96,90 +96,105 @@ type Tab = 'goleadores' | 'tarjetas';
             <p class="text-sm">Sin datos para los filtros seleccionados</p>
           </div>
         } @else if (tab === 'goleadores') {
-          <ul class="divide-y divide-gray-100">
-            @for (g of goleadores; track g.persona_id; let i = $index) {
-              <li class="px-4 py-3 flex items-center gap-3 hover:bg-gray-50">
-                <span class="inline-flex w-7 h-7 items-center justify-center rounded-full text-xs font-bold flex-shrink-0"
-                  [class]="i === 0 ? 'bg-yellow-100 text-yellow-700' : i === 1 ? 'bg-gray-200 text-gray-700' : i === 2 ? 'bg-amber-100 text-amber-700' : 'text-gray-400'">
-                  {{ i + 1 }}
-                </span>
-                @if (g.foto_url) {
-                  <img [src]="resolveUrl(g.foto_url)" class="w-10 h-10 rounded-full object-cover flex-shrink-0" alt="">
-                } @else {
-                  <div class="w-10 h-10 rounded-full bg-purple-700 text-white flex items-center justify-center font-bold text-sm flex-shrink-0">
-                    {{ (g.nombre || '?').charAt(0) }}{{ (g.apellido || '').charAt(0) }}
-                  </div>
-                }
-                <div class="flex-1 min-w-0">
-                  <p class="font-bold text-gray-900 truncate">{{ g.apellido }}, {{ g.nombre }}</p>
-                  <div class="flex items-center gap-2 mt-0.5">
-                    @if (g.club?.escudo_url) {
-                      <img [src]="resolveUrl(g.club.escudo_url)" class="w-4 h-4 object-contain" alt="">
-                    }
-                    <span class="text-xs text-gray-500 truncate">{{ g.club?.nombre_corto || g.club?.nombre }}</span>
-                    @if (g.categoria) {
-                      <span class="text-[10px] text-gray-400">· {{ g.categoria.nombre }}</span>
-                    }
-                  </div>
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-0 lg:divide-x divide-gray-200">
+            @for (g of gruposPorZona(goleadores); track g.zona.id) {
+              <div>
+                <div class="h-1" [style.background-color]="g.zona.color || 'var(--color-primario)'"></div>
+                <div class="px-4 py-2.5 bg-gray-50 border-b border-gray-200 flex items-center gap-2">
+                  <span class="w-3 h-3 rounded-full" [style.background-color]="g.zona.color || '#6b7280'"></span>
+                  <span class="text-xs font-bold text-gray-700 uppercase tracking-wide">{{ g.zona.nombre }}</span>
+                  <span class="ml-auto text-[10px] text-gray-400">{{ g.rows.length }} jugadores</span>
                 </div>
-                <span class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-white font-bold text-sm flex-shrink-0"
-                  [style.background-color]="branding.color_primario || '#762c7e'">
-                  ⚽ {{ g.goles }}
-                </span>
-              </li>
-            }
-          </ul>
-        } @else {
-          <div class="overflow-x-auto">
-            <table class="w-full text-sm">
-              <thead class="bg-gray-50 text-gray-400 text-[10px] uppercase tracking-wider">
-                <tr>
-                  <th class="px-3 py-2 text-center w-10">#</th>
-                  <th class="px-3 py-2 text-left">Jugador</th>
-                  <th class="px-3 py-2 text-left hidden sm:table-cell">Club</th>
-                  <th class="px-2 py-2 text-center">🟡</th>
-                  <th class="px-2 py-2 text-center">🔴</th>
-                  <th class="px-3 py-2 text-right">Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (t of tarjetas; track t.persona_id; let i = $index) {
-                  <tr class="border-t border-gray-100 hover:bg-gray-50">
-                    <td class="px-3 py-2 text-center text-gray-400 font-medium">{{ i + 1 }}</td>
-                    <td class="px-3 py-2">
-                      <div class="flex items-center gap-2.5 min-w-0">
-                        @if (t.foto_url) {
-                          <img [src]="resolveUrl(t.foto_url)" class="w-8 h-8 rounded-full object-cover flex-shrink-0" alt="">
-                        } @else {
-                          <div class="w-8 h-8 rounded-full bg-purple-700 text-white flex items-center justify-center font-bold text-[11px] flex-shrink-0">
-                            {{ (t.nombre || '?').charAt(0) }}{{ (t.apellido || '').charAt(0) }}
-                          </div>
-                        }
-                        <div class="min-w-0">
-                          <p class="font-semibold text-gray-900 truncate text-sm">{{ t.apellido }}, {{ t.nombre }}</p>
-                          <p class="sm:hidden text-xs text-gray-500 truncate">{{ t.club?.nombre_corto || t.club?.nombre }}</p>
+                <ul class="divide-y divide-gray-100">
+                  @for (j of g.rows; track j.persona_id; let i = $index) {
+                    <li class="px-4 py-2.5 flex items-center gap-3 hover:bg-gray-50">
+                      <span class="inline-flex w-6 h-6 items-center justify-center rounded-full text-[10px] font-bold flex-shrink-0"
+                        [class]="i === 0 ? 'bg-yellow-100 text-yellow-700' : i === 1 ? 'bg-gray-200 text-gray-700' : i === 2 ? 'bg-amber-100 text-amber-700' : 'text-gray-400'">
+                        {{ i + 1 }}
+                      </span>
+                      @if (j.foto_url) {
+                        <img [src]="resolveUrl(j.foto_url)" class="w-9 h-9 rounded-full object-cover flex-shrink-0" alt="">
+                      } @else {
+                        <div class="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-xs flex-shrink-0"
+                          [style.background-color]="j.club?.color_primario || 'var(--color-primario)'">
+                          {{ (j.nombre || '?').charAt(0) }}{{ (j.apellido || '').charAt(0) }}
+                        </div>
+                      }
+                      <div class="flex-1 min-w-0">
+                        <p class="font-semibold text-gray-900 text-sm truncate">{{ j.apellido }}, {{ j.nombre }}</p>
+                        <div class="flex items-center gap-1.5 mt-0.5">
+                          @if (j.club?.escudo_url) {
+                            <img [src]="resolveUrl(j.club.escudo_url)" class="w-4 h-4 object-contain" alt="">
+                          }
+                          <span class="text-[11px] text-gray-500 truncate">{{ j.club?.nombre_corto || j.club?.nombre }}</span>
+                          @if (j.categoria?.nombre) {
+                            <span class="inline-flex px-1.5 py-0 rounded text-[9px] font-medium bg-blue-50 text-blue-600">{{ j.categoria.nombre }}</span>
+                          }
                         </div>
                       </div>
-                    </td>
-                    <td class="px-3 py-2 hidden sm:table-cell">
-                      <div class="flex items-center gap-2">
-                        @if (t.club?.escudo_url) {
-                          <img [src]="resolveUrl(t.club.escudo_url)" class="w-5 h-5 object-contain" alt="">
-                        }
-                        <span class="text-xs text-gray-700 truncate">{{ t.club?.nombre_corto || t.club?.nombre }}</span>
-                      </div>
-                    </td>
-                    <td class="px-2 py-2 text-center font-bold text-yellow-600">{{ t.amarillas }}</td>
-                    <td class="px-2 py-2 text-center font-bold text-red-600">{{ t.rojas }}</td>
-                    <td class="px-3 py-2 text-right">
-                      <span class="inline-block min-w-[32px] px-2 py-0.5 rounded text-xs font-bold bg-gray-100 text-gray-700">
-                        {{ t.rojas * 3 + t.amarillas }}
+                      <span class="shrink-0 text-right">
+                        <span class="text-base font-extrabold text-gray-900">{{ j.goles }}</span>
+                        <p class="text-[9px] text-gray-400 uppercase leading-none">goles</p>
                       </span>
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
+                    </li>
+                  }
+                </ul>
+              </div>
+            }
+          </div>
+        } @else {
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-0 lg:divide-x divide-gray-200">
+            @for (g of gruposPorZona(tarjetas); track g.zona.id) {
+              <div class="overflow-x-auto">
+                <div class="h-1" [style.background-color]="g.zona.color || 'var(--color-primario)'"></div>
+                <div class="px-4 py-2.5 bg-gray-50 border-b border-gray-200 flex items-center gap-2">
+                  <span class="w-3 h-3 rounded-full" [style.background-color]="g.zona.color || '#6b7280'"></span>
+                  <span class="text-xs font-bold text-gray-700 uppercase tracking-wide">{{ g.zona.nombre }}</span>
+                  <span class="ml-auto text-[10px] text-gray-400">{{ g.rows.length }} jugadores</span>
+                </div>
+                <table class="w-full text-sm">
+                  <thead class="bg-gray-50/50 text-gray-400 text-[10px] uppercase tracking-wider">
+                    <tr>
+                      <th class="px-3 py-2 text-center w-10">#</th>
+                      <th class="px-3 py-2 text-left">Jugador</th>
+                      <th class="px-2 py-2 text-center">🟡</th>
+                      <th class="px-2 py-2 text-center">🔴</th>
+                      <th class="px-3 py-2 text-right">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (t of g.rows; track t.persona_id; let i = $index) {
+                      <tr class="border-t border-gray-100 hover:bg-gray-50">
+                        <td class="px-3 py-2 text-center text-gray-400 text-xs font-medium">{{ i + 1 }}</td>
+                        <td class="px-3 py-2">
+                          <div class="flex items-center gap-2 min-w-0">
+                            @if (t.foto_url) {
+                              <img [src]="resolveUrl(t.foto_url)" class="w-7 h-7 rounded-full object-cover flex-shrink-0" alt="">
+                            } @else {
+                              <div class="w-7 h-7 rounded-full flex items-center justify-center text-white font-bold text-[10px] flex-shrink-0"
+                                [style.background-color]="t.club?.color_primario || 'var(--color-primario)'">
+                                {{ (t.nombre || '?').charAt(0) }}{{ (t.apellido || '').charAt(0) }}
+                              </div>
+                            }
+                            <div class="min-w-0">
+                              <p class="font-semibold text-gray-900 truncate text-xs">{{ t.apellido }}, {{ t.nombre }}</p>
+                              <p class="text-[10px] text-gray-500 truncate">{{ t.club?.nombre_corto || t.club?.nombre }}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td class="px-2 py-2 text-center font-bold text-yellow-600 text-xs">{{ t.amarillas }}</td>
+                        <td class="px-2 py-2 text-center font-bold text-red-600 text-xs">{{ t.rojas }}</td>
+                        <td class="px-3 py-2 text-right">
+                          <span class="inline-block min-w-[28px] px-1.5 py-0.5 rounded text-[11px] font-bold bg-gray-100 text-gray-700">
+                            {{ t.rojas * 3 + t.amarillas }}
+                          </span>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
           </div>
         }
       </div>
@@ -275,6 +290,21 @@ export class EstadisticasComponent implements OnInit {
     return this.tab === 'goleadores' ? this.goleadores : this.tarjetas;
   }
 
+  /** Agrupa filas por zona (via r.club.zona_id) respetando orden de this.zonas. */
+  gruposPorZona(rows: any[]): { zona: any; rows: any[] }[] {
+    const map = new Map<number, { zona: any; rows: any[] }>();
+    for (const z of this.zonas) map.set(z.id, { zona: z, rows: [] });
+    const sinZona: any[] = [];
+    for (const r of rows) {
+      const zid = r.club?.zona_id;
+      if (zid && map.has(zid)) map.get(zid)!.rows.push(r);
+      else sinZona.push(r);
+    }
+    const result = [...map.values()].filter(g => g.rows.length);
+    if (sinZona.length) result.push({ zona: { id: 0, nombre: 'Sin zona', color: '#94a3b8' }, rows: sinZona });
+    return result;
+  }
+
   exportarPDF() {
     const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
     const margin = 40;
@@ -308,50 +338,66 @@ export class EstadisticasComponent implements OnInit {
       margin, 90,
     );
 
-    // Tabla
-    if (this.tab === 'goleadores') {
-      autoTable(doc, {
-        startY: 110,
-        head: [['#', 'Jugador', 'Club', 'Categoria', 'Goles']],
-        body: this.goleadores.map((g, i) => [
-          i + 1,
-          `${g.apellido || ''}, ${g.nombre || ''}`,
-          g.club?.nombre_corto || g.club?.nombre || '-',
-          g.categoria?.nombre || '-',
-          g.goles,
-        ]),
-        headStyles: { fillColor: this.hexToRgb(primary), textColor: 255, fontStyle: 'bold' },
-        alternateRowStyles: { fillColor: [248, 250, 252] },
-        columnStyles: {
-          0: { cellWidth: 32, halign: 'center' },
-          4: { cellWidth: 50, halign: 'center', fontStyle: 'bold' },
-        },
-        styles: { fontSize: 10, cellPadding: 6 },
-        margin: { left: margin, right: margin },
-      });
-    } else {
-      autoTable(doc, {
-        startY: 110,
-        head: [['#', 'Jugador', 'Club', 'Amarillas', 'Rojas', 'Total']],
-        body: this.tarjetas.map((t, i) => [
-          i + 1,
-          `${t.apellido || ''}, ${t.nombre || ''}`,
-          t.club?.nombre_corto || t.club?.nombre || '-',
-          t.amarillas,
-          t.rojas,
-          t.rojas * 3 + t.amarillas,
-        ]),
-        headStyles: { fillColor: this.hexToRgb(primary), textColor: 255, fontStyle: 'bold' },
-        alternateRowStyles: { fillColor: [248, 250, 252] },
-        columnStyles: {
-          0: { cellWidth: 32, halign: 'center' },
-          3: { cellWidth: 60, halign: 'center' },
-          4: { cellWidth: 50, halign: 'center' },
-          5: { cellWidth: 50, halign: 'center', fontStyle: 'bold' },
-        },
-        styles: { fontSize: 10, cellPadding: 6 },
-        margin: { left: margin, right: margin },
-      });
+    // Tablas — una por zona (o una sola si no hay zonas)
+    const grupos = this.gruposPorZona(this.currentRows());
+    let startY = 110;
+
+    for (const g of grupos) {
+      // Subheader de zona
+      doc.setFillColor(...this.hexToRgb(g.zona.color || primary));
+      doc.rect(margin, startY, doc.internal.pageSize.getWidth() - margin * 2, 18, 'F');
+      doc.setTextColor(255);
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Zona ${g.zona.nombre}  ·  ${g.rows.length} jugadores`, margin + 8, startY + 12);
+      startY += 18;
+
+      if (this.tab === 'goleadores') {
+        autoTable(doc, {
+          startY,
+          head: [['#', 'Jugador', 'Club', 'Categoria', 'Goles']],
+          body: g.rows.map((r, i) => [
+            i + 1,
+            `${r.apellido || ''}, ${r.nombre || ''}`,
+            r.club?.nombre_corto || r.club?.nombre || '-',
+            r.categoria?.nombre || '-',
+            r.goles,
+          ]),
+          headStyles: { fillColor: this.hexToRgb(primary), textColor: 255, fontStyle: 'bold' },
+          alternateRowStyles: { fillColor: [248, 250, 252] },
+          columnStyles: {
+            0: { cellWidth: 32, halign: 'center' },
+            4: { cellWidth: 50, halign: 'center', fontStyle: 'bold' },
+          },
+          styles: { fontSize: 9, cellPadding: 5 },
+          margin: { left: margin, right: margin },
+        });
+      } else {
+        autoTable(doc, {
+          startY,
+          head: [['#', 'Jugador', 'Club', 'Amarillas', 'Rojas', 'Total']],
+          body: g.rows.map((r, i) => [
+            i + 1,
+            `${r.apellido || ''}, ${r.nombre || ''}`,
+            r.club?.nombre_corto || r.club?.nombre || '-',
+            r.amarillas,
+            r.rojas,
+            r.rojas * 3 + r.amarillas,
+          ]),
+          headStyles: { fillColor: this.hexToRgb(primary), textColor: 255, fontStyle: 'bold' },
+          alternateRowStyles: { fillColor: [248, 250, 252] },
+          columnStyles: {
+            0: { cellWidth: 32, halign: 'center' },
+            3: { cellWidth: 60, halign: 'center' },
+            4: { cellWidth: 50, halign: 'center' },
+            5: { cellWidth: 50, halign: 'center', fontStyle: 'bold' },
+          },
+          styles: { fontSize: 9, cellPadding: 5 },
+          margin: { left: margin, right: margin },
+        });
+      }
+
+      startY = (doc as any).lastAutoTable.finalY + 16;
     }
 
     // Footer
