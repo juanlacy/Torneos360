@@ -142,6 +142,29 @@ import { BrandingService } from '../../core/services/branding.service';
           </mat-expansion-panel-header>
 
           <div class="mt-2">
+            <!-- Cambiar fecha calendario (admin) -->
+            @if (auth.isAdmin()) {
+              <div class="mb-3 p-3 rounded-lg bg-blue-50/50 border border-blue-100 flex items-center gap-3 flex-wrap">
+                <mat-icon class="!text-blue-600 !text-lg !w-5 !h-5 shrink-0">event</mat-icon>
+                <span class="text-xs font-medium text-gray-600 shrink-0">Fecha:</span>
+                <input type="date" [(ngModel)]="jornada._fechaEdit"
+                  class="px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <label class="inline-flex items-center gap-1.5 text-xs text-gray-600 cursor-pointer shrink-0">
+                  <input type="checkbox" [(ngModel)]="jornada._syncOtraZona" class="w-3.5 h-3.5 accent-blue-600">
+                  Aplicar tambien a la otra zona
+                </label>
+                <button (click)="guardarFechaJornada(jornada)" [disabled]="!jornada._fechaEdit || jornada._guardandoFecha"
+                  class="ml-auto inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                  @if (jornada._guardandoFecha) {
+                    <mat-icon class="!text-xs !w-3.5 !h-3.5 animate-spin">autorenew</mat-icon>
+                  } @else {
+                    <mat-icon class="!text-xs !w-3.5 !h-3.5">save</mat-icon>
+                  }
+                  Guardar
+                </button>
+              </div>
+            }
+
             @if (jornada._loading) {
               <p class="text-gray-400 text-sm py-3 text-center">Cargando partidos...</p>
             } @else if (!jornada._partidos) {
@@ -419,8 +442,50 @@ export class FixtureComponent implements OnInit {
   cargarJornadas() {
     if (!this.torneoId) return;
     this.http.get<any>(`${environment.apiUrl}/fixture/${this.torneoId}/jornadas`).subscribe({
-      next: res => { this.jornadas = res.data; this.filtrar(); },
+      next: res => {
+        // Pre-cargar _fechaEdit con el valor actual para el input del picker
+        this.jornadas = (res.data || []).map((j: any) => ({ ...j, _fechaEdit: j.fecha || '', _syncOtraZona: true }));
+        this.filtrar();
+      },
       error: () => this.toastr.error('Error al cargar jornadas'),
+    });
+  }
+
+  guardarFechaJornada(jornada: any) {
+    if (!jornada._fechaEdit) return;
+    jornada._guardandoFecha = true;
+    this.cdr.detectChanges();
+
+    const payload = { fecha: jornada._fechaEdit };
+    const target = [jornada.id];
+
+    // Si pidio sync a la otra zona, buscar la jornada hermana (mismo torneo, misma fase+numero, zona distinta)
+    if (jornada._syncOtraZona) {
+      const hermana = this.jornadas.find((j: any) =>
+        j.id !== jornada.id &&
+        j.fase === jornada.fase &&
+        j.numero_jornada === jornada.numero_jornada &&
+        j.zona_id !== jornada.zona_id,
+      );
+      if (hermana) target.push(hermana.id);
+    }
+
+    const calls = target.map(id =>
+      this.http.put(`${environment.apiUrl}/fixture/jornada/${id}`, payload).toPromise(),
+    );
+    Promise.all(calls).then(() => {
+      this.toastr.success(target.length > 1 ? 'Fecha guardada en ambas zonas' : 'Fecha guardada');
+      // Actualizar en memoria sin recargar todo
+      for (const id of target) {
+        const j = this.jornadas.find((x: any) => x.id === id);
+        if (j) { j.fecha = jornada._fechaEdit; j._fechaEdit = jornada._fechaEdit; }
+      }
+      jornada._guardandoFecha = false;
+      this.filtrar();
+    }).catch((e: any) => {
+      this.toastr.error(e?.error?.message || 'Error al guardar');
+      jornada._guardandoFecha = false;
+      this.cdr.detectChanges();
     });
   }
 
