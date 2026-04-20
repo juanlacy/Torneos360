@@ -727,10 +727,33 @@ export class FixtureComponent implements OnInit {
           if (cruce) cruce._showDetail = true;
           jornada._partidoObjetivo = null; // consumido
         }
+
+        // Cargar en background la jornada hermana (misma fecha/fase, otra zona)
+        // para que la validacion de recursos duplicados contemple ambas zonas
+        const hermana = this.jornadas.find((j: any) =>
+          j.id !== jornada.id &&
+          j.fase === jornada.fase &&
+          j.numero_jornada === jornada.numero_jornada &&
+          j.zona_id !== jornada.zona_id,
+        );
+        if (hermana && !hermana._cruces && !hermana._loading) {
+          this.cargarPartidos(hermana);
+        }
+
         this.cdr.detectChanges();
       },
       error: () => { jornada._loading = false; this.toastr.error('Error al cargar partidos'); this.cdr.detectChanges(); },
     });
+  }
+
+  /** Devuelve la jornada hermana (misma fecha+fase, otra zona) si existe */
+  getJornadaHermana(jornada: any): any {
+    return this.jornadas.find((j: any) =>
+      j.id !== jornada.id &&
+      j.fase === jornada.fase &&
+      j.numero_jornada === jornada.numero_jornada &&
+      j.zona_id !== jornada.zona_id,
+    );
   }
 
   clubesZona(zonaId: number | null): any[] {
@@ -810,17 +833,31 @@ export class FixtureComponent implements OnInit {
 
   /**
    * Si una persona (arbitro o veedor) ya esta asignada a OTRO cruce de la
-   * misma jornada, devuelve un texto descriptivo ('ocupado en Local vs Visitante').
-   * Null si esta libre (o asignada a este mismo cruce).
+   * misma fecha (jornada actual o hermana en la otra zona), devuelve texto
+   * descriptivo. Null si esta libre (o asignada a este mismo cruce).
    */
   recursoOcupadoEn(jornada: any, cruceActual: any, personaId: number | null | undefined, tipo: 'arbitro' | 'veedor'): string | null {
     if (!personaId) return null;
     const key = tipo === 'arbitro' ? '_editArbitroId' : '_editVeedorId';
+
+    // 1) Misma jornada (otros cruces de la misma zona)
     for (const c of jornada?._cruces || []) {
       if (c === cruceActual || c.key === cruceActual?.key) continue;
-      const usado = (c.resultados || []).some((r: any) => r[key] === personaId);
-      if (usado) return `en ${c.local} vs ${c.visitante}`;
+      if ((c.resultados || []).some((r: any) => r[key] === personaId)) {
+        return `en ${c.local} vs ${c.visitante}`;
+      }
     }
+
+    // 2) Jornada hermana (misma fecha+fase, otra zona)
+    const hermana = this.getJornadaHermana(jornada);
+    if (hermana?._cruces) {
+      for (const c of hermana._cruces) {
+        if ((c.resultados || []).some((r: any) => r[key] === personaId)) {
+          return `en ${c.local} vs ${c.visitante} (${hermana.zona?.nombre || 'otra zona'})`;
+        }
+      }
+    }
+
     return null;
   }
 
