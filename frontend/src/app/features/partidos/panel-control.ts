@@ -167,11 +167,14 @@ type EventoTipo = 'gol' | 'amarilla' | 'azul' | 'roja' | 'falta';
                 <div class="max-h-[400px] overflow-y-auto p-1.5 space-y-1">
                   @for (j of jugadoresLocal; track j.id) {
                     <div class="flex items-center gap-2 px-2 py-1.5 rounded-lg transition-colors"
-                      [class.bg-green-50]="esAlineado(j.id)" [class.hover:bg-gray-50]="!esAlineado(j.id)">
+                      [class.bg-green-50]="esAlineado(j.id) && !j.inhabilitado"
+                      [class.bg-red-50]="j.inhabilitado"
+                      [class.hover:bg-gray-50]="!esAlineado(j.id) && !j.inhabilitado"
+                      [title]="j.inhabilitado ? ('INHABILITADO: ' + (j.sancion?.motivo || '').replaceAll('_', ' ') + ' · ' + j.sancion?.fechas_suspension + 'f') : ''">
                       <input type="checkbox"
                         class="w-4 h-4 cursor-pointer accent-green-600 flex-shrink-0"
                         [checked]="esAlineado(j.id)"
-                        [disabled]="alineacion.confirmado_local"
+                        [disabled]="alineacion.confirmado_local || j.inhabilitado"
                         (change)="toggleAlineado(j, partido.club_local_id, $event)">
                       @if (esAlineado(j.id)) {
                         <input type="number"
@@ -183,8 +186,11 @@ type EventoTipo = 'gol' | 'amarilla' | 'azul' | 'roja' | 'falta';
                           (change)="setCamiseta(j, partido.club_local_id, $event)">
                       }
                       <div class="flex-1 min-w-0">
-                        <span class="text-sm font-bold text-gray-900 uppercase truncate">{{ j.apellido }}</span>
-                        <span class="text-xs text-gray-500 ml-1 truncate">{{ j.nombre }}</span>
+                        <span class="text-sm font-bold text-gray-900 uppercase truncate" [class.line-through]="j.inhabilitado" [class.text-red-600]="j.inhabilitado">{{ j.apellido }}</span>
+                        <span class="text-xs text-gray-500 ml-1 truncate" [class.line-through]="j.inhabilitado">{{ j.nombre }}</span>
+                        @if (j.inhabilitado) {
+                          <mat-icon class="!text-sm !w-4 !h-4 text-red-600 ml-1" title="Inhabilitado por sancion">block</mat-icon>
+                        }
                       </div>
                     </div>
                   }
@@ -219,11 +225,14 @@ type EventoTipo = 'gol' | 'amarilla' | 'azul' | 'roja' | 'falta';
                 <div class="max-h-[400px] overflow-y-auto p-1.5 space-y-1">
                   @for (j of jugadoresVisitante; track j.id) {
                     <div class="flex items-center gap-2 px-2 py-1.5 rounded-lg transition-colors"
-                      [class.bg-green-50]="esAlineado(j.id)" [class.hover:bg-gray-50]="!esAlineado(j.id)">
+                      [class.bg-green-50]="esAlineado(j.id) && !j.inhabilitado"
+                      [class.bg-red-50]="j.inhabilitado"
+                      [class.hover:bg-gray-50]="!esAlineado(j.id) && !j.inhabilitado"
+                      [title]="j.inhabilitado ? ('INHABILITADO: ' + (j.sancion?.motivo || '').replaceAll('_', ' ') + ' · ' + j.sancion?.fechas_suspension + 'f') : ''">
                       <input type="checkbox"
                         class="w-4 h-4 cursor-pointer accent-green-600 flex-shrink-0"
                         [checked]="esAlineado(j.id)"
-                        [disabled]="alineacion.confirmado_visitante"
+                        [disabled]="alineacion.confirmado_visitante || j.inhabilitado"
                         (change)="toggleAlineado(j, partido.club_visitante_id, $event)">
                       @if (esAlineado(j.id)) {
                         <input type="number"
@@ -235,8 +244,11 @@ type EventoTipo = 'gol' | 'amarilla' | 'azul' | 'roja' | 'falta';
                           (change)="setCamiseta(j, partido.club_visitante_id, $event)">
                       }
                       <div class="flex-1 min-w-0">
-                        <span class="text-sm font-bold text-gray-900 uppercase truncate">{{ j.apellido }}</span>
-                        <span class="text-xs text-gray-500 ml-1 truncate">{{ j.nombre }}</span>
+                        <span class="text-sm font-bold text-gray-900 uppercase truncate" [class.line-through]="j.inhabilitado" [class.text-red-600]="j.inhabilitado">{{ j.apellido }}</span>
+                        <span class="text-xs text-gray-500 ml-1 truncate" [class.line-through]="j.inhabilitado">{{ j.nombre }}</span>
+                        @if (j.inhabilitado) {
+                          <mat-icon class="!text-sm !w-4 !h-4 text-red-600 ml-1" title="Inhabilitado por sancion">block</mat-icon>
+                        }
                       </div>
                     </div>
                   }

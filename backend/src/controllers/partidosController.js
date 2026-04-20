@@ -2,6 +2,7 @@ import { Op } from 'sequelize';
 import {
   Partido, PartidoEvento, PartidoAlineacion, PartidoConfirmacion,
   Club, Institucion, Categoria, Persona, PersonaRol, Rol, FixtureJornada, Torneo,
+  SancionDisciplinaria,
 } from '../models/index.js';
 import { recalcularDespuesDePartido } from '../services/standingsCalculatorService.js';
 import { registrarAudit } from '../services/auditService.js';
@@ -42,15 +43,80 @@ export const obtener = async (req, res) => {
   }
 };
 
+// Comparador de jornadas: fecha calendario si existe, sino fase (ida<vuelta) + numero
+const compararJornadas = (a, b) => {
+  if (a.fecha && b.fecha) {
+    if (a.fecha === b.fecha) return 0;
+    return a.fecha < b.fecha ? -1 : 1;
+  }
+  const order = (f) => f === 'ida' ? 0 : 1;
+  const fd = order(a.fase) - order(b.fase);
+  if (fd !== 0) return fd;
+  return (a.numero_jornada || 0) - (b.numero_jornada || 0);
+};
+const esJornadaPosterior = (j, jOrigen) => compararJornadas(j, jOrigen) > 0;
+
 // GET /partidos/:id/jugadores-disponibles
-// Devuelve personas con rol=jugador, estado=aprobado, de la categoria de ambos clubes
+// Devuelve personas con rol=jugador, estado=aprobado, de la categoria de ambos clubes.
+// Marca como inhabilitados a los jugadores con sancion activa cuya ventana
+// incluya este partido.
 export const jugadoresDisponibles = async (req, res) => {
   try {
-    const partido = await Partido.findByPk(req.params.id);
+    const partido = await Partido.findByPk(req.params.id, {
+      include: [{ model: FixtureJornada, as: 'jornada' }],
+    });
     if (!partido) return res.status(404).json({ success: false, message: 'Partido no encontrado' });
 
     const rolJugador = await Rol.findOne({ where: { codigo: 'jugador' } });
     if (!rolJugador) return res.status(500).json({ success: false, message: 'Rol jugador no configurado' });
+
+    // ─── Calcular inhabilitados por sancion ──────────────────────────────
+    const inhabilitados = new Map(); // persona_id → { motivo, fechas_suspension, sancion_id }
+    const torneoId = partido.jornada?.torneo_id;
+
+    if (torneoId && partido.jornada) {
+      const sanciones = await SancionDisciplinaria.findAll({
+        where: { torneo_id: torneoId, estado: 'aplicada', fechas_suspension: { [Op.gt]: 0 } },
+        include: [{
+          model: Partido, as: 'partido', required: true,
+          where: { categoria_id: partido.categoria_id },
+          include: [{ model: FixtureJornada, as: 'jornada', required: true }],
+        }],
+      });
+
+      for (const s of sanciones) {
+        // Club del jugador en esta categoria
+        const pr = await PersonaRol.findOne({
+          where: { persona_id: s.persona_id, rol_id: rolJugador.id, categoria_id: partido.categoria_id, activo: true },
+          attributes: ['club_id'],
+        });
+        if (!pr?.club_id) continue;
+
+        // Solo si el club del jugador participa en este partido
+        if (partido.club_local_id !== pr.club_id && partido.club_visitante_id !== pr.club_id) continue;
+
+        // Partidos del club en esta categoria con jornada >= origen
+        const partidosClub = await Partido.findAll({
+          where: {
+            categoria_id: partido.categoria_id,
+            [Op.or]: [{ club_local_id: pr.club_id }, { club_visitante_id: pr.club_id }],
+          },
+          include: [{ model: FixtureJornada, as: 'jornada', where: { torneo_id: torneoId }, required: true }],
+        });
+
+        // Filtrar posteriores al origen y ordenar
+        const posteriores = partidosClub
+          .filter(p => esJornadaPosterior(p.jornada, s.partido.jornada))
+          .sort((a, b) => compararJornadas(a.jornada, b.jornada));
+
+        const primerasN = posteriores.slice(0, s.fechas_suspension);
+        if (primerasN.some(p => p.id === partido.id)) {
+          inhabilitados.set(s.persona_id, {
+            motivo: s.motivo, fechas_suspension: s.fechas_suspension, sancion_id: s.id,
+          });
+        }
+      }
+    }
 
     const obtenerJugadoresClub = async (clubId) => {
       const personas = await Persona.findAll({
@@ -71,6 +137,7 @@ export const jugadoresDisponibles = async (req, res) => {
       });
       return personas.map(p => {
         const ra = p.roles_asignados[0];
+        const susp = inhabilitados.get(p.id);
         return {
           id: p.id,                            // persona_id
           persona_rol_id: ra.id,
@@ -80,6 +147,8 @@ export const jugadoresDisponibles = async (req, res) => {
           foto_url: p.foto_url,
           club_id: ra.club_id,
           numero_camiseta: ra.numero_camiseta,
+          inhabilitado: !!susp,
+          sancion: susp || null,
         };
       });
     };
@@ -401,6 +470,39 @@ export const upsertAlineacion = async (req, res) => {
     });
     if (!fichaje) {
       return res.status(400).json({ success: false, message: 'La persona no esta fichada como jugador en este club y categoria' });
+    }
+
+    // Bloqueo de jugadores sancionados — rechazar si cae dentro de una ventana de suspension activa
+    const partidoConJornada = await Partido.findByPk(partido.id, { include: [{ model: FixtureJornada, as: 'jornada' }] });
+    const torneoId = partidoConJornada?.jornada?.torneo_id;
+    if (torneoId && partidoConJornada?.jornada) {
+      const sanciones = await SancionDisciplinaria.findAll({
+        where: { torneo_id: torneoId, persona_id: personaId, estado: 'aplicada', fechas_suspension: { [Op.gt]: 0 } },
+        include: [{
+          model: Partido, as: 'partido', required: true,
+          where: { categoria_id: partido.categoria_id },
+          include: [{ model: FixtureJornada, as: 'jornada', required: true }],
+        }],
+      });
+      for (const s of sanciones) {
+        const partidosClub = await Partido.findAll({
+          where: {
+            categoria_id: partido.categoria_id,
+            [Op.or]: [{ club_local_id: club_id }, { club_visitante_id: club_id }],
+          },
+          include: [{ model: FixtureJornada, as: 'jornada', where: { torneo_id: torneoId }, required: true }],
+        });
+        const posteriores = partidosClub
+          .filter(p => esJornadaPosterior(p.jornada, s.partido.jornada))
+          .sort((a, b) => compararJornadas(a.jornada, b.jornada));
+        const primerasN = posteriores.slice(0, s.fechas_suspension);
+        if (primerasN.some(p => p.id === partido.id)) {
+          return res.status(400).json({
+            success: false,
+            message: `El jugador esta inhabilitado por sancion (${s.motivo.replace('_', ' ')}, ${s.fechas_suspension} fechas).`,
+          });
+        }
+      }
     }
 
     const [aline] = await PartidoAlineacion.findOrCreate({
