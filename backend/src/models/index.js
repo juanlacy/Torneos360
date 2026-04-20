@@ -24,6 +24,7 @@ export { TablaPosicionesClub } from './TablaPosicionesClub.js';
 export { Configuracion } from './Configuracion.js';
 export { InformeArbitro } from './InformeArbitro.js';
 export { Documento } from './Documento.js';
+export { SancionDisciplinaria } from './SancionDisciplinaria.js';
 
 // ─── Asociaciones ───────────────────────────────────────────────────────────
 import { Usuario } from './Usuario.js';
@@ -45,6 +46,7 @@ import { PartidoConfirmacion } from './PartidoConfirmacion.js';
 import { TablaPosiciones } from './TablaPosiciones.js';
 import { TablaPosicionesClub } from './TablaPosicionesClub.js';
 import { InformeArbitro } from './InformeArbitro.js';
+import { SancionDisciplinaria } from './SancionDisciplinaria.js';
 
 // ─── Auth ───────────────────────────────────────────────────────────────────
 Usuario.hasMany(PermisoUsuario, { foreignKey: 'usuario_id', as: 'permisos' });
@@ -149,3 +151,12 @@ Partido.hasMany(InformeArbitro, { foreignKey: 'partido_id', as: 'informes' });
 InformeArbitro.belongsTo(Partido, { foreignKey: 'partido_id', as: 'partido' });
 InformeArbitro.belongsTo(Persona, { foreignKey: 'arbitro_id', as: 'arbitro' });
 InformeArbitro.belongsTo(Usuario, { foreignKey: 'usuario_id', as: 'usuario' });
+
+// ─── Tribunal de Disciplina ─────────────────────────────────────────────────
+Torneo.hasMany(SancionDisciplinaria, { foreignKey: 'torneo_id', as: 'sanciones' });
+SancionDisciplinaria.belongsTo(Torneo,  { foreignKey: 'torneo_id',  as: 'torneo' });
+SancionDisciplinaria.belongsTo(Persona, { foreignKey: 'persona_id', as: 'persona' });
+SancionDisciplinaria.belongsTo(Partido, { foreignKey: 'partido_id', as: 'partido' });
+SancionDisciplinaria.belongsTo(Usuario, { foreignKey: 'creada_por', as: 'creador' });
+SancionDisciplinaria.belongsTo(Usuario, { foreignKey: 'resuelta_por', as: 'resolvedor' });
+Persona.hasMany(SancionDisciplinaria, { foreignKey: 'persona_id', as: 'sanciones' });

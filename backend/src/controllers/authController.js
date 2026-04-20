@@ -36,7 +36,7 @@ const getMsalApp = () => {
 };
 
 // ─── Modulos y acciones para mis-permisos ────────────────────────────────────
-const TODOS_MODULOS = ['torneos', 'clubes', 'jugadores', 'fixture', 'partidos', 'posiciones', 'arbitros', 'veedores', 'staff', 'configuracion', 'reportes'];
+const TODOS_MODULOS = ['torneos', 'clubes', 'jugadores', 'fixture', 'partidos', 'posiciones', 'arbitros', 'veedores', 'staff', 'configuracion', 'reportes', 'tribunal'];
 const TODAS_ACCIONES = ['ver', 'crear', 'editar', 'eliminar', 'ver_sensibles'];
 
 // ─── Multer para avatares ───────────────────────────────────────────────────

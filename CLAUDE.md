@@ -66,6 +66,18 @@ Torneo360/
 - **Partido** → PartidoConfirmacion[] (DNI + firma del delegado/arbitro)
 - **Partido** → mejor_jugador_id, calificacion_arbitro, comentario_arbitro
 
+### Disciplina
+- **SancionDisciplinaria** — caso del tribunal con FK a torneo + persona (+ partido opcional)
+  - motivo: acumulacion_amarillas | roja_directa | doble_amarilla | informe_arbitro | otro
+  - estado: propuesta | aplicada | cumplida | apelada | revocada
+  - apelacion_texto + resolucion_apelacion (confirmada/reducida/revocada)
+- **Reglamento** vive en `torneo.config` (JSONB):
+  - amarillas_para_suspension (default 5)
+  - fechas_por_acumulacion_amarillas (default 1)
+  - fechas_por_roja (default 2)
+  - permite_apelacion (default true)
+  - publicar_sanciones (default true)
+
 ### Permisos
 - **PermisoDefaultRol**: matriz RBAC (rol × modulo × accion)
 - **PermisoUsuario**: override por usuario individual
@@ -77,6 +89,8 @@ Torneo360/
 ## Roles del sistema
 - `admin_sistema` — acceso total, bypass DNI, todos los permisos
 - `admin_torneo` — gestion completa del torneo, bypass DNI
+- `tribunal` — miembro del Tribunal de Disciplina. Ve tarjetas, historial,
+  aplica sanciones, resuelve apelaciones. ver_sensibles en jugadores/staff.
 - `coordinador` — asigna arbitros/veedores, gestiona fixture
 - `delegado` — gestiona su club (jugadores, staff, confirma alineaciones)
 - `arbitro` — cierra partidos, informes
@@ -162,6 +176,10 @@ node src/seeders/setup-entorno-demo.js --start=2026-04-25 --apply
 - `calificar_arbitro` (boolean) — estrellas 1-5 post-cierre (delegados/veedores)
 - `doble_amarilla_genera` ('roja'|'azul'|'nada')
 - `amarillas_para_suspension` (default 5, entre partidos)
+- `fechas_por_acumulacion_amarillas` (default 1) — fechas de suspension por llegar al limite
+- `fechas_por_roja` (default 2) — fechas de suspension por roja directa
+- `permite_apelacion` (default true)
+- `publicar_sanciones` (default true) — expone GET /publico/torneos/:id/sanciones
 
 ## OAuth credentials (en environment.ts y .env)
 - **Google**: `googleClientId` en frontend environment + `GOOGLE_CLIENT_ID` en backend .env
