@@ -728,16 +728,15 @@ export class FixtureComponent implements OnInit {
           jornada._partidoObjetivo = null; // consumido
         }
 
-        // Cargar en background la jornada hermana (misma fecha/fase, otra zona)
-        // para que la validacion de recursos duplicados contemple ambas zonas
-        const hermana = this.jornadas.find((j: any) =>
-          j.id !== jornada.id &&
-          j.fase === jornada.fase &&
-          j.numero_jornada === jornada.numero_jornada &&
-          j.zona_id !== jornada.zona_id,
-        );
-        if (hermana && !hermana._cruces && !hermana._loading) {
-          this.cargarPartidos(hermana);
+        // Cargar en background todas las jornadas que caigan en la MISMA fecha
+        // calendario (una persona no puede estar en 2 lugares el mismo dia).
+        if (jornada.fecha) {
+          const mismaFecha = this.jornadas.filter((j: any) =>
+            j.id !== jornada.id && j.fecha === jornada.fecha,
+          );
+          for (const j of mismaFecha) {
+            if (!j._cruces && !j._loading) this.cargarPartidos(j);
+          }
         }
 
         this.cdr.detectChanges();
@@ -746,14 +745,10 @@ export class FixtureComponent implements OnInit {
     });
   }
 
-  /** Devuelve la jornada hermana (misma fecha+fase, otra zona) si existe */
-  getJornadaHermana(jornada: any): any {
-    return this.jornadas.find((j: any) =>
-      j.id !== jornada.id &&
-      j.fase === jornada.fase &&
-      j.numero_jornada === jornada.numero_jornada &&
-      j.zona_id !== jornada.zona_id,
-    );
+  /** Jornadas del torneo con la misma fecha calendario que la dada (incluye la misma jornada) */
+  getJornadasMismaFecha(jornada: any): any[] {
+    if (!jornada?.fecha) return [jornada];
+    return this.jornadas.filter((j: any) => j.fecha === jornada.fecha);
   }
 
   clubesZona(zonaId: number | null): any[] {
@@ -832,28 +827,26 @@ export class FixtureComponent implements OnInit {
   }
 
   /**
-   * Si una persona (arbitro o veedor) ya esta asignada a OTRO cruce de la
-   * misma fecha (jornada actual o hermana en la otra zona), devuelve texto
-   * descriptivo. Null si esta libre (o asignada a este mismo cruce).
+   * Si una persona (arbitro o veedor) ya esta asignada a algun cruce de la
+   * MISMA fecha calendario (cualquier jornada/zona que juegue ese dia),
+   * devuelve texto descriptivo. Null si esta libre.
    */
   recursoOcupadoEn(jornada: any, cruceActual: any, personaId: number | null | undefined, tipo: 'arbitro' | 'veedor'): string | null {
     if (!personaId) return null;
     const key = tipo === 'arbitro' ? '_editArbitroId' : '_editVeedorId';
 
-    // 1) Misma jornada (otros cruces de la misma zona)
-    for (const c of jornada?._cruces || []) {
-      if (c === cruceActual || c.key === cruceActual?.key) continue;
-      if ((c.resultados || []).some((r: any) => r[key] === personaId)) {
-        return `en ${c.local} vs ${c.visitante}`;
-      }
-    }
+    // Si no hay fecha calendario, al menos validar contra la misma jornada (modelo antiguo)
+    const jornadas = this.getJornadasMismaFecha(jornada).length
+      ? this.getJornadasMismaFecha(jornada)
+      : [jornada];
 
-    // 2) Jornada hermana (misma fecha+fase, otra zona)
-    const hermana = this.getJornadaHermana(jornada);
-    if (hermana?._cruces) {
-      for (const c of hermana._cruces) {
+    for (const j of jornadas) {
+      for (const c of j?._cruces || []) {
+        // Saltar el cruce actual (es quien pregunta)
+        if (j.id === jornada.id && (c === cruceActual || c.key === cruceActual?.key)) continue;
         if ((c.resultados || []).some((r: any) => r[key] === personaId)) {
-          return `en ${c.local} vs ${c.visitante} (${hermana.zona?.nombre || 'otra zona'})`;
+          const zonaLabel = j.id !== jornada.id ? ` (${j.zona?.nombre || 'otra zona'})` : '';
+          return `en ${c.local} vs ${c.visitante}${zonaLabel}`;
         }
       }
     }
