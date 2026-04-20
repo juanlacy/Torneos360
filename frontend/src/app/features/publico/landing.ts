@@ -79,7 +79,8 @@ import { environment } from '../../../environments/environment';
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
               @for (t of torneos; track t.id) {
-                <div class="bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-200">
+                <a [routerLink]="['/torneo', t.id]"
+                  class="block bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-200 cursor-pointer">
                   <div class="h-3" [style.background]="'linear-gradient(90deg, ' + (t.color_primario || '#762c7e') + ', ' + (t.color_acento || '#8cb24d') + ')'"></div>
                   <div class="p-6">
                     <div class="flex items-center gap-4 mb-4">
@@ -138,10 +139,15 @@ import { environment } from '../../../environments/environment';
                             </div>
                           }
                         </div>
+                        <div class="mt-3 text-right">
+                          <span class="inline-flex items-center gap-1 text-xs font-medium text-[var(--color-primario)]">
+                            Ver torneo completo <mat-icon class="!text-sm !w-4 !h-4">arrow_forward</mat-icon>
+                          </span>
+                        </div>
                       </div>
                     }
                   </div>
-                </div>
+                </a>
               }
             </div>
           </div>

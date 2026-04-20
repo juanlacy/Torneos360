@@ -103,6 +103,12 @@ export const routes: Routes = [
     ],
   },
 
+  // ─── Detalle publico de torneo (accesible esten o no logueados) ───────────
+  {
+    path: 'torneo/:id',
+    loadComponent: () => import('./features/publico/torneo-detalle').then(m => m.TorneoDetallePublicoComponent),
+  },
+
   // ─── Vista Publica (sin auth) — matchea cuando no esta logueado ───────────
   {
     path: '',
