@@ -85,13 +85,20 @@ export const listar = async (req, res) => {
         estado: p.estado,
       };
 
+      // Solo alertar sobre la proxima fecha (dentro de DIAS_AVISO) o partidos en curso/recien pasados
+      const DIAS_AVISO = parseInt(req.query.dias_aviso) || 5;
+      const dentroDeVentana = p.estado === 'en_curso'
+        || (dias !== null && dias >= 0 && dias <= DIAS_AVISO)
+        || (dias !== null && dias < 0 && dias >= -DIAS_AVISO && p.estado === 'finalizado');
+      if (!dentroDeVentana && p.estado !== 'finalizado') continue;
+
       if ((p.estado === 'programado' || p.estado === 'en_curso') && !p.arbitro_id) {
         items.push({ ...base, tipo: 'partido_sin_arbitro', severidad: severidad(dias, p.estado) });
       }
       if ((p.estado === 'programado' || p.estado === 'en_curso') && !p.veedor_id) {
         items.push({ ...base, tipo: 'partido_sin_veedor', severidad: severidad(dias, p.estado) });
       }
-      if (p.estado === 'finalizado' && !p.confirmado_arbitro) {
+      if (p.estado === 'finalizado' && !p.confirmado_arbitro && dias !== null && dias >= -DIAS_AVISO) {
         items.push({ ...base, tipo: 'partido_sin_confirmar', severidad: 'warning' });
       }
     }
