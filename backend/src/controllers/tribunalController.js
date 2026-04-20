@@ -125,9 +125,11 @@ export const pendientes = async (req, res) => {
     })).map(j => j.id);
     if (!jornadaIds.length) return res.json({ success: true, data: { sanciones_propuestas: [], acumulaciones: [], rojas_sin_sancion: [] }, reglamento: regla });
 
-    // Sanciones ya registradas (propuestas + aplicadas + apeladas — para excluir duplicados)
+    // Sanciones ya registradas — se incluyen todas menos las revocadas para
+    // evitar duplicar casos. Una sancion cumplida SI cuenta como "ya procesada"
+    // (no volvemos a ofrecer el mismo caso en pendientes).
     const sanciones = await SancionDisciplinaria.findAll({
-      where: { torneo_id: torneoId, estado: { [Op.notIn]: ['revocada', 'cumplida'] } },
+      where: { torneo_id: torneoId, estado: { [Op.ne]: 'revocada' } },
       raw: true,
     });
     const sancionesPorPersonaYMotivo = new Map();  // `${persona_id}-${motivo}` → count
