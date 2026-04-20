@@ -4,6 +4,7 @@ import { AsyncPipe } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { AuthService } from '../services/auth.service';
 import { BrandingService } from '../services/branding.service';
+import { NotificacionesService } from '../services/notificaciones.service';
 
 interface NavItem {
   label: string;
@@ -123,6 +124,80 @@ interface NavGroup {
           <span class="flex-1"></span>
 
           @if (auth.getUser(); as user) {
+            <!-- Notificaciones (badge + dropdown) -->
+            @if ((notifs.data$ | async); as notif) {
+              <div class="relative mr-1">
+                <button (click)="notifOpen = !notifOpen"
+                  class="relative w-9 h-9 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors"
+                  title="Notificaciones">
+                  <mat-icon class="text-gray-500">notifications</mat-icon>
+                  @if (notif.total > 0) {
+                    <span class="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
+                      {{ notif.total > 99 ? '99+' : notif.total }}
+                    </span>
+                  }
+                </button>
+                @if (notifOpen) {
+                  <div class="absolute top-full right-0 mt-1 w-[360px] max-w-[90vw] bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden">
+                    <div class="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+                      <div>
+                        <h3 class="text-sm font-semibold text-gray-900">Pendientes</h3>
+                        <p class="text-[11px] text-gray-500">
+                          @if (notif.total) {
+                            {{ notif.total }} {{ notif.total === 1 ? 'item' : 'items' }} requieren atencion
+                          } @else {
+                            Todo al dia
+                          }
+                        </p>
+                      </div>
+                      <button (click)="notifs.refresh(); notifOpen = false" class="text-gray-400 hover:text-gray-600" title="Actualizar">
+                        <mat-icon class="!text-base !w-5 !h-5">refresh</mat-icon>
+                      </button>
+                    </div>
+
+                    @if (notif.total === 0) {
+                      <div class="py-8 text-center">
+                        <mat-icon class="!text-4xl text-green-500 mb-1">check_circle</mat-icon>
+                        <p class="text-sm text-gray-500">No hay nada pendiente</p>
+                      </div>
+                    } @else {
+                      <div class="max-h-[420px] overflow-y-auto divide-y divide-gray-100">
+                        @for (n of notif.items; track n.partido_id + '-' + n.tipo) {
+                          <a [routerLink]="['/partidos', n.partido_id]" (click)="notifOpen = false"
+                            class="flex items-start gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors cursor-pointer">
+                            <mat-icon class="!text-lg shrink-0 mt-0.5"
+                              [class.text-red-500]="n.severidad === 'danger'"
+                              [class.text-amber-500]="n.severidad === 'warning'"
+                              [class.text-blue-500]="n.severidad === 'info'">
+                              {{ n.tipo === 'partido_sin_confirmar' ? 'pending_actions' : n.tipo === 'partido_sin_arbitro' ? 'sports' : 'visibility_off' }}
+                            </mat-icon>
+                            <div class="flex-1 min-w-0">
+                              <p class="text-xs font-semibold text-gray-900">
+                                {{ n.tipo === 'partido_sin_arbitro' ? 'Sin arbitro asignado' : n.tipo === 'partido_sin_veedor' ? 'Sin veedor asignado' : 'Sin confirmar por arbitro' }}
+                              </p>
+                              <p class="text-xs text-gray-600 truncate">
+                                {{ n.categoria }} · {{ n.local }} vs {{ n.visitante }}
+                              </p>
+                              <p class="text-[10px] text-gray-400 mt-0.5">
+                                Fecha {{ n.numero_jornada }} ({{ n.fase }})
+                                @if (n.dias_hasta !== null) {
+                                  @if (n.dias_hasta < 0) { · hace {{ -n.dias_hasta }}d }
+                                  @else if (n.dias_hasta === 0) { · HOY }
+                                  @else if (n.dias_hasta === 1) { · manana }
+                                  @else { · en {{ n.dias_hasta }}d }
+                                }
+                              </p>
+                            </div>
+                          </a>
+                        }
+                      </div>
+                    }
+                  </div>
+                  <div class="fixed inset-0 z-40" (click)="notifOpen = false"></div>
+                }
+              </div>
+            }
+
             <div class="flex items-center gap-1">
               <a routerLink="/perfil" class="flex items-center gap-2 hover:bg-gray-100 rounded-lg px-2 py-1.5 transition-colors cursor-pointer" title="Mi perfil">
                 <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
@@ -159,6 +234,7 @@ interface NavGroup {
 export class LayoutComponent implements OnInit {
   sidebarOpen = false;
   torneoDropdown = false;
+  notifOpen = false;
 
   navGroups: NavGroup[] = [
     {
@@ -202,7 +278,12 @@ export class LayoutComponent implements OnInit {
 
   permisosLoaded = false;
 
-  constructor(public auth: AuthService, public branding: BrandingService, private cdr: ChangeDetectorRef) {}
+  constructor(
+    public auth: AuthService,
+    public branding: BrandingService,
+    public notifs: NotificacionesService,
+    private cdr: ChangeDetectorRef,
+  ) {}
 
   ngOnInit() {
     // Re-renderizar cuando los permisos terminen de cargar (fix navbar vacio al refresh)
