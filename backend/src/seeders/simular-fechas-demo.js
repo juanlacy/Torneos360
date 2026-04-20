@@ -40,6 +40,8 @@ const getArg = (name, def) => {
 
 const TORNEO_ID = parseInt(getArg('torneo-id', '0'));
 const CANTIDAD = parseInt(getArg('cantidad', '7'));
+const FASE = getArg('fase', null);               // 'ida' | 'vuelta' | null (todas)
+const HASTA_FECHA = parseInt(getArg('hasta-fecha', '0'));  // 0 = sin limite por numero
 
 if (!TORNEO_ID) {
   console.error('✗ --torneo-id es requerido');
@@ -98,13 +100,23 @@ const generarMinutos = (cantidad, min, max) => {
     const arbitroIds = arbitrosRoles.map(a => a.persona_id);
     console.log(`▶ Arbitros disponibles: ${arbitroIds.length}`);
 
-    // Traer las primeras N jornadas
-    const jornadas = await FixtureJornada.findAll({
-      where: { torneo_id: TORNEO_ID },
+    // Traer jornadas segun filtros
+    const jornadaWhere = { torneo_id: TORNEO_ID };
+    if (FASE) jornadaWhere.fase = FASE;
+    if (HASTA_FECHA > 0) jornadaWhere.numero_jornada = { [Op.lte]: HASTA_FECHA };
+
+    const jornadasQuery = {
+      where: jornadaWhere,
       order: [['numero_jornada', 'ASC'], ['fase', 'ASC'], ['id', 'ASC']],
-      limit: CANTIDAD,
-    });
-    console.log(`▶ Jornadas a simular: ${jornadas.length}\n`);
+    };
+    // Si no hay filtro por fase ni por numero, mantener el comportamiento legacy (limit CANTIDAD)
+    if (!FASE && !HASTA_FECHA) jornadasQuery.limit = CANTIDAD;
+
+    const jornadas = await FixtureJornada.findAll(jornadasQuery);
+    console.log(`▶ Jornadas a simular: ${jornadas.length}`);
+    if (FASE) console.log(`  fase=${FASE}`);
+    if (HASTA_FECHA) console.log(`  hasta numero_jornada=${HASTA_FECHA}`);
+    console.log('');
 
     if (jornadas.length === 0) {
       console.error('✗ El torneo no tiene jornadas cargadas');
