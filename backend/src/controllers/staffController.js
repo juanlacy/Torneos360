@@ -46,7 +46,7 @@ const aplanar = (persona) => {
 // GET /staff
 export const listar = async (req, res) => {
   try {
-    const { club_id, rol_id, search } = req.query;
+    const { club_id, rol_id, search, torneo_id } = req.query;
 
     const rolWhere = { activo: true };
     if (club_id) rolWhere.club_id = club_id;
@@ -61,6 +61,9 @@ export const listar = async (req, res) => {
       ];
     }
 
+    const includeClub = { model: Club, as: 'club', attributes: ['id', 'sufijo', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'], include: [{ model: Institucion, as: 'institucion' }], required: true };
+    if (torneo_id) includeClub.where = { torneo_id };
+
     const personas = await Persona.findAll({
       where: personaWhere,
       include: [{
@@ -70,7 +73,7 @@ export const listar = async (req, res) => {
         where: rolWhere,
         include: [
           { model: Rol, as: 'rol', where: { categoria_fn: 'staff_club' }, attributes: ['id', 'codigo', 'nombre', 'icono', 'color', 'puede_firmar_alineacion'] },
-          { model: Club, as: 'club', attributes: ['id', 'sufijo', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario', 'color_secundario'], include: [{ model: Institucion, as: 'institucion' }] },
+          includeClub,
         ],
       }],
       order: [['apellido', 'ASC'], ['nombre', 'ASC']],
