@@ -98,15 +98,40 @@ type EventoTipo = 'gol' | 'amarilla' | 'azul' | 'roja' | 'falta';
 
           <!-- Contador de faltas (solo si config lo habilita y partido en curso) -->
           @if (configTorneo.contar_faltas && partido.estado === 'en_curso') {
-            <div class="flex items-center justify-between px-6 py-2 bg-gray-900/80 text-white text-xs">
-              <div class="flex items-center gap-2">
-                <span class="text-gray-400 uppercase text-[10px]">Faltas T{{ partido.periodo_actual }}</span>
-                <span class="bg-orange-500 text-white font-bold px-2 py-0.5 rounded min-w-[24px] text-center">{{ contarFaltasPeriodo('local') }}</span>
+            <div class="grid grid-cols-3 items-center gap-2 px-4 py-2 bg-gray-900/90 text-white border-t border-white/20">
+              <!-- Local -->
+              <div class="flex items-center gap-2 justify-end">
+                <span class="text-[10px] uppercase text-gray-400 font-semibold tracking-wide hidden sm:inline">Faltas T{{ partido.periodo_actual }}</span>
+                <span class="sm:hidden text-[10px] uppercase text-gray-400 font-semibold">T{{ partido.periodo_actual }}</span>
+                <div class="inline-flex items-center justify-center min-w-[44px] h-9 px-2 rounded-lg font-extrabold text-xl tabular-nums shadow-sm"
+                  [class]="faltaColorClass(contarFaltasPeriodo('local'))">
+                  {{ contarFaltasPeriodo('local') }}
+                </div>
               </div>
-              <span class="text-gray-500 text-[10px]">⚠️ 6ta falta = tiro libre</span>
-              <div class="flex items-center gap-2">
-                <span class="bg-orange-500 text-white font-bold px-2 py-0.5 rounded min-w-[24px] text-center">{{ contarFaltasPeriodo('visitante') }}</span>
-                <span class="text-gray-400 uppercase text-[10px]">Faltas T{{ partido.periodo_actual }}</span>
+
+              <!-- Centro: aviso si alguno llego a 5+ -->
+              <div class="text-center">
+                @if (contarFaltasPeriodo('local') >= 6 || contarFaltasPeriodo('visitante') >= 6) {
+                  <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-red-600 text-white animate-pulse">
+                    ⚠ TIRO LIBRE DIRECTO
+                  </span>
+                } @else if (contarFaltasPeriodo('local') >= 5 || contarFaltasPeriodo('visitante') >= 5) {
+                  <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-orange-500 text-white">
+                    ⚠ ALERTA 5ta FALTA
+                  </span>
+                } @else {
+                  <span class="text-[10px] uppercase text-gray-500 tracking-wide">Faltas acumuladas</span>
+                }
+              </div>
+
+              <!-- Visitante -->
+              <div class="flex items-center gap-2 justify-start">
+                <div class="inline-flex items-center justify-center min-w-[44px] h-9 px-2 rounded-lg font-extrabold text-xl tabular-nums shadow-sm"
+                  [class]="faltaColorClass(contarFaltasPeriodo('visitante'))">
+                  {{ contarFaltasPeriodo('visitante') }}
+                </div>
+                <span class="text-[10px] uppercase text-gray-400 font-semibold tracking-wide hidden sm:inline">Faltas T{{ partido.periodo_actual }}</span>
+                <span class="sm:hidden text-[10px] uppercase text-gray-400 font-semibold">T{{ partido.periodo_actual }}</span>
               </div>
             </div>
           }
@@ -880,6 +905,14 @@ export class PanelControlComponent implements OnInit, OnDestroy {
       titulo: 'Cerrar partido',
       subtitulo: 'El arbitro asignado debe confirmar con DNI y firma',
     };
+  }
+
+  /** Clase de color segun cantidad de faltas */
+  faltaColorClass(n: number): string {
+    if (n >= 6) return 'bg-red-600 text-white ring-2 ring-red-300';
+    if (n >= 5) return 'bg-orange-500 text-white';
+    if (n >= 3) return 'bg-yellow-500 text-gray-900';
+    return 'bg-gray-700 text-gray-100';
   }
 
   /** Cuenta faltas de un equipo en el periodo actual */
