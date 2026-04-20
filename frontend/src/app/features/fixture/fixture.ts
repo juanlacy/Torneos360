@@ -228,83 +228,88 @@ import { BrandingService } from '../../core/services/branding.service';
                     </button>
                   }
                 </div>
-                <!-- Resultados por categoria (colapsable) -->
-                @if (cruce.finalizados > 0) {
-                  @if (cruce._showDetail) {
-                    <div class="ml-4 mr-4 mb-3 pl-4 border-l-2 border-gray-200 space-y-0.5 animate-fade-in">
-                      @for (r of cruce.resultados; track r.categoria) {
-                        <div class="flex items-center gap-2 text-xs text-gray-500">
-                          <span class="w-20 text-right truncate" [class.text-gray-400]="r.es_preliminar" [class.italic]="r.es_preliminar">
-                            {{ r.categoria }}{{ r.es_preliminar ? ' *' : '' }}
-                          </span>
-                          @if (r.estado === 'finalizado') {
-                            <span class="font-bold min-w-[40px] text-center"
+                <!-- Detalle de partidos del cruce (colapsable) -->
+                <div class="ml-4 mr-4 mb-2">
+                  <button class="text-[11px] text-[var(--color-primario)] hover:underline cursor-pointer flex items-center gap-1"
+                    (click)="cruce._showDetail = !cruce._showDetail">
+                    <mat-icon class="!text-sm !w-4 !h-4">{{ cruce._showDetail ? 'expand_less' : 'expand_more' }}</mat-icon>
+                    {{ cruce._showDetail ? 'Ocultar detalle' : 'Ver detalle por categoria' }}{{ puedeCargarResultados() ? ' y cargar resultados' : '' }}
+                  </button>
+                </div>
+                @if (cruce._showDetail) {
+                  <div class="ml-4 mr-4 mb-3 pl-3 border-l-2 border-gray-200 space-y-1 animate-fade-in">
+                    @for (r of cruce.resultados; track r.partido_id) {
+                      <div class="flex items-center gap-2 py-1 text-xs">
+                        <!-- Hora -->
+                        <span class="w-10 font-mono text-gray-400 shrink-0">{{ r.hora || '—' }}</span>
+                        <!-- Categoria -->
+                        <span class="w-16 text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full text-center shrink-0"
+                          [class]="r.es_preliminar ? 'bg-gray-100 text-gray-500' : 'bg-blue-50 text-blue-700'">
+                          {{ r.categoria }}{{ r.es_preliminar ? ' *' : '' }}
+                        </span>
+                        <!-- Local nombre -->
+                        <span class="flex-1 text-right truncate text-gray-700"
+                          [class.font-bold]="r.estado === 'finalizado' && r.goles_local > r.goles_visitante">
+                          {{ cruce.local }}
+                        </span>
+                        <!-- Marcador / inputs -->
+                        @if (puedeCargarResultados()) {
+                          <input type="number" min="0" [(ngModel)]="r._editLocal" (ngModelChange)="r._modificado = true"
+                            class="w-11 h-7 text-center font-bold text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shrink-0">
+                          <span class="text-gray-400 shrink-0">-</span>
+                          <input type="number" min="0" [(ngModel)]="r._editVisitante" (ngModelChange)="r._modificado = true"
+                            class="w-11 h-7 text-center font-bold text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shrink-0">
+                        } @else {
+                          @if (r.estado === 'finalizado' || r.estado === 'en_curso') {
+                            <span class="font-bold w-7 text-center shrink-0"
                               [class]="r.goles_local > r.goles_visitante ? 'text-green-700' : r.goles_local < r.goles_visitante ? 'text-red-600' : 'text-gray-500'">
                               {{ r.goles_local }}
                             </span>
-                            <span class="text-gray-300">-</span>
-                            <span class="font-bold min-w-[40px] text-center"
+                            <span class="text-gray-300 shrink-0">-</span>
+                            <span class="font-bold w-7 text-center shrink-0"
                               [class]="r.goles_visitante > r.goles_local ? 'text-green-700' : r.goles_visitante < r.goles_local ? 'text-red-600' : 'text-gray-500'">
                               {{ r.goles_visitante }}
                             </span>
                           } @else {
-                            <span class="text-gray-400 italic">prog.</span>
+                            <span class="text-gray-400 italic w-16 text-center shrink-0">vs</span>
                           }
-                        </div>
-                      }
-                    </div>
-                  }
-                  <div class="ml-4 mr-4 mb-2">
-                    <button class="text-[10px] text-[var(--color-primario)] hover:underline cursor-pointer"
-                      (click)="cruce._showDetail = !cruce._showDetail">
-                      {{ cruce._showDetail ? 'Ocultar detalle' : 'Ver detalle de resultados' }}
-                    </button>
+                        }
+                        <!-- Visitante nombre -->
+                        <span class="flex-1 truncate text-gray-700"
+                          [class.font-bold]="r.estado === 'finalizado' && r.goles_visitante > r.goles_local">
+                          {{ cruce.visitante }}
+                        </span>
+                        <!-- Estado badge -->
+                        <span class="badge text-[9px]" [class]="'badge-' + r.estado">{{ r.estado }}</span>
+                        <!-- Link al detalle -->
+                        <a [routerLink]="['/partidos', r.partido_id]" class="text-gray-400 hover:text-gray-600 shrink-0" title="Ver partido">
+                          <mat-icon class="!text-sm !w-4 !h-4">open_in_new</mat-icon>
+                        </a>
+                      </div>
+                    }
+                    @if (puedeCargarResultados() && tieneCambios(cruce)) {
+                      <div class="flex justify-end pt-2 gap-2">
+                        <button (click)="descartarCambios(cruce)"
+                          class="px-3 py-1.5 rounded-lg text-xs font-medium text-gray-600 hover:bg-gray-100">
+                          Descartar cambios
+                        </button>
+                        <button (click)="guardarResultadosCruce(jornada, cruce)" [disabled]="cruce._guardando"
+                          class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[var(--color-primario)] text-white text-xs font-medium hover:opacity-90 disabled:opacity-50">
+                          @if (cruce._guardando) {
+                            <mat-icon class="!text-xs !w-3.5 !h-3.5 animate-spin">autorenew</mat-icon>
+                          } @else {
+                            <mat-icon class="!text-xs !w-3.5 !h-3.5">save</mat-icon>
+                          }
+                          Guardar resultados
+                        </button>
+                      </div>
+                    }
                   </div>
                 }
               }
 
               @if (!jornada._cruces?.length) {
                 <p class="text-gray-400 text-center py-3">Sin cruces. Agrega enfrentamientos.</p>
-              }
-
-              <!-- Detalle por categoria (colapsable) -->
-              @if (jornada._cruces?.length) {
-                <mat-divider class="!my-3"></mat-divider>
-                <details class="text-sm">
-                  <summary class="cursor-pointer text-gray-500 hover:text-gray-700 mb-2 font-medium">
-                    <mat-icon class="!text-sm align-middle mr-1">schedule</mat-icon>
-                    Ver detalle por categoria y horarios
-                  </summary>
-                  <div class="space-y-1 mt-2">
-                    @for (p of jornada._partidos; track p.id) {
-                      <div class="flex items-center gap-2 px-3 py-1.5 rounded hover:bg-gray-50 text-gray-700">
-                        <span class="w-12 text-xs font-mono text-gray-500">{{ getHora(p) }}</span>
-                        <span class="w-16 text-[10px] font-semibold uppercase tracking-wide bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full text-center">{{ p.categoria?.nombre }}</span>
-                        <div class="flex-1 flex items-center gap-1.5">
-                          @if (p.clubLocal?.escudo_url) {
-                            <img [src]="resolveUrl(p.clubLocal.escudo_url)" class="escudo-sm" alt="">
-                          }
-                          <span class="text-xs font-medium" [class.font-bold]="p.estado === 'finalizado' && p.goles_local > p.goles_visitante">{{ p.clubLocal?.nombre_corto }}</span>
-                          @if (p.estado === 'finalizado') {
-                            <span class="font-bold text-sm bg-gray-900 text-white px-2 py-0.5 rounded">{{ p.goles_local }} - {{ p.goles_visitante }}</span>
-                          } @else if (p.estado === 'en_curso') {
-                            <span class="font-bold text-sm bg-red-600 text-white px-2 py-0.5 rounded animate-pulse">{{ p.goles_local ?? 0 }} - {{ p.goles_visitante ?? 0 }}</span>
-                          } @else {
-                            <span class="text-[10px] text-gray-400">vs</span>
-                          }
-                          @if (p.clubVisitante?.escudo_url) {
-                            <img [src]="resolveUrl(p.clubVisitante.escudo_url)" class="escudo-sm" alt="">
-                          }
-                          <span class="text-xs font-medium" [class.font-bold]="p.estado === 'finalizado' && p.goles_visitante > p.goles_local">{{ p.clubVisitante?.nombre_corto }}</span>
-                        </div>
-                        <span class="badge text-[10px]" [class]="'badge-' + p.estado">{{ p.estado }}</span>
-                        <a [routerLink]="['/partidos', p.id]" class="text-gray-400 hover:text-gray-600">
-                          <mat-icon class="!text-sm">open_in_new</mat-icon>
-                        </a>
-                      </div>
-                    }
-                  </div>
-                </details>
               }
 
               <!-- Agregar cruce -->
@@ -557,11 +562,17 @@ export class FixtureComponent implements OnInit {
           // Agregar resultado por categoria si finalizado
           if (!cruces[key].resultados) cruces[key].resultados = [];
           cruces[key].resultados.push({
+            partido_id: p.id,
             categoria: p.categoria?.nombre,
+            categoria_id: p.categoria_id,
             es_preliminar: p.categoria?.es_preliminar,
             estado: p.estado,
             goles_local: p.goles_local ?? 0,
             goles_visitante: p.goles_visitante ?? 0,
+            _editLocal: p.goles_local ?? 0,
+            _editVisitante: p.goles_visitante ?? 0,
+            _modificado: false,
+            hora: this.getHora(p),
           });
         }
         // Calcular puntos del cruce (sin preliminar, con config del torneo)
@@ -576,6 +587,10 @@ export class FixtureComponent implements OnInit {
           cruce.puntosLocal = ptsLocal;
           cruce.puntosVisitante = ptsVisit;
           cruce.finalizados = cruce.resultados.filter((r: any) => r.estado === 'finalizado').length;
+        }
+        // Ordenar resultados dentro de cada cruce por categoria_id
+        for (const cruce of Object.values(cruces) as any[]) {
+          cruce.resultados.sort((a: any, b: any) => (a.categoria_id || 0) - (b.categoria_id || 0));
         }
         jornada._cruces = Object.values(cruces);
 
@@ -610,6 +625,52 @@ export class FixtureComponent implements OnInit {
       usados.add(cruce.club_visitante_id);
     }
     return zonaClubes.filter(c => !usados.has(c.id));
+  }
+
+  /** Puede cargar/editar resultados rapidamente desde Fixture: coordinador, admin_torneo o admin_sistema */
+  puedeCargarResultados(): boolean {
+    if (this.auth.isAdmin()) return true;
+    return (this.auth.rolesActivos || []).includes('coordinador');
+  }
+
+  tieneCambios(cruce: any): boolean {
+    return (cruce.resultados || []).some((r: any) => r._modificado);
+  }
+
+  descartarCambios(cruce: any) {
+    for (const r of cruce.resultados || []) {
+      r._editLocal = r.goles_local;
+      r._editVisitante = r.goles_visitante;
+      r._modificado = false;
+    }
+    this.cdr.detectChanges();
+  }
+
+  guardarResultadosCruce(jornada: any, cruce: any) {
+    const modificados = (cruce.resultados || []).filter((r: any) => r._modificado);
+    if (!modificados.length) return;
+    cruce._guardando = true;
+    this.cdr.detectChanges();
+
+    const calls = modificados.map((r: any) =>
+      this.http.post(`${environment.apiUrl}/partidos/${r.partido_id}/resultado-rapido`, {
+        goles_local: parseInt(r._editLocal) || 0,
+        goles_visitante: parseInt(r._editVisitante) || 0,
+      }).toPromise(),
+    );
+
+    Promise.all(calls).then(() => {
+      this.toastr.success(`${modificados.length} resultado${modificados.length > 1 ? 's' : ''} guardado${modificados.length > 1 ? 's' : ''}`);
+      cruce._guardando = false;
+      // Recargar partidos de la jornada — limpia _cruces + se rearma con datos frescos
+      jornada._cruces = null;
+      jornada._partidos = null;
+      this.cargarPartidos(jornada);
+    }).catch((e: any) => {
+      cruce._guardando = false;
+      this.toastr.error(e?.error?.message || 'Error al guardar');
+      this.cdr.detectChanges();
+    });
   }
 
   getHora(partido: any): string {
