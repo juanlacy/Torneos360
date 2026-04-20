@@ -163,7 +163,7 @@ interface NavGroup {
                     } @else {
                       <div class="max-h-[420px] overflow-y-auto divide-y divide-gray-100">
                         @for (n of notif.items; track n.partido_id + '-' + n.tipo) {
-                          <a [routerLink]="['/partidos', n.partido_id]" (click)="notifOpen = false"
+                          <a routerLink="/fixture" [queryParams]="{ jornada: n.jornada_id, partido: n.partido_id }" (click)="notifOpen = false"
                             class="flex items-start gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors cursor-pointer">
                             <mat-icon class="!text-lg shrink-0 mt-0.5"
                               [class.text-red-500]="n.severidad === 'danger'"

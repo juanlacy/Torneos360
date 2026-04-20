@@ -1,7 +1,7 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { RouterLink, ActivatedRoute } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -99,7 +99,7 @@ import { BrandingService } from '../../core/services/branding.service';
               <span class="text-[10px] text-gray-400">{{ col.jornadas.length }} fechas</span>
             </div>
             @for (jornada of col.jornadas; track jornada.id) {
-              <mat-expansion-panel class="bg-white rounded-xl border !shadow-none overflow-hidden jornada-panel"
+              <mat-expansion-panel [id]="'jornada-' + jornada.id" class="bg-white rounded-xl border !shadow-none overflow-hidden jornada-panel"
           [class.border-gray-200]="(jornada._estadoVisual || jornada.estado) === 'programada'"
           [class.border-red-300]="(jornada._estadoVisual || jornada.estado) === 'en_curso'"
           [class.border-green-300]="(jornada._estadoVisual || jornada.estado) === 'finalizada'"
@@ -489,12 +489,43 @@ export class FixtureComponent implements OnInit {
     private http: HttpClient, public auth: AuthService,
     private toastr: ToastrService, private branding: BrandingService,
     private cdr: ChangeDetectorRef,
+    private route: ActivatedRoute,
   ) {}
 
   ngOnInit() {
     this.branding.torneoActivoId$.subscribe(id => {
       if (id) { this.torneoId = id; this.cargarDatos(); }
     });
+  }
+
+  /** Scroll + auto-expand segun query params (?jornada=X&partido=Y) despues de cargar jornadas */
+  private aplicarDeepLink() {
+    const qp = this.route.snapshot.queryParamMap;
+    const jornadaId = parseInt(qp.get('jornada') || '0');
+    const partidoId = parseInt(qp.get('partido') || '0');
+    if (!jornadaId) return;
+
+    const jornada = this.jornadas.find(j => j.id === jornadaId);
+    if (!jornada) return;
+
+    // Asegurar que la fase del filtro incluya esta jornada
+    if (this.filtroFase && jornada.fase !== this.filtroFase) {
+      this.filtroFase = '';
+      this.filtrar();
+    }
+
+    jornada._expandirDeepLink = true;
+    jornada._partidoObjetivo = partidoId;
+    // Scroll + expand despues del proximo render
+    setTimeout(() => {
+      const el = document.getElementById('jornada-' + jornadaId);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        // Trigger expand via click programatico
+        const header = el.querySelector('mat-expansion-panel-header');
+        if (header && !jornada._partidos) (header as HTMLElement).click();
+      }
+    }, 200);
   }
 
   cargarDatos() {
@@ -529,6 +560,7 @@ export class FixtureComponent implements OnInit {
         // Pre-cargar _fechaEdit con el valor actual para el input del picker
         this.jornadas = (res.data || []).map((j: any) => ({ ...j, _fechaEdit: j.fecha || '', _syncOtraZona: true }));
         this.filtrar();
+        this.aplicarDeepLink();
       },
       error: () => this.toastr.error('Error al cargar jornadas'),
     });
@@ -685,6 +717,15 @@ export class FixtureComponent implements OnInit {
           jornada._estadoVisual = 'en_curso';
         } else {
           jornada._estadoVisual = 'programada';
+        }
+
+        // Si venimos de un deep-link, expandir el cruce que contiene el partido
+        if (jornada._partidoObjetivo) {
+          const cruce = (jornada._cruces as any[]).find((c: any) =>
+            (c.resultados || []).some((r: any) => r.partido_id === jornada._partidoObjetivo),
+          );
+          if (cruce) cruce._showDetail = true;
+          jornada._partidoObjetivo = null; // consumido
         }
         this.cdr.detectChanges();
       },
