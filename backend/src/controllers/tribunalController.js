@@ -274,7 +274,8 @@ export const crearSancion = async (req, res) => {
     registrarAudit({ req, accion: 'CREAR_SANCION', entidad: 'sanciones_disciplinarias', entidad_id: sancion.id, despues: sancion.toJSON() });
     res.status(201).json({ success: true, data: sancion });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error('[tribunal.crearSancion]', error.name, error.message, error.errors || '', 'body:', JSON.stringify(req.body));
+    res.status(500).json({ success: false, message: error.message, name: error.name, errors: error.errors?.map(e => ({ path: e.path, message: e.message, value: e.value })) });
   }
 };
 
