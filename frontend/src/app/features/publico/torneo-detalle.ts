@@ -2,7 +2,6 @@ import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
-import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { environment } from '../../../environments/environment';
@@ -12,7 +11,7 @@ type Tab = 'general' | 'categoria' | 'goleadores' | 'tarjetas' | 'fixture';
 @Component({
   selector: 'app-torneo-detalle-publico',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, MatIconModule, MatProgressSpinnerModule],
+  imports: [CommonModule, RouterLink, MatIconModule, MatProgressSpinnerModule],
   template: `
     @if (loading) {
       <div class="min-h-screen flex items-center justify-center bg-gray-50">
@@ -162,17 +161,19 @@ type Tab = 'general' | 'categoria' | 'goleadores' | 'tarjetas' | 'fixture';
           <!-- ═══ TAB: POR CATEGORIA ═══ -->
           @if (tab === 'categoria') {
             <section>
-              <div class="mb-4 flex flex-wrap items-end justify-between gap-3 px-1">
-                <div>
-                  <h2 class="font-bold text-gray-900">Tabla por Categoria</h2>
-                  <p class="text-xs text-gray-500">Posiciones detalladas, una tabla por zona</p>
-                </div>
-                <select [(ngModel)]="categoriaId" (change)="cargarPosicionesCategoria()"
-                  class="px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-purple-500">
-                  @for (c of categorias; track c.id) {
-                    <option [ngValue]="c.id">{{ c.nombre }}</option>
-                  }
-                </select>
+              <div class="mb-4 px-1">
+                <h2 class="font-bold text-gray-900">Tabla por Categoria</h2>
+                <p class="text-xs text-gray-500">Posiciones detalladas, una tabla por zona</p>
+              </div>
+              <div class="mb-4 flex gap-2 overflow-x-auto">
+                @for (c of categorias; track c.id) {
+                  <button (click)="selectCategoriaPos(c.id)"
+                    class="shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-all"
+                    [class]="categoriaId === c.id ? 'text-white shadow-sm' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'"
+                    [style.background-color]="categoriaId === c.id ? (torneo.color_primario || '#762c7e') : ''">
+                    {{ c.nombre }}
+                  </button>
+                }
               </div>
 
               @if (loadingTab) {
@@ -261,18 +262,25 @@ type Tab = 'general' | 'categoria' | 'goleadores' | 'tarjetas' | 'fixture';
           <!-- ═══ TAB: GOLEADORES ═══ -->
           @if (tab === 'goleadores') {
             <section class="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-              <div class="px-5 py-4 border-b border-gray-100 flex flex-wrap items-center gap-3">
-                <div class="flex-1 min-w-[200px]">
-                  <h2 class="font-bold text-gray-900">Tabla de Goleadores</h2>
-                  <p class="text-xs text-gray-500">Top {{ goleadores.length || '20' }} maximos goleadores</p>
-                </div>
-                <select [(ngModel)]="categoriaIdGoleadores" (change)="cargarGoleadores()"
-                  class="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
-                  <option [ngValue]="null">Todas las categorias</option>
-                  @for (c of categorias; track c.id) {
-                    <option [ngValue]="c.id">{{ c.nombre }}</option>
-                  }
-                </select>
+              <div class="px-5 py-4 border-b border-gray-100">
+                <h2 class="font-bold text-gray-900">Tabla de Goleadores</h2>
+                <p class="text-xs text-gray-500">Top {{ goleadores.length || '20' }} maximos goleadores</p>
+              </div>
+              <div class="px-5 py-2.5 border-b border-gray-100 flex gap-2 overflow-x-auto bg-gray-50">
+                <button (click)="selectCategoriaGol(null)"
+                  class="shrink-0 px-3 py-1 rounded-full text-[11px] font-semibold transition-all"
+                  [class]="categoriaIdGoleadores === null ? 'text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
+                  [style.background-color]="categoriaIdGoleadores === null ? (torneo.color_primario || '#762c7e') : ''">
+                  Todas
+                </button>
+                @for (c of categorias; track c.id) {
+                  <button (click)="selectCategoriaGol(c.id)"
+                    class="shrink-0 px-3 py-1 rounded-full text-[11px] font-semibold transition-all"
+                    [class]="categoriaIdGoleadores === c.id ? 'text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
+                    [style.background-color]="categoriaIdGoleadores === c.id ? (torneo.color_primario || '#762c7e') : ''">
+                    {{ c.nombre }}
+                  </button>
+                }
               </div>
 
               @if (loadingTab) {
@@ -323,18 +331,25 @@ type Tab = 'general' | 'categoria' | 'goleadores' | 'tarjetas' | 'fixture';
           <!-- ═══ TAB: TARJETAS ═══ -->
           @if (tab === 'tarjetas') {
             <section class="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-              <div class="px-5 py-4 border-b border-gray-100 flex flex-wrap items-center gap-3">
-                <div class="flex-1 min-w-[200px]">
-                  <h2 class="font-bold text-gray-900">Tabla de Tarjetas</h2>
-                  <p class="text-xs text-gray-500">Amarillas y rojas acumuladas, ordenadas por total (rojas valen x3)</p>
-                </div>
-                <select [(ngModel)]="categoriaIdTarjetas" (change)="cargarTarjetas()"
-                  class="px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-purple-500">
-                  <option [ngValue]="null">Todas las categorias</option>
-                  @for (c of categorias; track c.id) {
-                    <option [ngValue]="c.id">{{ c.nombre }}</option>
-                  }
-                </select>
+              <div class="px-5 py-4 border-b border-gray-100">
+                <h2 class="font-bold text-gray-900">Tabla de Tarjetas</h2>
+                <p class="text-xs text-gray-500">Amarillas y rojas acumuladas, ordenadas por total (rojas valen x3)</p>
+              </div>
+              <div class="px-5 py-2.5 border-b border-gray-100 flex gap-2 overflow-x-auto bg-gray-50">
+                <button (click)="selectCategoriaTarj(null)"
+                  class="shrink-0 px-3 py-1 rounded-full text-[11px] font-semibold transition-all"
+                  [class]="categoriaIdTarjetas === null ? 'text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
+                  [style.background-color]="categoriaIdTarjetas === null ? (torneo.color_primario || '#762c7e') : ''">
+                  Todas
+                </button>
+                @for (c of categorias; track c.id) {
+                  <button (click)="selectCategoriaTarj(c.id)"
+                    class="shrink-0 px-3 py-1 rounded-full text-[11px] font-semibold transition-all"
+                    [class]="categoriaIdTarjetas === c.id ? 'text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
+                    [style.background-color]="categoriaIdTarjetas === c.id ? (torneo.color_primario || '#762c7e') : ''">
+                    {{ c.nombre }}
+                  </button>
+                }
               </div>
 
               @if (loadingTab) {
@@ -557,6 +572,10 @@ export class TorneoDetallePublicoComponent implements OnInit {
       error: () => { this.loadingTab = false; this.cdr.detectChanges(); },
     });
   }
+
+  selectCategoriaPos(id: number)  { this.categoriaId = id; this.cargarPosicionesCategoria(); }
+  selectCategoriaGol(id: number | null)  { this.categoriaIdGoleadores = id; this.cargarGoleadores(); }
+  selectCategoriaTarj(id: number | null) { this.categoriaIdTarjetas = id; this.cargarTarjetas(); }
 
   cargarPosicionesCategoria() {
     if (!this.categoriaId) return;
