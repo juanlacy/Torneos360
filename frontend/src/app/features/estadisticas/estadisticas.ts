@@ -48,26 +48,39 @@ type Tab = 'goleadores' | 'tarjetas';
           }
         </div>
 
-        <!-- Filtros -->
-        <div class="px-4 py-3 flex flex-wrap items-center gap-3 bg-gray-50 border-b border-gray-100">
-          <span class="text-xs text-gray-500 font-semibold uppercase">Filtros:</span>
-          <select [(ngModel)]="categoriaId" (change)="cargar()"
-            class="px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-purple-500">
-            <option [ngValue]="null">Todas las categorias</option>
-            @for (c of categorias; track c.id) {
-              <option [ngValue]="c.id">{{ c.nombre }}</option>
-            }
-          </select>
-          @if (zonas.length > 1) {
-            <select [(ngModel)]="zonaId" (change)="cargar()"
-              class="px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-purple-500">
-              <option [ngValue]="null">Todas las zonas</option>
-              @for (z of zonas; track z.id) {
-                <option [ngValue]="z.id">{{ z.nombre }}</option>
-              }
-            </select>
+        <!-- Chips de categoria -->
+        <div class="px-5 py-2.5 border-b border-gray-100 flex gap-2 overflow-x-auto bg-gray-50">
+          <button (click)="selectCategoria(null)"
+            class="shrink-0 px-3 py-1 rounded-full text-[11px] font-semibold transition-all"
+            [class]="categoriaId === null ? 'text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
+            [style.background-color]="categoriaId === null ? (branding.color_primario || '#762c7e') : ''">
+            Todas
+          </button>
+          @for (c of categorias; track c.id) {
+            <button (click)="selectCategoria(c.id)"
+              class="shrink-0 px-3 py-1 rounded-full text-[11px] font-semibold transition-all"
+              [class]="categoriaId === c.id ? 'text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
+              [style.background-color]="categoriaId === c.id ? (branding.color_primario || '#762c7e') : ''">
+              {{ c.nombre }}
+            </button>
           }
-          <span class="ml-auto text-xs text-gray-400">
+          @if (zonas.length > 1) {
+            <span class="shrink-0 w-px self-stretch bg-gray-200 mx-1"></span>
+            <button (click)="selectZona(null)"
+              class="shrink-0 px-3 py-1 rounded-full text-[11px] font-semibold transition-all"
+              [class]="zonaId === null ? 'bg-gray-700 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'">
+              Todas las zonas
+            </button>
+            @for (z of zonas; track z.id) {
+              <button (click)="selectZona(z.id)"
+                class="shrink-0 px-3 py-1 rounded-full text-[11px] font-semibold transition-all"
+                [class]="zonaId === z.id ? 'text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
+                [style.background-color]="zonaId === z.id ? (z.color || '#374151') : ''">
+                {{ z.nombre }}
+              </button>
+            }
+          }
+          <span class="ml-auto shrink-0 text-xs text-gray-400 self-center">
             @if (!loading) { {{ currentRows().length }} resultados }
           </span>
         </div>
@@ -224,6 +237,16 @@ export class EstadisticasComponent implements OnInit {
       this.cargar();
     }
     this.cdr.detectChanges();
+  }
+
+  selectCategoria(id: number | null) {
+    this.categoriaId = id;
+    this.cargar();
+  }
+
+  selectZona(id: number | null) {
+    this.zonaId = id;
+    this.cargar();
   }
 
   cargar() {
