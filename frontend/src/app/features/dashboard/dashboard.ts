@@ -209,7 +209,7 @@ const DEFAULT_WIDGETS = ['kpis', 'posiciones_zona', 'goleadores', 'resultados_fe
 
         <!-- D) Goleadores -->
         @if (isWidgetActive('goleadores')) {
-          <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden animate-fade-in-up">
+          <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden animate-fade-in-up flex flex-col h-full">
             <div class="px-5 py-4 border-b border-gray-100">
               <h2 class="text-base font-semibold text-gray-900 flex items-center gap-2">
                 <mat-icon class="!text-lg text-amber-500">emoji_events</mat-icon>
@@ -235,7 +235,7 @@ const DEFAULT_WIDGETS = ['kpis', 'posiciones_zona', 'goleadores', 'resultados_fe
             </div>
 
             @if (goleadores.length) {
-              <div class="grid grid-cols-1 lg:grid-cols-2 gap-0 lg:divide-x divide-gray-200">
+              <div class="grid grid-cols-1 lg:grid-cols-2 gap-0 lg:divide-x divide-gray-200 flex-1 overflow-y-auto min-h-0">
                 @for (g of gruposPorZonaGol(goleadores); track g.zona.id) {
                   <div>
                     <div class="h-1" [style.background-color]="g.zona.color || 'var(--color-primario)'"></div>
@@ -296,7 +296,7 @@ const DEFAULT_WIDGETS = ['kpis', 'posiciones_zona', 'goleadores', 'resultados_fe
 
         <!-- E) Resultados por Fecha -->
         @if (isWidgetActive('resultados_fecha')) {
-          <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden animate-fade-in-up">
+          <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden animate-fade-in-up flex flex-col h-full">
             <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
               <div>
                 <h2 class="text-base font-semibold text-gray-900 flex items-center gap-2">
@@ -327,7 +327,7 @@ const DEFAULT_WIDGETS = ['kpis', 'posiciones_zona', 'goleadores', 'resultados_fe
             </div>
 
             @if (partidosFecha.length) {
-              <div class="grid grid-cols-1 lg:grid-cols-2 gap-0 lg:divide-x divide-gray-200 max-h-[520px] overflow-y-auto">
+              <div class="grid grid-cols-1 lg:grid-cols-2 gap-0 lg:divide-x divide-gray-200 flex-1 overflow-y-auto min-h-0">
                 @for (z of partidosPorZona; track z.zona.id) {
                   <div>
                     <div class="h-1 sticky top-0 z-10" [style.background-color]="z.zona.color || 'var(--color-primario)'"></div>
