@@ -226,7 +226,10 @@ import { BrandingService } from '../../core/services/branding.service';
                             <option [ngValue]="'__mixto__'" disabled>— varios —</option>
                           }
                           @for (a of arbitros; track a.id) {
-                            <option [ngValue]="a.persona_id || a.id">{{ a.apellido }}, {{ a.nombre }}</option>
+                            @let ocupA = recursoOcupadoEn(jornada, cruce, a.persona_id || a.id, 'arbitro');
+                            <option [ngValue]="a.persona_id || a.id" [disabled]="!!ocupA">
+                              {{ a.apellido }}, {{ a.nombre }}{{ ocupA ? ' — ' + ocupA : '' }}
+                            </option>
                           }
                         </select>
                       </div>
@@ -239,7 +242,10 @@ import { BrandingService } from '../../core/services/branding.service';
                             <option [ngValue]="'__mixto__'" disabled>— varios —</option>
                           }
                           @for (v of veedores; track v.id) {
-                            <option [ngValue]="v.persona_id || v.id">{{ v.apellido }}, {{ v.nombre }}</option>
+                            @let ocupV = recursoOcupadoEn(jornada, cruce, v.persona_id || v.id, 'veedor');
+                            <option [ngValue]="v.persona_id || v.id" [disabled]="!!ocupV">
+                              {{ v.apellido }}, {{ v.nombre }}{{ ocupV ? ' — ' + ocupV : '' }}
+                            </option>
                           }
                         </select>
                       </div>
@@ -345,7 +351,10 @@ import { BrandingService } from '../../core/services/branding.service';
                             class="h-6 px-1.5 text-[11px] border border-gray-200 rounded bg-white focus:outline-none focus:border-blue-500">
                             <option [ngValue]="null">Sin árbitro</option>
                             @for (a of arbitros; track a.id) {
-                              <option [ngValue]="a.persona_id || a.id">{{ a.apellido || a.persona?.apellido }}, {{ a.nombre || a.persona?.nombre }}</option>
+                              @let ocupRA = recursoOcupadoEn(jornada, cruce, a.persona_id || a.id, 'arbitro');
+                              <option [ngValue]="a.persona_id || a.id" [disabled]="!!ocupRA && r._editArbitroId !== (a.persona_id || a.id)">
+                                {{ a.apellido || a.persona?.apellido }}, {{ a.nombre || a.persona?.nombre }}{{ ocupRA ? ' — ' + ocupRA : '' }}
+                              </option>
                             }
                           </select>
                         } @else {
@@ -357,7 +366,10 @@ import { BrandingService } from '../../core/services/branding.service';
                             class="h-6 px-1.5 text-[11px] border border-gray-200 rounded bg-white focus:outline-none focus:border-blue-500">
                             <option [ngValue]="null">Sin veedor</option>
                             @for (v of veedores; track v.id) {
-                              <option [ngValue]="v.persona_id || v.id">{{ v.apellido || v.persona?.apellido }}, {{ v.nombre || v.persona?.nombre }}</option>
+                              @let ocupRV = recursoOcupadoEn(jornada, cruce, v.persona_id || v.id, 'veedor');
+                              <option [ngValue]="v.persona_id || v.id" [disabled]="!!ocupRV && r._editVeedorId !== (v.persona_id || v.id)">
+                                {{ v.apellido || v.persona?.apellido }}, {{ v.nombre || v.persona?.nombre }}{{ ocupRV ? ' — ' + ocupRV : '' }}
+                              </option>
                             }
                           </select>
                         } @else {
@@ -753,6 +765,22 @@ export class FixtureComponent implements OnInit {
       this.toastr.error(e?.error?.message || 'Error al guardar');
       this.cdr.detectChanges();
     });
+  }
+
+  /**
+   * Si una persona (arbitro o veedor) ya esta asignada a OTRO cruce de la
+   * misma jornada, devuelve un texto descriptivo ('ocupado en Local vs Visitante').
+   * Null si esta libre (o asignada a este mismo cruce).
+   */
+  recursoOcupadoEn(jornada: any, cruceActual: any, personaId: number | null | undefined, tipo: 'arbitro' | 'veedor'): string | null {
+    if (!personaId) return null;
+    const key = tipo === 'arbitro' ? '_editArbitroId' : '_editVeedorId';
+    for (const c of jornada?._cruces || []) {
+      if (c === cruceActual || c.key === cruceActual?.key) continue;
+      const usado = (c.resultados || []).some((r: any) => r[key] === personaId);
+      if (usado) return `en ${c.local} vs ${c.visitante}`;
+    }
+    return null;
   }
 
   /** Devuelve el persona_id del arbitro si TODOS los partidos tienen el mismo, null si todos sin asignar, '__mixto__' si divergen */
