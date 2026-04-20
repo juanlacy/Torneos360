@@ -91,19 +91,41 @@ import { BrandingService } from '../../core/services/branding.service';
 
       <!-- ═══ Jornadas ═══ -->
       @for (jornada of jornadasFiltradas; track jornada.id) {
-        <mat-expansion-panel class="bg-white rounded-xl border border-gray-200 !shadow-none"
+        <mat-expansion-panel class="bg-white rounded-xl border !shadow-none overflow-hidden jornada-panel"
+          [class.border-gray-200]="(jornada._estadoVisual || jornada.estado) === 'programada'"
+          [class.border-red-300]="(jornada._estadoVisual || jornada.estado) === 'en_curso'"
+          [class.border-green-300]="(jornada._estadoVisual || jornada.estado) === 'finalizada'"
+          [class.border-amber-300]="(jornada._estadoVisual || jornada.estado) === 'suspendida'"
+          [class.bg-red-50\/30]="(jornada._estadoVisual || jornada.estado) === 'en_curso'"
           (opened)="!jornada._partidos && cargarPartidos(jornada)">
           <mat-expansion-panel-header>
-            <mat-panel-title class="text-gray-900 font-semibold">
-              Fecha {{ jornada.numero_jornada }} — {{ jornada.fase | uppercase }}
+            <mat-panel-title class="text-gray-900 font-semibold flex items-center gap-2">
+              @switch (jornada._estadoVisual || jornada.estado) {
+                @case ('finalizada') {
+                  <mat-icon class="!text-green-600 !text-lg !w-5 !h-5">check_circle</mat-icon>
+                }
+                @case ('en_curso') {
+                  <span class="relative flex h-2.5 w-2.5 shrink-0">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-600"></span>
+                  </span>
+                }
+                @case ('suspendida') {
+                  <mat-icon class="!text-amber-600 !text-lg !w-5 !h-5">pause_circle</mat-icon>
+                }
+                @default {
+                  <mat-icon class="!text-gray-400 !text-lg !w-5 !h-5">schedule</mat-icon>
+                }
+              }
+              <span>Fecha {{ jornada.numero_jornada }} — {{ jornada.fase | uppercase }}</span>
             </mat-panel-title>
-            <mat-panel-description class="text-gray-500">
+            <mat-panel-description class="text-gray-500 flex items-center gap-2 flex-wrap">
               @if (jornada.zona) {
-                <span class="mr-3">Zona {{ jornada.zona.nombre }}</span>
+                <span>Zona {{ jornada.zona.nombre }}</span>
               }
               <span class="badge" [class]="'badge-' + (jornada._estadoVisual || jornada.estado)">{{ jornada._estadoVisual || jornada.estado }}</span>
               @if (jornada.fecha) {
-                <span class="ml-3">{{ jornada.fecha }}</span>
+                <span>{{ jornada.fecha }}</span>
               }
             </mat-panel-description>
           </mat-expansion-panel-header>

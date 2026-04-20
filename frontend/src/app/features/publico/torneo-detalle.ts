@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
@@ -66,6 +66,44 @@ type Tab = 'general' | 'categoria' | 'goleadores' | 'tarjetas' | 'fixture';
         </header>
 
         <main class="max-w-6xl mx-auto px-4 sm:px-6 mt-6">
+
+          <!-- ═══ BANNER: PARTIDOS EN VIVO ═══ -->
+          @if (partidosEnVivo.length) {
+            <section class="mb-4 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl shadow-lg overflow-hidden animate-fade-in">
+              <div class="px-4 py-2.5 flex items-center gap-2 bg-red-800/30 border-b border-red-500/30">
+                <span class="relative flex h-2.5 w-2.5">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-white"></span>
+                </span>
+                <span class="text-xs font-bold uppercase tracking-wider">En Vivo Ahora</span>
+                <span class="ml-auto text-[11px] text-white/80">{{ partidosEnVivo.length }} partido{{ partidosEnVivo.length === 1 ? '' : 's' }}</span>
+              </div>
+              <div class="divide-y divide-red-500/30">
+                @for (p of partidosEnVivo; track p.id) {
+                  <div class="flex items-center gap-3 px-4 py-2.5">
+                    @if (p.categoria?.nombre) {
+                      <span class="shrink-0 text-[10px] font-bold uppercase bg-white/15 px-2 py-0.5 rounded">{{ p.categoria.nombre }}</span>
+                    }
+                    <div class="flex items-center gap-2 flex-1 justify-end min-w-0">
+                      <span class="text-sm font-semibold truncate text-right">{{ p.clubLocal?.nombre_corto || p.clubLocal?.nombre }}</span>
+                      @if (p.clubLocal?.escudo_url) {
+                        <img [src]="resolveUrl(p.clubLocal.escudo_url)" class="w-7 h-7 object-contain shrink-0 bg-white/10 rounded p-0.5" alt="">
+                      }
+                    </div>
+                    <div class="shrink-0 px-3 py-1 rounded-lg bg-black/30 text-center min-w-[64px]">
+                      <span class="text-lg font-extrabold tabular-nums">{{ p.goles_local ?? 0 }} - {{ p.goles_visitante ?? 0 }}</span>
+                    </div>
+                    <div class="flex items-center gap-2 flex-1 min-w-0">
+                      @if (p.clubVisitante?.escudo_url) {
+                        <img [src]="resolveUrl(p.clubVisitante.escudo_url)" class="w-7 h-7 object-contain shrink-0 bg-white/10 rounded p-0.5" alt="">
+                      }
+                      <span class="text-sm font-semibold truncate">{{ p.clubVisitante?.nombre_corto || p.clubVisitante?.nombre }}</span>
+                    </div>
+                  </div>
+                }
+              </div>
+            </section>
+          }
 
           <!-- ═══ TAB: TABLA GENERAL ═══ -->
           @if (tab === 'general') {
@@ -495,7 +533,7 @@ type Tab = 'general' | 'categoria' | 'goleadores' | 'tarjetas' | 'fixture';
     }
   `,
 })
-export class TorneoDetallePublicoComponent implements OnInit {
+export class TorneoDetallePublicoComponent implements OnInit, OnDestroy {
   loading = true;
   loadingTab = false;
   torneo: any = null;
@@ -521,6 +559,8 @@ export class TorneoDetallePublicoComponent implements OnInit {
   posicionesCategoria: any[] = [];
   goleadores: any[] = [];
   tarjetas: any[] = [];
+  partidosEnVivo: any[] = [];
+  private vivoSub: any = null;
 
   private torneoId!: number;
 
@@ -545,9 +585,26 @@ export class TorneoDetallePublicoComponent implements OnInit {
         if (this.categorias.length) this.categoriaId = this.categorias[0].id;
         this.loading = false;
         this.cargarPosicionesGenerales();
+        this.cargarEnVivo();
+        // Poll cada 30s mientras la pantalla este abierta
+        this.vivoSub = setInterval(() => this.cargarEnVivo(), 30_000);
         this.cdr.detectChanges();
       },
       error: () => { this.loading = false; this.cdr.detectChanges(); },
+    });
+  }
+
+  ngOnDestroy() {
+    if (this.vivoSub) clearInterval(this.vivoSub);
+  }
+
+  cargarEnVivo() {
+    this.http.get<any>(`${environment.apiUrl}/publico/torneos/${this.torneoId}/en-vivo`).subscribe({
+      next: (res) => {
+        this.partidosEnVivo = res.data || [];
+        this.cdr.detectChanges();
+      },
+      error: () => {},
     });
   }
 

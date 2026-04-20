@@ -163,6 +163,34 @@ export const goleadores = async (req, res) => {
   }
 };
 
+// GET /publico/torneos/:id/en-vivo
+// Lista de partidos en_curso del torneo (sin auth, para banner publico)
+export const partidosEnVivo = async (req, res) => {
+  try {
+    const torneoId = parseInt(req.params.id);
+    const jornadaIds = (await FixtureJornada.findAll({
+      where: { torneo_id: torneoId }, attributes: ['id'], raw: true,
+    })).map(j => j.id);
+
+    if (!jornadaIds.length) return res.json({ success: true, data: [] });
+
+    const partidos = await Partido.findAll({
+      where: { jornada_id: jornadaIds, estado: 'en_curso' },
+      include: [
+        { model: Club, as: 'clubLocal', attributes: ['id', 'sufijo', 'zona_id', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario'], include: [{ model: Institucion, as: 'institucion' }] },
+        { model: Club, as: 'clubVisitante', attributes: ['id', 'sufijo', 'zona_id', 'nombre', 'nombre_corto', 'escudo_url', 'color_primario'], include: [{ model: Institucion, as: 'institucion' }] },
+        { model: Categoria, as: 'categoria', attributes: ['id', 'nombre'] },
+        { model: FixtureJornada, as: 'jornada', attributes: ['numero_jornada', 'fase'] },
+      ],
+      order: [['hora_inicio', 'ASC']],
+    });
+
+    res.json({ success: true, data: partidos });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 // GET /publico/torneos/:id/tarjetas?limit=30&categoria_id=X&zona_id=X
 export const tarjetas = async (req, res) => {
   try {
