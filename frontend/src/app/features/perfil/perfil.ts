@@ -56,7 +56,7 @@ interface PerfilData {
                 <img [src]="perfil.avatar_url" class="w-20 h-20 rounded-full object-cover border-2 border-gray-200" alt="Avatar">
               } @else {
                 <div class="w-20 h-20 rounded-full bg-purple-700 flex items-center justify-center text-white text-2xl font-bold border-2 border-gray-200">
-                  {{ perfil.nombre?.charAt(0) }}{{ perfil.apellido?.charAt(0) }}
+                  {{ (perfil.nombre || '').charAt(0) }}{{ (perfil.apellido || '').charAt(0) }}
                 </div>
               }
               <button (click)="avatarInput.click()"
