@@ -211,15 +211,47 @@ import { BrandingService } from '../../core/services/branding.service';
                     <span class="font-semibold text-gray-900 text-sm">{{ cruce.visitante }}</span>
                   </div>
 
-                  <div class="flex flex-col items-end gap-0.5 text-right">
+                  <div class="flex flex-col items-end gap-1 text-right min-w-[180px]">
                     <span class="text-[10px] text-gray-400 font-medium hidden md:inline">{{ cruce.partidos }} partidos</span>
-                    @if (cruce.arbitroNombre) {
-                      <span class="text-[10px] text-gray-600 flex items-center gap-1">
-                        <mat-icon class="!text-xs !w-3 !h-3">sports</mat-icon>
-                        {{ cruce.arbitroNombre }}
-                      </span>
+                    @if (puedeCargarResultados()) {
+                      <!-- Asignacion rapida a nivel cruce (aplica a todos los partidos) -->
+                      <div class="flex items-center gap-1">
+                        <mat-icon class="!text-xs !w-3 !h-3 text-gray-400">sports</mat-icon>
+                        <select [ngModel]="arbitroComunCruce(cruce)" (ngModelChange)="setArbitroTodoCruce(cruce, $event)"
+                          class="h-6 px-1.5 text-[11px] border border-gray-200 rounded bg-white focus:outline-none focus:border-blue-500 max-w-[140px]"
+                          [class.border-amber-400]="!arbitroComunCruce(cruce) && !hayArbitrosEnCruce(cruce)"
+                          [class.bg-amber-50]="!arbitroComunCruce(cruce) && !hayArbitrosEnCruce(cruce)">
+                          <option [ngValue]="null">Sin arbitro</option>
+                          @if (tieneAsignacionMixta(cruce, 'arbitro')) {
+                            <option [ngValue]="'__mixto__'" disabled>— varios —</option>
+                          }
+                          @for (a of arbitros; track a.id) {
+                            <option [ngValue]="a.persona_id || a.id">{{ a.apellido }}, {{ a.nombre }}</option>
+                          }
+                        </select>
+                      </div>
+                      <div class="flex items-center gap-1">
+                        <mat-icon class="!text-xs !w-3 !h-3 text-gray-400">visibility</mat-icon>
+                        <select [ngModel]="veedorComunCruce(cruce)" (ngModelChange)="setVeedorTodoCruce(cruce, $event)"
+                          class="h-6 px-1.5 text-[11px] border border-gray-200 rounded bg-white focus:outline-none focus:border-blue-500 max-w-[140px]">
+                          <option [ngValue]="null">Sin veedor</option>
+                          @if (tieneAsignacionMixta(cruce, 'veedor')) {
+                            <option [ngValue]="'__mixto__'" disabled>— varios —</option>
+                          }
+                          @for (v of veedores; track v.id) {
+                            <option [ngValue]="v.persona_id || v.id">{{ v.apellido }}, {{ v.nombre }}</option>
+                          }
+                        </select>
+                      </div>
                     } @else {
-                      <span class="text-[10px] text-amber-600 italic">sin arbitro</span>
+                      @if (cruce.arbitroNombre) {
+                        <span class="text-[10px] text-gray-600 flex items-center gap-1">
+                          <mat-icon class="!text-xs !w-3 !h-3">sports</mat-icon>
+                          {{ cruce.arbitroNombre }}
+                        </span>
+                      } @else {
+                        <span class="text-[10px] text-amber-600 italic">sin arbitro</span>
+                      }
                     }
                   </div>
                   @if (auth.isAdmin()) {
@@ -228,13 +260,31 @@ import { BrandingService } from '../../core/services/branding.service';
                     </button>
                   }
                 </div>
-                <!-- Detalle de partidos del cruce (colapsable) -->
-                <div class="ml-4 mr-4 mb-2">
+                <!-- Barra de acciones del cruce -->
+                <div class="ml-4 mr-4 mb-2 flex items-center justify-between gap-2 flex-wrap">
                   <button class="text-[11px] text-[var(--color-primario)] hover:underline cursor-pointer flex items-center gap-1"
                     (click)="cruce._showDetail = !cruce._showDetail">
                     <mat-icon class="!text-sm !w-4 !h-4">{{ cruce._showDetail ? 'expand_less' : 'expand_more' }}</mat-icon>
                     {{ cruce._showDetail ? 'Ocultar detalle' : 'Ver detalle por categoria' }}{{ puedeCargarResultados() ? ' y cargar resultados' : '' }}
                   </button>
+                  @if (puedeCargarResultados() && tieneCambios(cruce)) {
+                    <div class="flex items-center gap-2">
+                      <span class="text-[10px] text-amber-600 font-medium">Cambios sin guardar</span>
+                      <button (click)="descartarCambios(cruce)"
+                        class="px-2 py-1 rounded text-[11px] font-medium text-gray-600 hover:bg-gray-100">
+                        Descartar
+                      </button>
+                      <button (click)="guardarResultadosCruce(jornada, cruce)" [disabled]="cruce._guardando"
+                        class="inline-flex items-center gap-1 px-3 py-1 rounded bg-[var(--color-primario)] text-white text-[11px] font-medium hover:opacity-90 disabled:opacity-50">
+                        @if (cruce._guardando) {
+                          <mat-icon class="!text-xs !w-3.5 !h-3.5 animate-spin">autorenew</mat-icon>
+                        } @else {
+                          <mat-icon class="!text-xs !w-3.5 !h-3.5">save</mat-icon>
+                        }
+                        Guardar
+                      </button>
+                    </div>
+                  }
                 </div>
                 @if (cruce._showDetail) {
                   <div class="ml-4 mr-4 mb-3 pl-3 border-l-2 border-gray-200 space-y-1 animate-fade-in">
@@ -313,23 +363,6 @@ import { BrandingService } from '../../core/services/branding.service';
                         } @else {
                           <span class="truncate">{{ veedorNombre(r.veedor_id) || 'sin veedor' }}</span>
                         }
-                      </div>
-                    }
-                    @if (puedeCargarResultados() && tieneCambios(cruce)) {
-                      <div class="flex justify-end pt-2 gap-2">
-                        <button (click)="descartarCambios(cruce)"
-                          class="px-3 py-1.5 rounded-lg text-xs font-medium text-gray-600 hover:bg-gray-100">
-                          Descartar cambios
-                        </button>
-                        <button (click)="guardarResultadosCruce(jornada, cruce)" [disabled]="cruce._guardando"
-                          class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[var(--color-primario)] text-white text-xs font-medium hover:opacity-90 disabled:opacity-50">
-                          @if (cruce._guardando) {
-                            <mat-icon class="!text-xs !w-3.5 !h-3.5 animate-spin">autorenew</mat-icon>
-                          } @else {
-                            <mat-icon class="!text-xs !w-3.5 !h-3.5">save</mat-icon>
-                          }
-                          Guardar resultados
-                        </button>
                       </div>
                     }
                   </div>
@@ -720,6 +753,50 @@ export class FixtureComponent implements OnInit {
       this.toastr.error(e?.error?.message || 'Error al guardar');
       this.cdr.detectChanges();
     });
+  }
+
+  /** Devuelve el persona_id del arbitro si TODOS los partidos tienen el mismo, null si todos sin asignar, '__mixto__' si divergen */
+  arbitroComunCruce(cruce: any): any {
+    const ids = (cruce.resultados || []).map((r: any) => r._editArbitroId ?? null);
+    if (!ids.length) return null;
+    const first = ids[0];
+    return ids.every((x: any) => x === first) ? first : '__mixto__';
+  }
+  veedorComunCruce(cruce: any): any {
+    const ids = (cruce.resultados || []).map((r: any) => r._editVeedorId ?? null);
+    if (!ids.length) return null;
+    const first = ids[0];
+    return ids.every((x: any) => x === first) ? first : '__mixto__';
+  }
+  tieneAsignacionMixta(cruce: any, tipo: 'arbitro' | 'veedor'): boolean {
+    const key = tipo === 'arbitro' ? '_editArbitroId' : '_editVeedorId';
+    const ids = (cruce.resultados || []).map((r: any) => r[key] ?? null);
+    if (ids.length <= 1) return false;
+    return !ids.every((x: any) => x === ids[0]);
+  }
+  hayArbitrosEnCruce(cruce: any): boolean {
+    return (cruce.resultados || []).some((r: any) => !!r._editArbitroId);
+  }
+  /** Cascadea asignacion a todos los partidos del cruce */
+  setArbitroTodoCruce(cruce: any, arbitroId: any) {
+    if (arbitroId === '__mixto__') return;  // ignorar la opcion disabled
+    for (const r of cruce.resultados || []) {
+      if (r._editArbitroId !== arbitroId) {
+        r._editArbitroId = arbitroId;
+        r._modificadoAsignacion = true;
+      }
+    }
+    this.cdr.detectChanges();
+  }
+  setVeedorTodoCruce(cruce: any, veedorId: any) {
+    if (veedorId === '__mixto__') return;
+    for (const r of cruce.resultados || []) {
+      if (r._editVeedorId !== veedorId) {
+        r._editVeedorId = veedorId;
+        r._modificadoAsignacion = true;
+      }
+    }
+    this.cdr.detectChanges();
   }
 
   arbitroNombre(personaId: number | null | undefined): string {
