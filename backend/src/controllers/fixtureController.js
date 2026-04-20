@@ -1,7 +1,7 @@
 import { FixtureJornada, Partido, Club, Categoria, Zona, Persona, Institucion } from '../models/index.js';
 import { generarFixture } from '../services/fixtureGeneratorService.js';
 import { registrarAudit } from '../services/auditService.js';
-import { Op } from 'sequelize';
+import { Op, fn, col } from 'sequelize';
 
 // Horario fijo por categoria (anio_nacimiento -> hora)
 const HORARIOS_CATEGORIA = {
@@ -65,7 +65,40 @@ export const listarJornadas = async (req, res) => {
       include: [{ model: Zona, as: 'zona', attributes: ['id', 'nombre', 'color'] }],
       order: [['fase', 'ASC'], ['numero_jornada', 'ASC']],
     });
-    res.json({ success: true, data: jornadas });
+
+    // Precomputar estado visual en base a los partidos (1 query agregada)
+    const jornadaIds = jornadas.map(j => j.id);
+    const counts = jornadaIds.length ? await Partido.findAll({
+      where: { jornada_id: jornadaIds },
+      attributes: ['jornada_id', 'estado', [fn('COUNT', col('id')), 'cantidad']],
+      group: ['jornada_id', 'estado'],
+      raw: true,
+    }) : [];
+
+    const byJornada = new Map();
+    for (const c of counts) {
+      if (!byJornada.has(c.jornada_id)) byJornada.set(c.jornada_id, { programado: 0, en_curso: 0, finalizado: 0, suspendido: 0, total: 0 });
+      const entry = byJornada.get(c.jornada_id);
+      const n = parseInt(c.cantidad);
+      entry[c.estado] = n;
+      entry.total += n;
+    }
+
+    const data = jornadas.map(j => {
+      const plain = j.toJSON();
+      const s = byJornada.get(j.id) || { total: 0, en_curso: 0, finalizado: 0, programado: 0 };
+      let estadoVisual = 'programada';
+      if (s.total > 0) {
+        if (s.finalizado === s.total)                                estadoVisual = 'finalizada';
+        else if (s.en_curso > 0 || (s.finalizado > 0 && s.finalizado < s.total)) estadoVisual = 'en_curso';
+        else                                                         estadoVisual = 'programada';
+      }
+      plain._estadoVisual = estadoVisual;
+      plain._partidosCount = s;
+      return plain;
+    });
+
+    res.json({ success: true, data });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
