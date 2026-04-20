@@ -261,6 +261,7 @@ export class LayoutComponent implements OnInit {
         { label: 'En Vivo', icon: 'live_tv', route: '/partidos/en-vivo', permiso: { modulo: 'partidos', accion: 'ver' }, highlight: true },
         { label: 'Posiciones', icon: 'leaderboard', route: '/posiciones', permiso: { modulo: 'posiciones', accion: 'ver' } },
         { label: 'Estadisticas', icon: 'bar_chart', route: '/estadisticas', permiso: { modulo: 'posiciones', accion: 'ver' } },
+        { label: 'Tribunal', icon: 'gavel', route: '/tribunal', permiso: { modulo: 'tribunal', accion: 'ver' } },
       ],
     },
     {
